@@ -1,0 +1,130 @@
+import { motion } from "framer-motion";
+import DashboardLayout from "@/components/DashboardLayout";
+import StatCard from "@/components/StatCard";
+import { Users, GraduationCap, BookOpen, BarChart3, School, TrendingUp, AlertTriangle, ShieldCheck } from "lucide-react";
+
+const schools = [
+  { name: "E.M. Monteiro Lobato", students: 420, teachers: 28, avg: 7.9 },
+  { name: "E.M. Cecília Meireles", students: 380, teachers: 24, avg: 8.1 },
+  { name: "E.M. Machado de Assis", students: 350, teachers: 22, avg: 7.5 },
+];
+
+export default function AdminDashboard() {
+  return (
+    <DashboardLayout role="admin" userName="Carlos Diretor">
+      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
+        <h1 className="text-2xl font-bold">Painel Administrativo</h1>
+        <p className="text-muted-foreground text-sm">Visão geral de todas as escolas</p>
+      </motion.div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <StatCard title="Escolas" value="3" icon={<School size={20} />} gradient="hero" subtitle="Ativas" />
+        <StatCard title="Alunos" value="1.150" icon={<Users size={20} />} gradient="success" subtitle="+45 este mês" />
+        <StatCard title="Professores" value="74" icon={<GraduationCap size={20} />} gradient="gamification" />
+        <StatCard title="Média Rede" value="7.8" icon={<TrendingUp size={20} />} gradient="badge" subtitle="↑ 0.2" />
+      </div>
+
+      <div className="grid lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
+          {/* Schools */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-card rounded-xl border border-border p-5">
+            <h2 className="font-bold text-base mb-4 flex items-center gap-2">
+              <School size={18} className="text-primary" />
+              Escolas da Rede
+            </h2>
+            <div className="space-y-3">
+              {schools.map((s, i) => (
+                <motion.div
+                  key={s.name}
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.15 + i * 0.05 }}
+                  className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/30 transition-colors cursor-pointer"
+                >
+                  <div>
+                    <p className="font-semibold text-sm">{s.name}</p>
+                    <p className="text-xs text-muted-foreground">{s.teachers} professores · {s.students} alunos</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="font-bold text-lg">{s.avg}</p>
+                    <p className="text-[10px] text-muted-foreground">Média</p>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Metrics */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-card rounded-xl border border-border p-5">
+            <h2 className="font-bold text-base mb-4 flex items-center gap-2">
+              <BarChart3 size={18} className="text-secondary" />
+              Indicadores da Rede
+            </h2>
+            <div className="grid grid-cols-2 gap-4">
+              {[
+                { label: "Taxa de Aprovação", value: "91%", change: "+2%" },
+                { label: "Frequência Média", value: "89%", change: "+1%" },
+                { label: "Evasão Escolar", value: "2.3%", change: "-0.5%" },
+                { label: "Satisfação", value: "4.2/5", change: "+0.3" },
+              ].map((m, i) => (
+                <div key={i} className="p-3 rounded-lg bg-muted/30">
+                  <p className="text-xs text-muted-foreground mb-1">{m.label}</p>
+                  <p className="text-xl font-bold">{m.value}</p>
+                  <p className="text-xs text-secondary font-medium">{m.change}</p>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+
+        <div className="space-y-6">
+          {/* Security */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="gradient-success rounded-xl p-5 text-secondary-foreground">
+            <ShieldCheck className="w-8 h-8 mb-3 opacity-80" />
+            <h3 className="font-bold text-lg mb-1">LGPD Compliant</h3>
+            <p className="text-secondary-foreground/70 text-sm">Todos os dados estão protegidos e em conformidade com a LGPD.</p>
+          </motion.div>
+
+          {/* Alerts */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="bg-card rounded-xl border border-border p-5">
+            <h2 className="font-bold text-base mb-4 flex items-center gap-2">
+              <AlertTriangle size={18} className="text-gamification-streak" />
+              Alertas
+            </h2>
+            <div className="space-y-3 text-sm">
+              <div className="p-3 rounded-lg border border-destructive/20 bg-destructive/5">
+                <p className="font-medium text-destructive">3 alunos com frequência crítica</p>
+                <p className="text-xs text-muted-foreground mt-0.5">E.M. Monteiro Lobato</p>
+              </div>
+              <div className="p-3 rounded-lg border border-gamification-gold/20 bg-gamification-gold/5">
+                <p className="font-medium text-gamification-gold">5 turmas sem planejamento semanal</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Atualizar até sexta</p>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Activity */}
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="bg-card rounded-xl border border-border p-5">
+            <h2 className="font-bold text-base mb-4 flex items-center gap-2">
+              <BookOpen size={18} className="text-primary" />
+              Atividade Recente
+            </h2>
+            <div className="space-y-3 text-sm">
+              {[
+                "Prof. Maria criou plano com IA",
+                "32 alunos completaram atividade",
+                "Relatório mensal gerado",
+                "Nova turma cadastrada",
+              ].map((a, i) => (
+                <div key={i} className="flex items-center gap-2 text-muted-foreground">
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+                  <span>{a}</span>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+      </div>
+    </DashboardLayout>
+  );
+}
