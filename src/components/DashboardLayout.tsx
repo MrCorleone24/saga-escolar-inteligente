@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, BookOpen, Users, Trophy, BarChart3,
   GraduationCap, Dumbbell, Settings, LogOut, ChevronLeft,
-  ChevronRight, Presentation, ClipboardList, Brain, Menu
+  ChevronRight, Presentation, ClipboardList, Brain, Menu,
+  PenLine, Calendar, BookMarked
 } from "lucide-react";
 
 type Role = "aluno" | "professor" | "admin";
@@ -19,10 +20,15 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard", roles: ["aluno", "professor", "admin"] },
   { label: "Minhas Aulas", icon: BookOpen, path: "/aulas", roles: ["aluno"] },
+  { label: "Meu Caderno", icon: PenLine, path: "/meu-caderno", roles: ["aluno"] },
+  { label: "Calendário", icon: Calendar, path: "/calendario", roles: ["aluno"] },
+  { label: "Leitura", icon: BookMarked, path: "/leitura", roles: ["aluno"] },
   { label: "Conquistas", icon: Trophy, path: "/conquistas", roles: ["aluno"] },
   { label: "Esportes", icon: Dumbbell, path: "/esportes", roles: ["aluno"] },
   { label: "Turmas", icon: Users, path: "/turmas", roles: ["professor"] },
   { label: "Planejamento", icon: ClipboardList, path: "/planejamento", roles: ["professor"] },
+  { label: "Caderno Alunos", icon: PenLine, path: "/caderno-alunos", roles: ["professor"] },
+  { label: "Leitura", icon: BookMarked, path: "/gerenciar-leitura", roles: ["professor"] },
   { label: "IA Pedagógica", icon: Brain, path: "/ia-pedagogica", roles: ["professor"] },
   { label: "Lousa Digital", icon: Presentation, path: "/lousa", roles: ["professor"] },
   { label: "Relatórios", icon: BarChart3, path: "/relatorios", roles: ["professor", "admin"] },
