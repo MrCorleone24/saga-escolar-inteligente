@@ -27,7 +27,7 @@ interface NotebookEntry {
   title: string;
   content: string;
   photo: string | null;
-  status: "rascunho" | "enviado" | "corrigido" | "devolvido";
+  status: "rascunho" | "enviado" | "corrigido" | "devolvido" | "pendente";
   grade?: string;
   teacherNote?: string;
   lessonRef?: string;
