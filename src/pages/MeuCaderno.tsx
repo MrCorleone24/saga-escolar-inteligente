@@ -355,12 +355,35 @@ export default function MeuCaderno() {
                             </div>
                           )}
                           {currentEntry.teacherNote && (
-                            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="mt-5 rounded-xl p-4 border" style={{ background: `hsl(${subject.color} / 0.05)`, borderColor: `hsl(${subject.color} / 0.15)` }}>
+                            <motion.div 
+                              initial={{ opacity: 0, y: 10 }} 
+                              animate={{ opacity: 1, y: 0 }} 
+                              transition={{ delay: 0.3 }} 
+                              className="mt-5 rounded-xl p-4 border relative overflow-hidden" 
+                              style={{ background: `hsl(${subject.color} / 0.05)`, borderColor: `hsl(${subject.color} / 0.15)` }}
+                            >
                               <div className="flex items-center gap-1.5 mb-1.5">
                                 <MessageSquare size={12} style={{ color: subjectColor }} />
-                                <span className="text-xs font-bold" style={{ color: subjectColor }}>Correção da Professora</span>
+                                <span className="text-xs font-bold" style={{ color: subjectColor }}>Feedback da Professora</span>
                               </div>
-                              <p className="text-xs text-muted-foreground leading-relaxed">{currentEntry.teacherNote}</p>
+                              <p className="text-xs text-muted-foreground leading-relaxed mb-3">{currentEntry.teacherNote}</p>
+                              
+                              <div className="flex justify-end">
+                                {hasConfirmed[currentEntry.id] ? (
+                                  <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-600">
+                                    <Check size={12} /> Confirmado
+                                  </div>
+                                ) : (
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline" 
+                                    className="h-7 text-[10px] gap-1 px-3 border-emerald-200 text-emerald-700 hover:bg-emerald-50"
+                                    onClick={() => setHasConfirmed(prev => ({ ...prev, [currentEntry.id]: true }))}
+                                  >
+                                    Confirmar Leitura
+                                  </Button>
+                                )}
+                              </div>
                             </motion.div>
                           )}
                         </div>
