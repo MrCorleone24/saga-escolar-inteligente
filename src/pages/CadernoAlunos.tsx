@@ -163,7 +163,24 @@ export default function CadernoAlunos() {
                         <Textarea placeholder="Comentário para o aluno..." value={correction} onChange={e => setCorrection(e.target.value)} rows={2} className="flex-1" />
                       </div>
                       <div className="flex gap-2">
-                        <Button size="sm" className="gradient-hero border-0 text-primary-foreground"><CheckCircle2 size={12} className="mr-1" /> Corrigir</Button>
+                        <Button 
+                          size="sm" 
+                          className="gradient-hero border-0 text-primary-foreground"
+                          onClick={() => {
+                            // Mock logic: mark as corrected locally
+                            const entry = viewingEntry;
+                            if (entry) {
+                              entry.status = "corrigido";
+                              entry.grade = grade;
+                              entry.teacherNote = correction;
+                              setViewEntry(null);
+                              setGrade("");
+                              setCorrection("");
+                            }
+                          }}
+                        >
+                          <CheckCircle2 size={12} className="mr-1" /> Corrigir e Enviar
+                        </Button>
                         <Button size="sm" variant="outline"><MessageSquare size={12} className="mr-1" /> Devolver</Button>
                       </div>
                     </div>

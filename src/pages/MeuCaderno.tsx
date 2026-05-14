@@ -121,6 +121,8 @@ export default function MeuCaderno() {
   const [newTitle, setNewTitle] = useState("");
   const [newPhoto, setNewPhoto] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"notebook" | "list">("notebook");
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [hasConfirmed, setHasConfirmed] = useState<Record<number, boolean>>({});
 
   const subject = SUBJECTS[activeSubject];
   const filtered = MOCK_ENTRIES.filter(e => e.subject === subject.name);
