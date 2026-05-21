@@ -41,20 +41,30 @@ const statusMap = {
 export default function Financeiro() {
   const [role, setRole] = useState<Role>("aluno");
   const [userName, setUserName] = useState("Usuário");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      const { data: profile } = await supabase.from("profiles").select("role, full_name").eq("id", user.id).single();
-      if (profile) {
-        setRole((profile.role as Role) ?? "aluno");
-        setUserName(profile.full_name ?? user.email ?? "Usuário");
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+        const { data: profile } = await supabase.from("profiles").select("role, full_name").eq("id", user.id).single();
+        if (profile) {
+          setRole((profile.role as Role) ?? "aluno");
+          setUserName(profile.full_name ?? user.email ?? "Usuário");
+        }
+      } catch (e) {
+        console.error("Erro ao carregar perfil:", e);
+      } finally {
+        setLoading(false);
       }
     })();
   }, []);
 
   const isAdmin = role === "admin";
+  const isSchool = role === "school";
+  const isProfessor = role === "professor";
+
 
   const handleTestPayment = async () => {
     // Placeholder: integração Woovi sandbox
@@ -99,18 +109,22 @@ export default function Financeiro() {
           <Card className="p-5 gradient-hero text-white border-0">
             <div className="flex items-center justify-between flex-wrap gap-3">
               <div>
-                <p className="text-xs opacity-80">Plano atual</p>
+                <p className="text-xs opacity-80">Plano ativo</p>
                 <h2 className="text-xl font-bold">
-                  {role === "school" ? "Plano Escola" : role === "professor" ? "Plano Professor" : "Plano Aluno"}
+                  {isSchool ? "Plano Escola (Institucional)" : isProfessor ? "Plano Professor (Profissional)" : "Plano Aluno (Básico)"}
                 </h2>
-                <p className="text-sm opacity-90 mt-1">Próximo vencimento: 01/06/2026 — R$ 149,90</p>
+                <p className="text-sm opacity-90 mt-1">
+                  {isSchool ? "Gestão total de alunos e professores ilimitados" : isProfessor ? "Gestão de até 50 alunos inclusa" : "Acesso completo às aulas e materiais"}
+                </p>
+                <p className="text-xs font-semibold mt-2">Próximo vencimento: 01/06/2026 — R$ {isSchool ? "499,90" : isProfessor ? "149,90" : "49,90"}</p>
               </div>
-              <Button variant="secondary" onClick={handleTestPayment}>
-                <CreditCard className="mr-2" size={16} /> Pagar com Woovi
+              <Button variant="secondary" onClick={handleTestPayment} className="font-bold">
+                <CreditCard className="mr-2" size={16} /> Renovação via Woovi
               </Button>
             </div>
           </Card>
         )}
+
 
         <Card className="p-5">
           <div className="flex items-center justify-between mb-4">
