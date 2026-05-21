@@ -45,11 +45,14 @@ export default function Turmas() {
       // Fetch groups/subjects as "Turmas"
       const { data: subjectsData } = await supabase
         .from("subjects")
-        .select("*")
-        .eq(profile.role === 'teacher' ? 'teacher_id' : 'school_id', user.id);
+        .select("*");
       
-      if (subjectsData) {
-        setTurmasList(subjectsData.map(s => ({
+      const filteredSubjects = subjectsData?.filter(s => 
+        profile.role === 'teacher' ? (s as any).teacher_id === user.id : (s as any).school_id === user.id
+      );
+      
+      if (filteredSubjects) {
+        setTurmasList(filteredSubjects.map(s => ({
           id: s.id,
           name: s.name,
           subject: s.name,
