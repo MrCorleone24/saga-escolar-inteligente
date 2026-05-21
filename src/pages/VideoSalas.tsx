@@ -109,7 +109,7 @@ export default function VideoSalas() {
   const { data: rooms = [] } = useQuery({
     queryKey: ['rooms'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('rooms').select('*').eq('is_active', true);
+      const { data, error } = await supabase.from('rooms').select('*').eq('is_active', true).order('created_at', { ascending: false });
       if (error) throw error;
       return data as Room[];
     }
@@ -176,7 +176,7 @@ export default function VideoSalas() {
       await supabase.from('classroom_moderation').insert({
         room_id: room.id,
         user_id: userId,
-        role: ['professor', 'teacher', 'admin', 'school'].includes(userRole || '') ? 'admin' : 'participante'
+      role: ['professor', 'teacher', 'admin', 'school'].includes(userRole || '') ? 'admin' : 'participante'
       });
     }
 
@@ -272,8 +272,8 @@ export default function VideoSalas() {
   };
 
   const currentUserModeration = participants.find(p => p.user_id === userId);
-  const isAdmin = currentUserModeration?.role === 'admin' || userRole === 'professor' || userRole === 'teacher' || userRole === 'admin' || userRole === 'school';
-  const canCreate = userRole === 'professor' || userRole === 'teacher' || userRole === 'admin' || userRole === 'school';
+  const isAdmin = currentUserModeration?.role === 'admin' || ['professor', 'teacher', 'admin', 'school'].includes(userRole || '');
+  const canCreate = ['professor', 'teacher', 'admin', 'school'].includes(userRole || '');
 
   if (inCall && activeRoom) {
     return (
