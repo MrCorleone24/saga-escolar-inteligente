@@ -15,6 +15,7 @@ interface Plan {
   max_teachers: number;
   role_type: string;
   features: string[];
+  checkout_url?: string;
 }
 
 export default function Planos() {
