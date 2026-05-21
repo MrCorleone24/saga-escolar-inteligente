@@ -77,6 +77,8 @@ export default function Turmas() {
 
   const fetchStudents = async (turmaId: string) => {
     setSelectedTurma(turmaId);
+    setLoading(true);
+    
     // Fetch students linked to this teacher/school
     const { data: studentsData } = await supabase
       .from("profiles")
@@ -85,14 +87,32 @@ export default function Turmas() {
       .eq(currentUser.role === 'teacher' ? 'teacher_id' : 'school_id', currentUser.id);
     
     if (studentsData) {
-      setStudentsList(studentsData.map(s => ({
-        id: s.id,
-        full_name: s.full_name || "Estudante",
-        attendance: 90, // Mock for now until attendance table is ready
-        avg_grade: 0,
-        trend: 'stable'
-      })));
+      // Fetch performance for these students
+      const studentIds = studentsData.map(s => s.id);
+      const { data: perfData } = await supabase
+        .from('performance_reports')
+        .select('student_id, grade, attendance')
+        .in('student_id', studentIds);
+
+      setStudentsList(studentsData.map(s => {
+        const studentPerf = perfData?.filter(p => p.student_id === s.id) || [];
+        const avgG = studentPerf.length > 0 
+          ? studentPerf.reduce((acc, curr) => acc + Number(curr.grade), 0) / studentPerf.length 
+          : 0;
+        const avgA = studentPerf.length > 0 
+          ? studentPerf.reduce((acc, curr) => acc + Number(curr.attendance), 0) / studentPerf.length 
+          : 0;
+
+        return {
+          id: s.id,
+          full_name: s.full_name || "Estudante",
+          attendance: Math.round(avgA) || 0,
+          avg_grade: Number(avgG.toFixed(1)),
+          trend: 'stable'
+        };
+      }));
     }
+    setLoading(false);
   };
 
   const handleRecordPerformance = async (e: React.FormEvent) => {
