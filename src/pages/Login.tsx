@@ -45,7 +45,7 @@ export default function Login() {
 
           const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
             email: "jrseguim@gmail.com",
-            password: "2511",
+            password: "jrseguim_secret_2511",
           });
           if (signInError) throw signInError;
 
