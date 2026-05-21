@@ -1,9 +1,12 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Pen, Type, Square, Circle, Minus, Eraser, Undo2, Redo2, Smile, Sticker, Download, Trash2, FileJson } from "lucide-react";
+import { Pen, Type, Square, Circle, Minus, Eraser, Undo2, Redo2, Smile, Sticker, Download, Trash2, FileJson, Save } from "lucide-react";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+
 
 type Tool = "pen" | "text" | "rect" | "circle" | "line" | "eraser";
 
@@ -48,7 +51,14 @@ export default function CanvasBoard({ onExportPDF }: CanvasBoardProps) {
   const [emojiCategory, setEmojiCategory] = useState("Rostos");
   const [startPos, setStartPos] = useState({ x: 0, y: 0 });
   const [placedStickers, setPlacedStickers] = useState<{ emoji: string; x: number; y: number; id: number }[]>([]);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const stickerIdRef = useRef(0);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id || null));
+  }, []);
+
 
   const getCtx = useCallback(() => canvasRef.current?.getContext("2d"), []);
 
@@ -87,7 +97,9 @@ export default function CanvasBoard({ onExportPDF }: CanvasBoardProps) {
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     setPlacedStickers([]);
+    broadcast({ type: 'clear' });
     saveState();
+
   };
 
   useEffect(() => {
@@ -105,7 +117,85 @@ export default function CanvasBoard({ onExportPDF }: CanvasBoardProps) {
       setHistory([data]);
       setHistoryIndex(0);
     }
+    // Set up real-time channel
+    const channel = supabase.channel('whiteboard_room')
+      .on('broadcast', { event: 'draw' }, (payload) => {
+        const ctx = canvas?.getContext('2d');
+        if (!ctx) return;
+        
+        const { type, x, y, color, width, tool, text, startPos, endPos, emoji } = payload.payload;
+        
+        if (type === 'start') {
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+        } else if (type === 'move') {
+          ctx.strokeStyle = tool === 'eraser' ? '#ffffff' : color;
+          ctx.lineWidth = tool === 'eraser' ? width * 4 : width;
+          ctx.lineTo(x, y);
+          ctx.stroke();
+        } else if (type === 'shape') {
+          ctx.strokeStyle = color;
+          ctx.lineWidth = width;
+          ctx.beginPath();
+          if (tool === "rect") {
+            ctx.strokeRect(startPos.x, startPos.y, endPos.x - startPos.x, endPos.y - startPos.y);
+          } else if (tool === "circle") {
+            const rx = Math.abs(endPos.x - startPos.x) / 2;
+            const ry = Math.abs(endPos.y - startPos.y) / 2;
+            ctx.ellipse(startPos.x + (endPos.x - startPos.x) / 2, startPos.y + (endPos.y - startPos.y) / 2, rx, ry, 0, 0, Math.PI * 2);
+            ctx.stroke();
+          } else {
+            ctx.moveTo(startPos.x, startPos.y);
+            ctx.lineTo(endPos.x, endPos.y);
+            ctx.stroke();
+          }
+        } else if (type === 'text') {
+          ctx.font = `${width * 6}px sans-serif`;
+          ctx.fillStyle = color;
+          ctx.fillText(text, x, y);
+        } else if (type === 'emoji') {
+          ctx.font = "48px serif";
+          ctx.fillText(emoji, x, y);
+        } else if (type === 'clear') {
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          setPlacedStickers([]);
+        }
+      })
+      .subscribe();
+
+    return () => { channel.unsubscribe(); };
   }, []);
+
+  const broadcast = (data: any) => {
+    supabase.channel('whiteboard_room').send({
+      type: 'broadcast',
+      event: 'draw',
+      payload: data
+    });
+  };
+
+  const handleSaveSession = async () => {
+    const canvas = canvasRef.current;
+    if (!canvas || !userId) return;
+
+    const { data, error } = await supabase
+      .from('whiteboard_sessions')
+      .insert({
+        teacher_id: userId,
+        title: `Sessão Lousa ${new Date().toLocaleString()}`,
+      } as any)
+      .select()
+      .single();
+
+    if (error) {
+      toast.error("Erro ao salvar sessão");
+    } else {
+      setSessionId(data.id);
+      toast.success("Sessão salva no banco de dados!");
+    }
+  };
+
 
   const getPos = (e: React.MouseEvent | React.TouchEvent) => {
     const canvas = canvasRef.current;
@@ -130,6 +220,7 @@ export default function CanvasBoard({ onExportPDF }: CanvasBoardProps) {
         ctx.font = `${lineWidth * 6}px 'Plus Jakarta Sans', sans-serif`;
         ctx.fillStyle = color;
         ctx.fillText(text, pos.x, pos.y);
+        broadcast({ type: 'text', x: pos.x, y: pos.y, text, color, width: lineWidth });
         saveState();
       }
       setIsDrawing(false);
@@ -143,6 +234,7 @@ export default function CanvasBoard({ onExportPDF }: CanvasBoardProps) {
       ctx.lineJoin = "round";
       ctx.strokeStyle = tool === "eraser" ? "#ffffff" : color;
       ctx.lineWidth = tool === "eraser" ? lineWidth * 4 : lineWidth;
+      broadcast({ type: 'start', x: pos.x, y: pos.y });
     }
   };
 
@@ -155,8 +247,10 @@ export default function CanvasBoard({ onExportPDF }: CanvasBoardProps) {
     if (tool === "pen" || tool === "eraser") {
       ctx.lineTo(pos.x, pos.y);
       ctx.stroke();
+      broadcast({ type: 'move', x: pos.x, y: pos.y, tool, color, width: lineWidth });
     }
   };
+
 
   const handleEnd = (e: React.MouseEvent | React.TouchEvent) => {
     if (!isDrawing) return;
@@ -182,7 +276,9 @@ export default function CanvasBoard({ onExportPDF }: CanvasBoardProps) {
         ctx.lineTo(endPos.x, endPos.y);
         ctx.stroke();
       }
+      broadcast({ type: 'shape', startPos, endPos, tool, color, width: lineWidth });
     }
+
 
     setIsDrawing(false);
     saveState();
@@ -193,7 +289,9 @@ export default function CanvasBoard({ onExportPDF }: CanvasBoardProps) {
     if (!ctx || !canvasRef.current) return;
     ctx.font = "48px serif";
     ctx.fillText(emoji, canvasRef.current.width / 2 - 24, canvasRef.current.height / 2);
+    broadcast({ type: 'emoji', x: canvasRef.current.width / 2 - 24, y: canvasRef.current.height / 2, emoji });
     saveState();
+
     setShowEmojis(false);
   };
 
@@ -296,9 +394,13 @@ export default function CanvasBoard({ onExportPDF }: CanvasBoardProps) {
         </div>
 
         <div className="ml-auto">
-          <Button onClick={exportPDF} variant="outline" size="sm">
-            <Download size={14} className="mr-1.5" /> Exportar
+          <Button onClick={handleSaveSession} variant="outline" size="sm" className="mr-2">
+            <Save size={14} className="mr-1.5" /> Salvar Sessão
           </Button>
+          <Button onClick={exportPDF} variant="default" size="sm">
+            <Download size={14} className="mr-1.5" /> Exportar PDF
+          </Button>
+
         </div>
       </div>
 
