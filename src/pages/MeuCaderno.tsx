@@ -1,29 +1,18 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import DashboardLayout from "@/components/DashboardLayout";
 import {
   PenLine, MessageSquare, Star, ChevronLeft, ChevronRight,
-  BookOpen, Camera, Save, RotateCcw, Plus, Check, Clock, Link2
+  BookOpen, Camera, Save, RotateCcw, Plus, Check, Clock, Link2,
+  FileDown, Search, Filter, History, CheckCircle2, Bell
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { SUBJECTS, MOCK_LESSONS } from "@/lib/subjects";
+import { SUBJECTS, MOCK_LESSONS, NotebookEntry, FeedbackVersion } from "@/lib/subjects";
 import { useNavigate } from "react-router-dom";
-
-interface NotebookEntry {
-  id: number;
-  date: string;
-  subject: string;
-  title: string;
-  content: string;
-  photo: string | null;
-  status: "rascunho" | "enviado" | "corrigido" | "devolvido" | "pendente";
-  grade?: string;
-  teacherNote?: string;
-  lessonId?: string;
-  lessonRef?: string;
-}
+import { jsPDF } from "jspdf";
+import { toast } from "sonner";
 
 const MOCK_ENTRIES: NotebookEntry[] = [
   {
@@ -32,6 +21,9 @@ const MOCK_ENTRIES: NotebookEntry[] = [
     photo: null, status: "corrigido", grade: "Muito Bem! ⭐",
     teacherNote: "Excelente trabalho, João! Suas respostas estão completas e bem escritas. Continue assim!",
     lessonId: "1", lessonRef: "Aula 12 - Interpretação de Texto",
+    versions: [
+      { id: "v1", date: "26/02/2026 10:00", grade: "Bom", note: "Falta responder a moral da história.", status: "devolvido" }
+    ]
   },
   {
     id: 2, date: "26/02/2026", subject: "Português", title: "Ditado - Palavras com LH e NH",
@@ -108,10 +100,12 @@ const STATUS_CONFIG = {
   pendente: { label: "Pendente", icon: Clock, color: "text-amber-600", bg: "bg-amber-50" },
   corrigido: { label: "Corrigido", icon: Check, color: "text-emerald-600", bg: "bg-emerald-50" },
   devolvido: { label: "Devolvido", icon: RotateCcw, color: "text-red-500", bg: "bg-red-50" },
+  confirmado: { label: "Confirmado", icon: CheckCircle2, color: "text-blue-600", bg: "bg-blue-50" },
 };
 
 export default function MeuCaderno() {
   const navigate = useNavigate();
+  const [entries, setEntries] = useState<NotebookEntry[]>(MOCK_ENTRIES);
   const [activeSubject, setActiveSubject] = useState(0);
   const [currentPage, setCurrentPage] = useState(0);
   const [isFlipping, setIsFlipping] = useState(false);
@@ -123,10 +117,68 @@ export default function MeuCaderno() {
   const [viewMode, setViewMode] = useState<"notebook" | "list">("notebook");
   const [showFeedback, setShowFeedback] = useState(false);
   const [hasConfirmed, setHasConfirmed] = useState<Record<number, boolean>>({});
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("todos");
+  const [showVersionHistory, setShowVersionHistory] = useState<number | null>(null);
 
   const subject = SUBJECTS[activeSubject];
-  const filtered = MOCK_ENTRIES.filter(e => e.subject === subject.name);
+  
+  const filtered = useMemo(() => {
+    return entries.filter(e => {
+      const matchesSubject = viewMode === "notebook" ? e.subject === subject.name : true;
+      const matchesSearch = e.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                            e.subject.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesStatus = statusFilter === "todos" ? true : e.status === statusFilter;
+      
+      return matchesSubject && matchesSearch && matchesStatus;
+    });
+  }, [entries, subject.name, searchQuery, statusFilter, viewMode]);
+
   const currentEntry = filtered[currentPage] || null;
+
+  const handleConfirmReading = (entryId: number) => {
+    setEntries(prev => prev.map(e => 
+      e.id === entryId ? { ...e, status: "confirmado", confirmedAt: new Date().toLocaleString() } as NotebookEntry : e
+    ));
+    toast.success("Feedback confirmado com sucesso!");
+    // Simulate notification to teacher
+    console.log("Notification sent to teacher: Student confirmed reading feedback.");
+  };
+
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(20);
+    doc.text("Histórico de Notas e Feedbacks", 20, 20);
+    doc.setFontSize(12);
+    doc.text(`Aluno: João Silva | Data: ${new Date().toLocaleDateString()}`, 20, 30);
+    
+    let y = 45;
+    entries.filter(e => e.status === "corrigido" || e.status === "confirmado").forEach((e, i) => {
+      if (y > 270) {
+        doc.addPage();
+        y = 20;
+      }
+      doc.setFont("helvetica", "bold");
+      doc.text(`${e.date} - ${e.subject}: ${e.title}`, 20, y);
+      y += 7;
+      doc.setFont("helvetica", "normal");
+      doc.text(`Nota: ${e.grade || "S/N"}`, 25, y);
+      y += 7;
+      doc.text(`Feedback: ${e.teacherNote || "S/C"}`, 25, y);
+      y += 7;
+      if (e.status === "confirmado") {
+        doc.text(`[✓ Confirmado em ${e.confirmedAt}]`, 25, y);
+        y += 7;
+      }
+      y += 5;
+      doc.line(20, y, 190, y);
+      y += 10;
+    });
+
+    doc.save("historico-notas.pdf");
+    toast.success("PDF exportado com sucesso!");
+  };
+
 
   const subjectLessons = MOCK_LESSONS.filter(l => l.subject === subject.name);
 
@@ -221,25 +273,62 @@ export default function MeuCaderno() {
         </motion.div>
       )}
 
-      {/* View toggle + new page */}
-      <div className="flex items-center justify-between mb-4">
+      {/* View toggle + Search + Filters + PDF */}
+      <div className="flex flex-col md:flex-row gap-4 mb-4">
         <div className="flex items-center gap-2">
           <button
             onClick={() => setViewMode("notebook")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${viewMode === "notebook" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-2 ${viewMode === "notebook" ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground border border-border"}`}
           >
             📓 Caderno
           </button>
           <button
             onClick={() => setViewMode("list")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${viewMode === "list" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-2 ${viewMode === "list" ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground border border-border"}`}
           >
-            📋 Lista
+            📋 Lista Histórica
           </button>
         </div>
-        <Button size="sm" onClick={goToNewPage} className="gradient-hero border-0 text-primary-foreground gap-1.5">
-          <Plus size={14} /> Nova Página
-        </Button>
+
+        <div className="flex-1 flex flex-wrap items-center gap-2">
+          <div className="relative flex-1 min-w-[150px]">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input 
+              value={searchQuery} 
+              onChange={e => setSearchQuery(e.target.value)} 
+              placeholder="Buscar por título ou matéria..." 
+              className="pl-9 h-9 text-xs" 
+            />
+          </div>
+          
+          <div className="flex items-center gap-1.5 bg-card border border-border rounded-lg px-2 h-9 shadow-sm">
+            <Filter size={14} className="text-muted-foreground" />
+            <select 
+              value={statusFilter} 
+              onChange={e => setStatusFilter(e.target.value)}
+              className="bg-transparent border-0 text-xs focus:ring-0 cursor-pointer pr-6"
+            >
+              <option value="todos">Todos Status</option>
+              <option value="enviado">Enviados</option>
+              <option value="corrigido">Corrigidos</option>
+              <option value="confirmado">Confirmados</option>
+              <option value="devolvido">Devolvidos</option>
+            </select>
+          </div>
+
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={exportToPDF}
+            className="h-9 gap-2 text-xs border-primary/30 text-primary hover:bg-primary/5 shadow-sm"
+          >
+            <FileDown size={14} /> Exportar PDF
+          </Button>
+
+          <Button size="sm" onClick={goToNewPage} className="h-9 gradient-hero border-0 text-primary-foreground gap-1.5 shadow-md">
+            <Plus size={14} /> Nova Página
+          </Button>
+        </div>
       </div>
 
       {viewMode === "notebook" ? (
@@ -362,26 +451,52 @@ export default function MeuCaderno() {
                               className="mt-5 rounded-xl p-4 border relative overflow-hidden" 
                               style={{ background: `hsl(${subject.color} / 0.05)`, borderColor: `hsl(${subject.color} / 0.15)` }}
                             >
-                              <div className="flex items-center gap-1.5 mb-1.5">
-                                <MessageSquare size={12} style={{ color: subjectColor }} />
-                                <span className="text-xs font-bold" style={{ color: subjectColor }}>Feedback da Professora</span>
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-1.5">
+                                  <MessageSquare size={12} style={{ color: subjectColor }} />
+                                  <span className="text-xs font-bold" style={{ color: subjectColor }}>Feedback da Professora</span>
+                                </div>
+                                {currentEntry.versions && currentEntry.versions.length > 0 && (
+                                  <button 
+                                    onClick={() => setShowVersionHistory(showVersionHistory === currentEntry.id ? null : currentEntry.id)}
+                                    className="text-[10px] font-bold text-primary flex items-center gap-1 hover:underline"
+                                  >
+                                    <History size={10} /> {showVersionHistory === currentEntry.id ? "Ocultar Histórico" : "Ver Histórico"}
+                                  </button>
+                                )}
                               </div>
+
+                              {showVersionHistory === currentEntry.id && currentEntry.versions && (
+                                <div className="mb-3 space-y-2 border-l-2 border-primary/20 pl-3 py-1">
+                                  {currentEntry.versions.map(v => (
+                                    <div key={v.id} className="text-[10px]">
+                                      <p className="font-bold text-muted-foreground">{v.date} · {v.grade}</p>
+                                      <p className="text-muted-foreground italic">"{v.note}"</p>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
                               <p className="text-xs text-muted-foreground leading-relaxed mb-3">{currentEntry.teacherNote}</p>
                               
-                              <div className="flex justify-end">
-                                {hasConfirmed[currentEntry.id] ? (
-                                  <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-600">
-                                    <Check size={12} /> Confirmado
+                              <div className="flex justify-between items-center pt-2 border-t border-border/30">
+                                {currentEntry.status === "confirmado" ? (
+                                  <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
+                                    <CheckCircle2 size={12} /> Confirmado em {currentEntry.confirmedAt}
                                   </div>
                                 ) : (
-                                  <Button 
-                                    size="sm" 
-                                    variant="outline" 
-                                    className="h-7 text-[10px] gap-1 px-3 border-emerald-200 text-emerald-700 hover:bg-emerald-50"
-                                    onClick={() => setHasConfirmed(prev => ({ ...prev, [currentEntry.id]: true }))}
-                                  >
-                                    Confirmar Leitura
-                                  </Button>
+                                  <div className="flex items-center gap-2 ml-auto">
+                                    <span className="text-[10px] text-amber-600 font-medium flex items-center gap-1">
+                                      <Bell size={10} /> Confirme a leitura
+                                    </span>
+                                    <Button 
+                                      size="sm" 
+                                      className="h-8 text-[10px] gap-1.5 px-3 gradient-hero border-0 text-white"
+                                      onClick={() => handleConfirmReading(currentEntry.id)}
+                                    >
+                                      <CheckCircle2 size={12} /> Confirmar Leitura
+                                    </Button>
+                                  </div>
                                 )}
                               </div>
                             </motion.div>
@@ -442,11 +557,12 @@ export default function MeuCaderno() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-xs text-muted-foreground">{entry.date}</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-lg font-bold bg-muted text-muted-foreground">{entry.subject}</span>
                       {entry.lessonId && (
                         <span className="text-[10px] text-primary flex items-center gap-0.5"><Link2 size={8} /> Aula</span>
                       )}
-                      <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${STATUS_CONFIG[entry.status].bg} ${STATUS_CONFIG[entry.status].color}`}>
-                        {STATUS_CONFIG[entry.status].label}
+                      <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${STATUS_CONFIG[entry.status]?.bg || "bg-muted"} ${STATUS_CONFIG[entry.status]?.color || "text-muted-foreground"}`}>
+                        {STATUS_CONFIG[entry.status]?.label || entry.status}
                       </div>
                     </div>
                     <h4 className="font-bold text-sm group-hover:text-primary transition-colors truncate">{entry.title}</h4>
