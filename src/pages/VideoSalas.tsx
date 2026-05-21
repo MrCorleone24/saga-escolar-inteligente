@@ -272,7 +272,8 @@ export default function VideoSalas() {
   };
 
   const currentUserModeration = participants.find(p => p.user_id === userId);
-  const isAdmin = currentUserModeration?.role === 'admin' || userRole === 'professor' || userRole === 'admin' || userRole === 'school';
+  const isAdmin = currentUserModeration?.role === 'admin' || userRole === 'professor' || userRole === 'teacher' || userRole === 'admin' || userRole === 'school';
+  const canCreate = userRole === 'professor' || userRole === 'teacher' || userRole === 'admin' || userRole === 'school';
 
   if (inCall && activeRoom) {
     return (
