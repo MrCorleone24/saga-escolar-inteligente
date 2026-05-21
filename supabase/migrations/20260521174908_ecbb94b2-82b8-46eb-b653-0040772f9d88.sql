@@ -1,0 +1,1 @@
+ALTER TABLE public.classroom_moderation ADD COLUMN IF NOT EXISTS hand_raised BOOLEAN DEFAULT false;

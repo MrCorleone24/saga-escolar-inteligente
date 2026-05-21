@@ -59,6 +59,7 @@ export type Database = {
           can_chat: boolean | null
           can_video: boolean | null
           created_at: string
+          hand_raised: boolean | null
           id: string
           is_muted: boolean | null
           role: string
@@ -70,6 +71,7 @@ export type Database = {
           can_chat?: boolean | null
           can_video?: boolean | null
           created_at?: string
+          hand_raised?: boolean | null
           id?: string
           is_muted?: boolean | null
           role?: string
@@ -81,6 +83,7 @@ export type Database = {
           can_chat?: boolean | null
           can_video?: boolean | null
           created_at?: string
+          hand_raised?: boolean | null
           id?: string
           is_muted?: boolean | null
           role?: string
