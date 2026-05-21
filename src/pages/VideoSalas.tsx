@@ -21,6 +21,7 @@ interface Room {
   name: string;
   status: "online" | "offline";
   created_by: string;
+  room_type: "classroom" | "administrative";
 }
 
 interface Participant {
@@ -30,6 +31,7 @@ interface Participant {
   can_audio: boolean;
   can_video: boolean;
   is_muted: boolean;
+  hand_raised: boolean;
   profiles: {
     full_name: string;
     role: string;
