@@ -34,7 +34,10 @@ serve(async (req) => {
 
     if (profileError || !profile) throw new Error('Profile not found')
 
-    const { email, password, fullName, role, schoolName, subject } = await req.json()
+    const { 
+      email, password, fullName, role, schoolName, subject,
+      phone, address, city, state, zipCode, taxId, website, contactPerson 
+    } = await req.json()
 
     let targetSchoolId = null;
     let targetTeacherId = null;
@@ -101,7 +104,15 @@ serve(async (req) => {
         email: email,
         full_name: fullName,
         school_name: schoolName || profile.school_name,
-        subject: subject
+        subject: subject,
+        phone: phone,
+        address: address,
+        city: city,
+        state: state,
+        zip_code: zipCode,
+        tax_id: taxId,
+        website: website,
+        contact_person: contactPerson
       })
       .eq('id', newUser.user.id)
 
