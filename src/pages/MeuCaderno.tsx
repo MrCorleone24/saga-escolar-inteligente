@@ -272,25 +272,62 @@ export default function MeuCaderno() {
         </motion.div>
       )}
 
-      {/* View toggle + new page */}
-      <div className="flex items-center justify-between mb-4">
+      {/* View toggle + Search + Filters + PDF */}
+      <div className="flex flex-col md:flex-row gap-4 mb-4">
         <div className="flex items-center gap-2">
           <button
             onClick={() => setViewMode("notebook")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${viewMode === "notebook" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-2 ${viewMode === "notebook" ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground border border-border"}`}
           >
             📓 Caderno
           </button>
           <button
             onClick={() => setViewMode("list")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${viewMode === "list" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm flex items-center gap-2 ${viewMode === "list" ? "bg-primary text-primary-foreground" : "bg-card text-muted-foreground border border-border"}`}
           >
-            📋 Lista
+            📋 Lista Histórica
           </button>
         </div>
-        <Button size="sm" onClick={goToNewPage} className="gradient-hero border-0 text-primary-foreground gap-1.5">
-          <Plus size={14} /> Nova Página
-        </Button>
+
+        <div className="flex-1 flex flex-wrap items-center gap-2">
+          <div className="relative flex-1 min-w-[150px]">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <Input 
+              value={searchQuery} 
+              onChange={e => setSearchQuery(e.target.value)} 
+              placeholder="Buscar por título ou matéria..." 
+              className="pl-9 h-9 text-xs" 
+            />
+          </div>
+          
+          <div className="flex items-center gap-1.5 bg-card border border-border rounded-lg px-2 h-9 shadow-sm">
+            <Filter size={14} className="text-muted-foreground" />
+            <select 
+              value={statusFilter} 
+              onChange={e => setStatusFilter(e.target.value)}
+              className="bg-transparent border-0 text-xs focus:ring-0 cursor-pointer pr-6"
+            >
+              <option value="todos">Todos Status</option>
+              <option value="enviado">Enviados</option>
+              <option value="corrigido">Corrigidos</option>
+              <option value="confirmado">Confirmados</option>
+              <option value="devolvido">Devolvidos</option>
+            </select>
+          </div>
+
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={exportToPDF}
+            className="h-9 gap-2 text-xs border-primary/30 text-primary hover:bg-primary/5 shadow-sm"
+          >
+            <FileDown size={14} /> Exportar PDF
+          </Button>
+
+          <Button size="sm" onClick={goToNewPage} className="h-9 gradient-hero border-0 text-primary-foreground gap-1.5 shadow-md">
+            <Plus size={14} /> Nova Página
+          </Button>
+        </div>
       </div>
 
       {viewMode === "notebook" ? (
