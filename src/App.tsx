@@ -28,7 +28,9 @@ import CadernoAlunos from "./pages/CadernoAlunos";
 import GerenciarLeitura from "./pages/GerenciarLeitura";
 import VideoSalas from "./pages/VideoSalas";
 import Planos from "./pages/Planos";
+import Financeiro from "./pages/Financeiro";
 import NotFound from "./pages/NotFound";
+
 
 const queryClient = new QueryClient();
 
