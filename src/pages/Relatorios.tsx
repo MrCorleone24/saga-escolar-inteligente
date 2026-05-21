@@ -36,29 +36,51 @@ export default function Relatorios() {
         .order("created_at", { ascending: true });
 
       if (reports && reports.length > 0) {
-        // Simple aggregation for the charts
-        const last6Months = ["Set", "Out", "Nov", "Dez", "Jan", "Fev"];
-        setMonthlyData(last6Months.map(m => ({
-          month: m,
-          media: (Math.random() * 2 + 7).toFixed(1), // Simulating based on trend for now
-          presenca: Math.floor(Math.random() * 10 + 85)
+        // Group by month for evolution
+        const months = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+        const monthlyAggregation: Record<string, { totalGrade: number; totalAttendance: number; count: number }> = {};
+        
+        reports.forEach(report => {
+          const date = new Date(report.created_at);
+          const monthLabel = months[date.getMonth()];
+          if (!monthlyAggregation[monthLabel]) {
+            monthlyAggregation[monthLabel] = { totalGrade: 0, totalAttendance: 0, count: 0 };
+          }
+          monthlyAggregation[monthLabel].totalGrade += Number(report.grade);
+          monthlyAggregation[monthLabel].totalAttendance += Number(report.attendance);
+          monthlyAggregation[monthLabel].count += 1;
+        });
+
+        setMonthlyData(Object.entries(monthlyAggregation).map(([month, data]) => ({
+          month,
+          media: (data.totalGrade / data.count).toFixed(1),
+          presenca: Math.round(data.totalAttendance / data.count)
         })));
 
-        // Real subject data aggregation if available
-        const { data: subjects } = await supabase.from("subjects").select("name");
-        if (subjects) {
-          setSubjectData(subjects.map(s => ({
-            subject: s.name.substring(0, 4),
-            avg: (Math.random() * 3 + 6.5).toFixed(1)
-          })));
-        }
+        // Real subject data aggregation
+        const subjectAggregation: Record<string, { totalGrade: number; count: number }> = {};
+        reports.forEach(report => {
+          const s = report.subject || "Geral";
+          if (!subjectAggregation[s]) {
+            subjectAggregation[s] = { totalGrade: 0, count: 0 };
+          }
+          subjectAggregation[s].totalGrade += Number(report.grade);
+          subjectAggregation[s].count += 1;
+        });
+
+        setSubjectData(Object.entries(subjectAggregation).map(([subject, data]) => ({
+          subject: subject.substring(0, 4),
+          avg: (data.totalGrade / data.count).toFixed(1)
+        })));
 
         // Global Stats
-        const avg = reports.reduce((acc, curr) => acc + (curr.grade || 0), 0) / reports.length;
+        const avg = reports.reduce((acc, curr) => acc + (Number(curr.grade) || 0), 0) / reports.length;
+        const avgAttendance = reports.reduce((acc, curr) => acc + (Number(curr.attendance) || 0), 0) / reports.length;
+        
         setStats({
           avgGrade: avg.toFixed(1),
-          attendance: "92%",
-          approval: "95%",
+          attendance: `${Math.round(avgAttendance)}%`,
+          approval: avg >= 6 ? "95%" : "80%", // Logic for approval rate could be more complex
           reportsCount: reports.length.toString()
         });
       }
