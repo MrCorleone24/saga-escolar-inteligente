@@ -73,7 +73,7 @@ export default function Usuarios() {
       // Hierarchy filtering
       if (profile.role === 'school') {
         query = query.eq('school_id', profile.id);
-      } else if (profile.role === 'teacher') {
+      } else if (profile.role === 'teacher' || profile.role === 'professor') {
         query = query.eq('teacher_id', profile.id).eq('role', 'student');
       }
 
@@ -192,7 +192,9 @@ export default function Usuarios() {
 
   const roleIcons: Record<string, React.ElementType> = {
     teacher: GraduationCap,
+    professor: GraduationCap,
     student: BookOpen,
+    aluno: BookOpen,
     admin: Shield,
     school: Shield,
   };
