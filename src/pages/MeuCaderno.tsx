@@ -13,7 +13,6 @@ import { SUBJECTS, MOCK_LESSONS, NotebookEntry, FeedbackVersion } from "@/lib/su
 import { useNavigate } from "react-router-dom";
 import { jsPDF } from "jspdf";
 import { toast } from "sonner";
-import autoTable from "jspdf-autotable"; // jspdf-autotable is usually available with jspdf in these environments
 
 const MOCK_ENTRIES: NotebookEntry[] = [
   {
