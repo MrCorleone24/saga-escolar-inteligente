@@ -107,7 +107,8 @@ export default function VideoSalas() {
       .insert({
         name: newRoomName,
         created_by: userId,
-        status: 'online'
+        status: 'online',
+        room_type: newRoomType
       })
       .select()
       .single();
@@ -121,7 +122,10 @@ export default function VideoSalas() {
     await supabase.from('classroom_moderation').insert({
       room_id: roomData.id,
       user_id: userId,
-      role: 'admin'
+      role: 'admin',
+      can_audio: true,
+      can_video: true,
+      can_chat: true
     });
 
     setNewRoomName("");
