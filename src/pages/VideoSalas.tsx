@@ -247,7 +247,7 @@ export default function VideoSalas() {
         .insert({
           room_id: activeRoom.id,
           invited_user_id: userToInvite.id,
-          inviter_id: userId,
+          invited_by: userId!,
           status: 'pending'
         });
 
@@ -305,6 +305,11 @@ export default function VideoSalas() {
             <Button variant="ghost" size="icon" onClick={() => setShowParticipants(!showParticipants)}>
               <Users className="h-5 w-5" />
             </Button>
+            {isAdmin && (
+              <Button variant="outline" size="sm" onClick={() => setShowInviteModal(true)} className="text-blue-400 border-blue-400/30 hover:bg-blue-400/10">
+                <Plus className="mr-2 h-4 w-4" /> Convidar
+              </Button>
+            )}
             <Button variant="destructive" onClick={() => setInCall(false)}>
               <PhoneOff className="mr-2 h-4 w-4" /> Sair
             </Button>
