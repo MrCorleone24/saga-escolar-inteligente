@@ -12,7 +12,7 @@ export default function Login() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
-  const [selectedRole, setSelectedRole] = useState<"aluno" | "professor" | "admin">("aluno");
+  const [selectedRole, setSelectedRole] = useState<"aluno" | "professor" | "admin" | "school">("aluno");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -21,7 +21,8 @@ export default function Login() {
   const roles = [
     { value: "aluno" as const, label: "Aluno", emoji: "🎒" },
     { value: "professor" as const, label: "Professor", emoji: "👩‍🏫" },
-    { value: "admin" as const, label: "Admin", emoji: "🏫" },
+    { value: "school" as const, label: "Escola", emoji: "🏫" },
+    { value: "admin" as const, label: "Admin", emoji: "🛡️" },
   ];
 
   const dashboardPaths: Record<string, string> = {

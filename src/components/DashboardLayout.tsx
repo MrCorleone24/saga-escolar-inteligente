@@ -8,7 +8,7 @@ import {
   PenLine, Calendar, BookMarked, Video
 } from "lucide-react";
 
-type Role = "aluno" | "professor" | "admin";
+type Role = "aluno" | "professor" | "admin" | "school";
 
 interface NavItem {
   label: string;
@@ -18,7 +18,7 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard", roles: ["aluno", "professor", "admin"] },
+  { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard", roles: ["aluno", "professor", "admin", "school"] },
   { label: "Minhas Aulas", icon: BookOpen, path: "/aulas", roles: ["aluno"] },
   { label: "Salas Virtuais", icon: Video, path: "/salas", roles: ["aluno", "professor"] },
   { label: "Meu Caderno", icon: PenLine, path: "/meu-caderno", roles: ["aluno"] },
@@ -26,16 +26,16 @@ const navItems: NavItem[] = [
   { label: "Leitura", icon: BookMarked, path: "/leitura", roles: ["aluno"] },
   { label: "Conquistas", icon: Trophy, path: "/conquistas", roles: ["aluno"] },
   { label: "Esportes", icon: Dumbbell, path: "/esportes", roles: ["aluno"] },
-  { label: "Turmas", icon: Users, path: "/turmas", roles: ["professor"] },
+  { label: "Turmas", icon: Users, path: "/turmas", roles: ["professor", "school"] },
   { label: "Planejamento", icon: ClipboardList, path: "/planejamento", roles: ["professor"] },
   { label: "Caderno Alunos", icon: PenLine, path: "/caderno-alunos", roles: ["professor"] },
   { label: "Leitura", icon: BookMarked, path: "/gerenciar-leitura", roles: ["professor"] },
   { label: "IA Pedagógica", icon: Brain, path: "/ia-pedagogica", roles: ["professor"] },
   { label: "Lousa Digital", icon: Presentation, path: "/lousa", roles: ["professor"] },
-  { label: "Relatórios", icon: BarChart3, path: "/relatorios", roles: ["professor", "admin"] },
-  { label: "Escolas", icon: GraduationCap, path: "/escolas", roles: ["admin"] },
-  { label: "Usuários", icon: Users, path: "/usuarios", roles: ["admin"] },
-  { label: "Configurações", icon: Settings, path: "/configuracoes", roles: ["admin"] },
+  { label: "Relatórios", icon: BarChart3, path: "/relatorios", roles: ["professor", "admin", "school"] },
+  { label: "Gestão Escolar", icon: GraduationCap, path: "/escolas", roles: ["admin", "school"] },
+  { label: "Usuários", icon: Users, path: "/usuarios", roles: ["admin", "school", "professor"] },
+  { label: "Configurações", icon: Settings, path: "/configuracoes", roles: ["admin", "school", "professor"] },
 ];
 
 interface DashboardLayoutProps {
@@ -57,6 +57,7 @@ export default function DashboardLayout({ children, role, userName, xp = 0, leve
     aluno: "Aluno",
     professor: "Professor",
     admin: "Administrador",
+    school: "Escola",
   };
 
   const SidebarContent = () => (

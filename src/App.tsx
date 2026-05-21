@@ -61,6 +61,7 @@ const App = () => (
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/escolas" element={<Escolas />} />
           <Route path="/usuarios" element={<Usuarios />} />
+          <Route path="/planos" element={<NotFound />} /> {/* Placeholder for Plans page */}
           <Route path="/configuracoes" element={<Configuracoes />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
