@@ -58,3 +58,17 @@ export const SUBJECTS: Subject[] = [
   { id: "12", name: "Empreendedorismo", color: "45 90% 50%", emoji: "🚀" },
   { id: "13", name: "Leitura/Literatura", color: "340 65% 50%", emoji: "📚" },
 ];
+
+export const MOCK_LESSONS: LessonLink[] = [
+  { id: "1", title: "Texto Narrativo - A Formiguinha e a Neve", subject: "Português", date: "27/02/2026", type: "mista", teacher: "Prof. Ana", duration: "40 min", progress: 100, status: "concluída" },
+  { id: "2", title: "Ditado - Palavras com LH e NH", subject: "Português", date: "26/02/2026", type: "caderno", teacher: "Prof. Ana", duration: "30 min", progress: 100, status: "concluída" },
+];
+
+export const MOCK_ENTRIES: NotebookEntry[] = [
+  { 
+    id: "1", student_id: "user1", date: "27/02/2026", subject: "Português", title: "Texto Narrativo", 
+    content: "Aprendemos sobre texto narrativo.", 
+    photo_url: null, status: "corrigido", grade: "Muito Bem!", 
+    teacher_note: "Excelente!", lesson_id: "1" 
+  }
+];
