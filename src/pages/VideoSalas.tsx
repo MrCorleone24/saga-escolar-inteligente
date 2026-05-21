@@ -336,17 +336,30 @@ export default function VideoSalas() {
             <h1 className="text-3xl font-bold tracking-tight">Salas de Aula Virtual</h1>
             <p className="text-muted-foreground">Ambiente seguro para aulas ao vivo e moderação em tempo real.</p>
           </div>
-          {userRole === 'professor' && (
-            <div className="flex gap-2">
-              <Input 
-                placeholder="Nome da sala..." 
-                value={newRoomName} 
-                onChange={e => setNewRoomName(e.target.value)} 
-                className="max-w-[200px]"
-              />
-              <Button className="bg-indigo-600 hover:bg-indigo-700" onClick={handleCreateRoom}>
-                <Plus className="mr-2 h-4 w-4" /> Criar Sala
-              </Button>
+          {(userRole === 'professor' || userRole === 'admin' || userRole === 'school') && (
+            <div className="flex flex-col gap-2 bg-card p-4 rounded-xl border border-dashed border-primary/50">
+              <h3 className="font-semibold text-sm mb-1">Nova Sala</h3>
+              <div className="flex gap-2">
+                <Input 
+                  placeholder="Nome da sala..." 
+                  value={newRoomName} 
+                  onChange={e => setNewRoomName(e.target.value)} 
+                  className="flex-1"
+                />
+                <select 
+                  className="bg-background border rounded px-2 text-sm"
+                  value={newRoomType}
+                  onChange={(e) => setNewRoomType(e.target.value as any)}
+                >
+                  <option value="classroom">Aula</option>
+                  {(userRole === 'admin' || userRole === 'school') && (
+                    <option value="administrative">Direção</option>
+                  )}
+                </select>
+                <Button className="bg-indigo-600 hover:bg-indigo-700" onClick={handleCreateRoom}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           )}
         </div>
@@ -356,21 +369,23 @@ export default function VideoSalas() {
             <motion.div
               key={room.id}
               whileHover={{ y: -4 }}
-              className="bg-card border rounded-xl overflow-hidden shadow-sm flex flex-col"
+              className={`bg-card border rounded-xl overflow-hidden shadow-sm flex flex-col ${room.room_type === 'administrative' ? 'border-blue-200 shadow-blue-50' : ''}`}
             >
               <div className="p-5 flex-1">
                 <div className="flex justify-between items-start mb-4">
-                  <div className="p-2 bg-indigo-100 rounded-lg">
-                    <Video className="h-5 w-5 text-indigo-600" />
+                  <div className={`p-2 rounded-lg ${room.room_type === 'administrative' ? 'bg-blue-100' : 'bg-indigo-100'}`}>
+                    {room.room_type === 'administrative' ? <Shield className="h-5 w-5 text-blue-600" /> : <Video className="h-5 w-5 text-indigo-600" />}
                   </div>
-                  <Badge className="bg-green-500/10 text-green-600 border-green-200">Online</Badge>
+                  <Badge className={room.room_type === 'administrative' ? 'bg-blue-500/10 text-blue-600 border-blue-200' : 'bg-green-500/10 text-green-600 border-green-200'}>
+                    {room.room_type === 'administrative' ? 'Sala da Direção' : 'Online'}
+                  </Badge>
                 </div>
                 <h3 className="font-bold text-lg mb-1">{room.name}</h3>
                 <p className="text-sm text-muted-foreground">ID da sala: {room.id.substring(0,8)}</p>
               </div>
               <div className="p-4 bg-muted/30 border-t">
                 <Button 
-                  className="w-full bg-indigo-600 hover:bg-indigo-700" 
+                  className={`w-full ${room.room_type === 'administrative' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-indigo-600 hover:bg-indigo-700'}`} 
                   onClick={() => handleJoinRoom(room)}
                 >
                   Entrar na Sala
