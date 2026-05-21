@@ -105,6 +105,7 @@ const STATUS_CONFIG = {
 
 export default function MeuCaderno() {
   const navigate = useNavigate();
+  const [entries, setEntries] = useState<NotebookEntry[]>(MOCK_ENTRIES);
   const [activeSubject, setActiveSubject] = useState(0);
   const [currentPage, setCurrentPage] = useState(0);
   const [isFlipping, setIsFlipping] = useState(false);
@@ -116,6 +117,67 @@ export default function MeuCaderno() {
   const [viewMode, setViewMode] = useState<"notebook" | "list">("notebook");
   const [showFeedback, setShowFeedback] = useState(false);
   const [hasConfirmed, setHasConfirmed] = useState<Record<number, boolean>>({});
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("todos");
+  const [showVersionHistory, setShowVersionHistory] = useState<number | null>(null);
+
+  const subject = SUBJECTS[activeSubject];
+  
+  const filtered = useMemo(() => {
+    return entries.filter(e => {
+      const matchesSubject = viewMode === "notebook" ? e.subject === subject.name : true;
+      const matchesSearch = e.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                            e.subject.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesStatus = statusFilter === "todos" ? true : e.status === statusFilter;
+      
+      return matchesSubject && matchesSearch && matchesStatus;
+    });
+  }, [entries, subject.name, searchQuery, statusFilter, viewMode]);
+
+  const currentEntry = filtered[currentPage] || null;
+
+  const handleConfirmReading = (entryId: number) => {
+    setEntries(prev => prev.map(e => 
+      e.id === entryId ? { ...e, status: "confirmado", confirmedAt: new Date().toLocaleString() } as NotebookEntry : e
+    ));
+    toast.success("Feedback confirmado com sucesso!");
+    // Simulate notification to teacher
+    console.log("Notification sent to teacher: Student confirmed reading feedback.");
+  };
+
+  const exportToPDF = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(20);
+    doc.text("Histórico de Notas e Feedbacks", 20, 20);
+    doc.setFontSize(12);
+    doc.text(`Aluno: João Silva | Data: ${new Date().toLocaleDateString()}`, 20, 30);
+    
+    let y = 45;
+    entries.filter(e => e.status === "corrigido" || e.status === "confirmado").forEach((e, i) => {
+      if (y > 270) {
+        doc.addPage();
+        y = 20;
+      }
+      doc.setFont("helvetica", "bold");
+      doc.text(`${e.date} - ${e.subject}: ${e.title}`, 20, y);
+      y += 7;
+      doc.setFont("helvetica", "normal");
+      doc.text(`Nota: ${e.grade || "S/N"}`, 25, y);
+      y += 7;
+      doc.text(`Feedback: ${e.teacherNote || "S/C"}`, 25, y);
+      y += 7;
+      if (e.status === "confirmado") {
+        doc.text(`[✓ Confirmado em ${e.confirmedAt}]`, 25, y);
+        y += 7;
+      }
+      y += 5;
+      doc.line(20, y, 190, y);
+      y += 10;
+    });
+
+    doc.save("historico-notas.pdf");
+    toast.success("PDF exportado com sucesso!");
+  };
 
   const subject = SUBJECTS[activeSubject];
   const filtered = MOCK_ENTRIES.filter(e => e.subject === subject.name);
