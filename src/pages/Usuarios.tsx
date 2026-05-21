@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import DashboardLayout from "@/components/DashboardLayout";
-import { Users, UserPlus, Search, Shield, GraduationCap, BookOpen, X, Loader2 } from "lucide-react";
+import { Users, UserPlus, Search, Shield, GraduationCap, BookOpen, X, Loader2, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
@@ -30,6 +30,7 @@ export default function Usuarios() {
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [showPerformance, setShowPerformance] = useState(false);
   const [performanceData, setPerformanceData] = useState<PerformanceData>({ grade: 0, attendance: 0, engagement: 0 });
