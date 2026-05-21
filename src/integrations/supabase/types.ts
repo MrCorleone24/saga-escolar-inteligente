@@ -425,6 +425,7 @@ export type Database = {
         Row: {
           address: string | null
           avatar_url: string | null
+          bio: string | null
           city: string | null
           contact_person: string | null
           created_at: string
@@ -443,6 +444,11 @@ export type Database = {
           role: string
           school_id: string | null
           school_name: string | null
+          social_facebook: string | null
+          social_instagram: string | null
+          social_linkedin: string | null
+          social_twitter: string | null
+          social_youtube: string | null
           state: string | null
           subject: string | null
           subscription_status: string | null
@@ -457,6 +463,7 @@ export type Database = {
         Insert: {
           address?: string | null
           avatar_url?: string | null
+          bio?: string | null
           city?: string | null
           contact_person?: string | null
           created_at?: string
@@ -475,6 +482,11 @@ export type Database = {
           role: string
           school_id?: string | null
           school_name?: string | null
+          social_facebook?: string | null
+          social_instagram?: string | null
+          social_linkedin?: string | null
+          social_twitter?: string | null
+          social_youtube?: string | null
           state?: string | null
           subject?: string | null
           subscription_status?: string | null
@@ -489,6 +501,7 @@ export type Database = {
         Update: {
           address?: string | null
           avatar_url?: string | null
+          bio?: string | null
           city?: string | null
           contact_person?: string | null
           created_at?: string
@@ -507,6 +520,11 @@ export type Database = {
           role?: string
           school_id?: string | null
           school_name?: string | null
+          social_facebook?: string | null
+          social_instagram?: string | null
+          social_linkedin?: string | null
+          social_twitter?: string | null
+          social_youtube?: string | null
           state?: string | null
           subject?: string | null
           subscription_status?: string | null
