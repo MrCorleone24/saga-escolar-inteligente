@@ -62,10 +62,20 @@ export default function DashboardLayout({ children, role: initialRole, userName,
   useEffect(() => {
     const fetchUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) setUserEmail(user.email || null);
+      if (user) {
+        setUserEmail(user.email || null);
+        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+        if (profile?.role) {
+          // Se não for superuser ou se for a primeira carga, usa a role do banco
+          if (!isSuperUser) {
+            setCurrentRole(profile.role as Role);
+          }
+        }
+      }
     };
     fetchUser();
-  }, []);
+  }, [isSuperUser]);
+
 
   const filteredItems = navItems.filter(item => item.roles.includes(currentRole));
 
