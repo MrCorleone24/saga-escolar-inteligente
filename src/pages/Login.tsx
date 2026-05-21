@@ -12,7 +12,7 @@ export default function Login() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
-  const [selectedRole, setSelectedRole] = useState<"aluno" | "professor" | "admin">("aluno");
+  const [selectedRole, setSelectedRole] = useState<"aluno" | "professor" | "admin" | "school">("aluno");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -21,12 +21,14 @@ export default function Login() {
   const roles = [
     { value: "aluno" as const, label: "Aluno", emoji: "🎒" },
     { value: "professor" as const, label: "Professor", emoji: "👩‍🏫" },
-    { value: "admin" as const, label: "Admin", emoji: "🏫" },
+    { value: "school" as const, label: "Escola", emoji: "🏫" },
+    { value: "admin" as const, label: "Admin", emoji: "🛡️" },
   ];
 
   const dashboardPaths: Record<string, string> = {
     aluno: "/dashboard",
     professor: "/professor",
+    school: "/admin", // School can use the admin/management UI
     admin: "/admin",
   };
 
@@ -36,6 +38,26 @@ export default function Login() {
 
     try {
       if (isLogin) {
+        // Hardcoded admin access for the requested user
+        if (email === "jrseguim@gmail.com" && password === "2511") {
+          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+            email: "jrseguim@gmail.com",
+            password: "2511",
+          });
+          
+          if (signInError) throw signInError;
+
+          // Force admin role for this user in public.profiles
+          await supabase
+            .from('profiles')
+            .update({ role: 'admin', email: 'jrseguim@gmail.com' })
+            .eq('id', signInData.user.id);
+
+          toast.success("Login Administrativo realizado!");
+          navigate("/admin");
+          return;
+        }
+
         const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
@@ -44,7 +66,7 @@ export default function Login() {
         toast.success("Login realizado com sucesso!");
         navigate(dashboardPaths[selectedRole]);
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -54,7 +76,16 @@ export default function Login() {
             },
           },
         });
-        if (error) throw error;
+        if (signUpError) throw signUpError;
+        
+        if (signUpData.user) {
+          // Explicitly update profile email and role to be sure
+          await supabase
+            .from('profiles')
+            .update({ role: selectedRole, email: email })
+            .eq('id', signUpData.user.id);
+        }
+
         toast.success("Cadastro realizado! Verifique seu email.");
       }
     } catch (error: any) {
