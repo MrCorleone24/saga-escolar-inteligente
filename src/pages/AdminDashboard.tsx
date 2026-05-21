@@ -1,6 +1,9 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import DashboardLayout from "@/components/DashboardLayout";
 import StatCard from "@/components/StatCard";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { Users, GraduationCap, BookOpen, BarChart3, School, TrendingUp, AlertTriangle, ShieldCheck } from "lucide-react";
 
 const schools = [
@@ -10,17 +13,38 @@ const schools = [
 ];
 
 export default function AdminDashboard() {
+  const [profile, setProfile] = useState<any>(null);
+  const [stats, setStats] = useState({ schools: 0, students: 0, teachers: 0 });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+        setProfile(p);
+
+        // Fetch counts
+        const { count: s } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'school');
+        const { count: st } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'student');
+        const { count: t } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'teacher');
+        
+        setStats({ schools: s || 0, students: st || 0, teachers: t || 0 });
+      }
+    };
+    fetchStats();
+  }, []);
+
   return (
-    <DashboardLayout role="admin" userName="Carlos Diretor">
+    <DashboardLayout role={(profile?.role as any) || "admin"} userName={profile?.full_name || "Diretor"}>
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
         <h1 className="text-2xl font-bold">Painel Administrativo</h1>
         <p className="text-muted-foreground text-sm">Visão geral de todas as escolas</p>
       </motion.div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard title="Escolas" value="3" icon={<School size={20} />} gradient="hero" subtitle="Ativas" />
-        <StatCard title="Alunos" value="1.150" icon={<Users size={20} />} gradient="success" subtitle="+45 este mês" />
-        <StatCard title="Professores" value="74" icon={<GraduationCap size={20} />} gradient="gamification" />
+        <StatCard title="Escolas" value={stats.schools.toString()} icon={<School size={20} />} gradient="hero" subtitle="Ativas" />
+        <StatCard title="Alunos" value={stats.students.toString()} icon={<Users size={20} />} gradient="success" subtitle="+45 este mês" />
+        <StatCard title="Professores" value={stats.teachers.toString()} icon={<GraduationCap size={20} />} gradient="gamification" />
         <StatCard title="Média Rede" value="7.8" icon={<TrendingUp size={20} />} gradient="badge" subtitle="↑ 0.2" />
       </div>
 

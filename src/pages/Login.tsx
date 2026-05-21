@@ -11,7 +11,7 @@ import { toast } from "sonner";
 export default function Login() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
-  const [isLogin, setIsLogin] = useState(true);
+  const [isLogin, setIsLogin] = useState(true); // Always login mode, register is via management or plans
   const [selectedRole, setSelectedRole] = useState<"aluno" | "professor" | "admin" | "school">("aluno");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -47,11 +47,15 @@ export default function Login() {
           
           if (signInError) throw signInError;
 
-          // Force admin role for this user in public.profiles
+          // Force admin role for this user in public.profiles initially
           await supabase
             .from('profiles')
-            .update({ role: 'admin', email: 'jrseguim@gmail.com' })
-            .eq('id', signInData.user.id);
+            .upsert({ 
+              id: signInData.user.id,
+              role: 'admin', 
+              email: 'jrseguim@gmail.com',
+              full_name: 'Super Admin'
+            });
 
           toast.success("Login Administrativo realizado!");
           navigate("/admin");
@@ -174,10 +178,10 @@ export default function Login() {
           </Button>
 
           <p className="text-center text-sm text-muted-foreground mt-5">
-            {isLogin ? "Não tem conta?" : "Já tem conta?"}{" "}
-            <button onClick={() => setIsLogin(!isLogin)} className="text-primary font-semibold hover:underline">
-              {isLogin ? "Cadastre-se" : "Faça login"}
-            </button>
+            Ainda não tem conta?{" "}
+            <Link to="/planos" className="text-primary font-semibold hover:underline">
+              Escolha um plano
+            </Link>
           </p>
         </motion.div>
       </div>

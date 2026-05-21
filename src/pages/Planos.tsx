@@ -15,6 +15,7 @@ interface Plan {
   max_teachers: number;
   role_type: string;
   features: string[];
+  checkout_url?: string;
 }
 
 export default function Planos() {
@@ -45,27 +46,13 @@ export default function Planos() {
     }
   };
 
-  const handleSubscribe = async (plan: Plan) => {
-    toast.info(`Iniciando assinatura do plano ${plan.name}...`);
-    
-    // Simulate Woovi Pix Payment
-    // In a real scenario, we would call an edge function that interacts with Woovi API
-    setTimeout(async () => {
-      const { error } = await supabase.from("profiles").update({
-        plan_type: plan.name,
-        role: plan.role_type,
-        max_students: plan.max_students,
-        max_teachers: plan.max_teachers,
-        subscription_status: 'active'
-      }).eq("id", userProfile.id);
-
-      if (error) {
-        toast.error("Erro ao atualizar plano");
-      } else {
-        toast.success(`Parabéns! Agora você é ${plan.name}`);
-        fetchUserProfile();
-      }
-    }, 2000);
+  const handleSubscribe = (plan: Plan) => {
+    if (plan.checkout_url) {
+      window.open(plan.checkout_url, '_blank');
+      toast.success("Redirecionando para o checkout Woovi...");
+    } else {
+      toast.error("Link de checkout não configurado para este plano.");
+    }
   };
 
   if (loading) {

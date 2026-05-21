@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import DashboardLayout from "@/components/DashboardLayout";
-import { Users, UserPlus, Search, Shield, GraduationCap, BookOpen, X, Loader2 } from "lucide-react";
+import { Users, UserPlus, Search, Shield, GraduationCap, BookOpen, X, Loader2, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
@@ -14,6 +14,15 @@ interface UserProfile {
   role: string;
   school_name: string;
   subscription_status: string;
+  subject?: string;
+  school_id?: string;
+  teacher_id?: string;
+}
+
+interface PerformanceData {
+  grade: number;
+  attendance: number;
+  engagement: number;
 }
 
 export default function Usuarios() {
@@ -21,7 +30,10 @@ export default function Usuarios() {
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
+  const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
+  const [showPerformance, setShowPerformance] = useState(false);
+  const [performanceData, setPerformanceData] = useState<PerformanceData>({ grade: 0, attendance: 0, engagement: 0 });
 
   // Form states
   const [newEmail, setNewEmail] = useState("");
@@ -29,6 +41,7 @@ export default function Usuarios() {
   const [newName, setNewName] = useState("");
   const [newRole, setNewRole] = useState("student");
   const [newSchool, setNewSchool] = useState("");
+  const [newSubject, setNewSubject] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -46,9 +59,9 @@ export default function Usuarios() {
       
       // Hierarchy filtering
       if (profile.role === 'school') {
-        query = query.eq('parent_id', profile.id);
+        query = query.eq('school_id', profile.id);
       } else if (profile.role === 'teacher') {
-        query = query.eq('parent_id', profile.id).eq('role', 'student');
+        query = query.eq('teacher_id', profile.id).eq('role', 'student');
       }
 
       const { data, error } = await query;
@@ -68,7 +81,8 @@ export default function Usuarios() {
           password: newPassword,
           fullName: newName,
           role: newRole,
-          schoolName: newSchool || currentUser?.school_name
+          schoolName: newSchool || currentUser?.school_name,
+          subject: newSubject
         }
       });
 
@@ -84,10 +98,24 @@ export default function Usuarios() {
       setNewPassword("");
       setNewName("");
       setNewSchool("");
+      setNewSubject("");
     } catch (error: any) {
       toast.error(error.message || "Erro ao criar usuário");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleUserClick = async (user: UserProfile) => {
+    if (user.role === 'student') {
+      setSelectedUser(user);
+      setShowPerformance(true);
+      // Mock performance data for now, could be fetched from performance_reports table
+      setPerformanceData({
+        grade: Math.floor(Math.random() * 4) + 6.5,
+        attendance: Math.floor(Math.random() * 20) + 80,
+        engagement: Math.floor(Math.random() * 30) + 70,
+      });
     }
   };
 
@@ -119,7 +147,7 @@ export default function Usuarios() {
   };
 
   return (
-    <DashboardLayout role={currentUser?.role || "admin"} userName={currentUser?.full_name || "Admin"}>
+    <DashboardLayout role={(currentUser?.role as any) || "admin"} userName={currentUser?.full_name || "Admin"}>
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold">Usuários</h1>
@@ -159,7 +187,8 @@ export default function Usuarios() {
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.03 }}
-                    className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/30 transition-colors"
+                    className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/30 transition-colors cursor-pointer"
+                    onClick={() => handleUserClick(u)}
                   >
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full gradient-hero flex items-center justify-center text-primary-foreground text-sm font-bold">
@@ -167,7 +196,7 @@ export default function Usuarios() {
                       </div>
                       <div>
                         <p className="text-sm font-medium">{u.full_name || 'Usuário Sem Nome'}</p>
-                        <p className="text-xs text-muted-foreground">{u.email} {u.school_name && `· ${u.school_name}`}</p>
+                        <p className="text-xs text-muted-foreground">{u.email} {u.school_name && `· ${u.school_name}`} {u.subject && `· ${u.subject}`}</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -247,6 +276,13 @@ export default function Usuarios() {
                   </div>
                 )}
 
+                {newRole === 'teacher' && (
+                  <div>
+                    <label className="text-sm font-medium mb-1 block">Matéria</label>
+                    <Input value={newSubject} onChange={e => setNewSubject(e.target.value)} placeholder="Ex: Matemática" required />
+                  </div>
+                )}
+
                 {(currentUser?.role === 'admin' || currentUser?.role === 'school') && (
                   <div>
                     <label className="text-sm font-medium mb-1 block">Nome da Escola (Opcional)</label>
@@ -258,6 +294,96 @@ export default function Usuarios() {
                   {submitting ? <Loader2 className="animate-spin mr-2" /> : "Criar Usuário"}
                 </Button>
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Performance Report Modal */}
+      <AnimatePresence>
+        {showPerformance && selectedUser && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-2xl bg-card border border-border rounded-2xl shadow-xl overflow-hidden"
+            >
+              <div className="p-6 border-b border-border flex justify-between items-center bg-muted/30">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full gradient-hero flex items-center justify-center text-primary-foreground font-bold">
+                    {selectedUser.full_name?.charAt(0)}
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold">{selectedUser.full_name}</h3>
+                    <p className="text-sm text-muted-foreground">Relatório de Performance Individual</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowPerformance(false)} className="text-muted-foreground hover:text-foreground">
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="p-8">
+                <div className="grid grid-cols-3 gap-6 mb-8">
+                  <div className="p-4 rounded-xl bg-primary/5 border border-primary/10 text-center">
+                    <p className="text-3xl font-bold text-primary mb-1">{performanceData.grade.toFixed(1)}</p>
+                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Média Geral</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-secondary/5 border border-secondary/10 text-center">
+                    <p className="text-3xl font-bold text-secondary mb-1">{performanceData.attendance}%</p>
+                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Frequência</p>
+                  </div>
+                  <div className="p-4 rounded-xl bg-gamification-streak/5 border border-gamification-streak/10 text-center">
+                    <p className="text-3xl font-bold text-gamification-streak mb-1">{performanceData.engagement}%</p>
+                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">Engajamento</p>
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  <div>
+                    <div className="flex justify-between items-center mb-2">
+                      <h4 className="font-bold text-sm">Evolução de Competências</h4>
+                      <span className="text-[10px] text-muted-foreground">Alinhado à BNCC</span>
+                    </div>
+                    <div className="space-y-3">
+                      {[
+                        { label: "Pensamento Crítico", value: 85 },
+                        { label: "Colaboração", value: 92 },
+                        { label: "Comunicação", value: 78 },
+                        { label: "Cultura Digital", value: 95 },
+                      ].map((c) => (
+                        <div key={c.label}>
+                          <div className="flex justify-between text-xs mb-1">
+                            <span>{c.label}</span>
+                            <span>{c.value}%</span>
+                          </div>
+                          <div className="h-2 bg-muted rounded-full overflow-hidden">
+                            <motion.div 
+                              initial={{ width: 0 }}
+                              animate={{ width: `${c.value}%` }}
+                              className="h-full bg-primary"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  <div className="p-4 rounded-xl bg-muted/30 border border-border">
+                    <h4 className="font-bold text-sm mb-2 flex items-center gap-2 text-primary">
+                      <Brain size={16} /> Insight da IA Pedagógica
+                    </h4>
+                    <p className="text-sm text-muted-foreground italic leading-relaxed">
+                      "O aluno demonstra excelente progresso em competências digitais, mas poderia se beneficiar de mais atividades de comunicação verbal em grupo para equilibrar seu desenvolvimento socioemocional."
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-8 flex justify-end gap-3">
+                  <Button variant="outline" className="text-sm h-10">Exportar PDF</Button>
+                  <Button className="gradient-hero border-0 text-white text-sm h-10">Enviar para Responsáveis</Button>
+                </div>
+              </div>
             </motion.div>
           </div>
         )}

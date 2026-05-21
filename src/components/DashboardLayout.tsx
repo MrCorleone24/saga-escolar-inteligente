@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   LayoutDashboard, BookOpen, Users, Trophy, BarChart3,
@@ -47,11 +48,36 @@ interface DashboardLayoutProps {
   level?: number;
 }
 
-export default function DashboardLayout({ children, role, userName, xp = 0, level = 1 }: DashboardLayoutProps) {
+export default function DashboardLayout({ children, role: initialRole, userName, xp = 0, level = 1 }: DashboardLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [currentRole, setCurrentRole] = useState<Role>(initialRole);
   const location = useLocation();
-  const filteredItems = navItems.filter(item => item.roles.includes(role));
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) setUserEmail(user.email || null);
+    };
+    fetchUser();
+  }, []);
+
+  const filteredItems = navItems.filter(item => item.roles.includes(currentRole));
+
+  const isSuperUser = userEmail === "jrseguim@gmail.com";
+
+  const handleRoleSwitch = (newRole: Role) => {
+    setCurrentRole(newRole);
+    const dashboardPaths: Record<Role, string> = {
+      aluno: "/dashboard",
+      professor: "/professor",
+      school: "/admin",
+      admin: "/admin",
+    };
+    navigate(dashboardPaths[newRole]);
+  };
 
   const roleLabels: Record<Role, string> = {
     aluno: "Aluno",
@@ -84,11 +110,31 @@ export default function DashboardLayout({ children, role, userName, xp = 0, leve
           {!collapsed && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="overflow-hidden min-w-0">
               <p className="text-sm font-semibold text-sidebar-foreground truncate">{userName}</p>
-              <p className="text-[10px] text-sidebar-foreground/50">{roleLabels[role]}</p>
+              <p className="text-[10px] text-sidebar-foreground/50">{roleLabels[currentRole]}</p>
             </motion.div>
           )}
         </div>
-        {role === "aluno" && !collapsed && (
+        {isSuperUser && !collapsed && (
+          <div className="mt-4 px-2">
+            <p className="text-[10px] uppercase font-bold text-sidebar-foreground/40 mb-2">Alternar Modo</p>
+            <div className="grid grid-cols-2 gap-1">
+              {(["aluno", "professor", "school", "admin"] as Role[]).map((r) => (
+                <button
+                  key={r}
+                  onClick={() => handleRoleSwitch(r)}
+                  className={`text-[10px] py-1 px-2 rounded border transition-colors ${
+                    currentRole === r 
+                    ? "bg-primary text-primary-foreground border-primary" 
+                    : "border-sidebar-border text-sidebar-foreground/60 hover:bg-sidebar-accent"
+                  }`}
+                >
+                  {roleLabels[r]}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        {currentRole === "aluno" && !collapsed && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-3">
             <div className="flex items-center justify-between text-[10px] text-sidebar-foreground/60 mb-1">
               <span>Nível {level}</span>
