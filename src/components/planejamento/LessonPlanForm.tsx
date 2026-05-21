@@ -5,10 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-const SUBJECTS = [
-  "Português", "Matemática", "Ciências", "História", "Geografia",
-  "Inglês", "Ed. Física", "Artes", "Ensino Religioso",
-];
+import { SUBJECTS } from "@/lib/subjects";
 
 const TYPES = [
   { value: "interativa", label: "Interativa", icon: Layers, desc: "Aluno resolve no digital" },
@@ -51,7 +48,7 @@ export default function LessonPlanForm({ grade = 3, onClose, onSave }: LessonPla
         <div>
           <label className="text-xs font-medium text-muted-foreground mb-1 block">Disciplina</label>
           <select value={form.subject} onChange={e => update("subject", e.target.value)} className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm">
-            {SUBJECTS.map(s => <option key={s} value={s}>{s}</option>)}
+            {SUBJECTS.map(s => <option key={s.name} value={s.name}>{s.name}</option>)}
           </select>
         </div>
         <div>
