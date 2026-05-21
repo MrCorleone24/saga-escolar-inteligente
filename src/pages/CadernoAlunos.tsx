@@ -1,11 +1,16 @@
-import { useState } from "react";
-import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import DashboardLayout from "@/components/DashboardLayout";
-import { Users, PenLine, CheckCircle2, Clock, MessageSquare, Search, Star, Link2, Eye } from "lucide-react";
+import { 
+  Users, PenLine, CheckCircle2, Clock, MessageSquare, Search, 
+  Star, Link2, Eye, History, RotateCcw, AlertCircle, FileDown, 
+  Bell, CheckCircle
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { SUBJECTS, MOCK_LESSONS } from "@/lib/subjects";
+import { SUBJECTS, MOCK_LESSONS, NotebookEntry, FeedbackVersion } from "@/lib/subjects";
+import { toast } from "sonner";
 
 const STUDENTS = [
   { id: 1, name: "João Silva", grade: "3º A", avatar: "J", entries: 12, pending: 2 },
@@ -15,25 +20,29 @@ const STUDENTS = [
   { id: 5, name: "Lucas Ferreira", grade: "3º B", avatar: "L", entries: 10, pending: 3 },
 ];
 
-interface StudentEntry {
-  id: number;
-  date: string;
-  subject: string;
-  title: string;
-  content: string;
-  photo: string | null;
-  status: "pendente" | "corrigido";
-  lessonId?: string;
-  grade?: string;
-  teacherNote?: string;
-}
-
-const ENTRIES: StudentEntry[] = [
-  { id: 1, date: "27/02/2026", subject: "Português", title: "Texto Narrativo - A Formiguinha", content: "Hoje aprendemos sobre texto narrativo. A professora pediu para copiar o texto da formiguinha e a neve.", photo: null, status: "pendente", lessonId: "1" },
-  { id: 2, date: "26/02/2026", subject: "Matemática", title: "Tabuada do 3 e 4", content: "Exercícios de multiplicação por 3 e 4.", photo: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=200&h=200&fit=crop", status: "pendente", lessonId: "4" },
-  { id: 3, date: "25/02/2026", subject: "Ciências", title: "Ciclo da Água", content: "Desenho do ciclo da água.", photo: null, status: "corrigido", lessonId: "8", grade: "Muito Bem!", teacherNote: "Excelente desenho!" },
-  { id: 4, date: "27/02/2026", subject: "Tecnologia e IA", title: "Pensamento Computacional", content: "Aprendemos o que é um algoritmo.", photo: null, status: "pendente", lessonId: "17" },
-  { id: 5, date: "26/02/2026", subject: "Espanhol", title: "Saludos y Presentaciones", content: "Hola, me llamo João.", photo: null, status: "pendente", lessonId: "13" },
+const INITIAL_ENTRIES: NotebookEntry[] = [
+  { 
+    id: 1, date: "27/02/2026", subject: "Português", title: "Texto Narrativo - A Formiguinha", 
+    content: "Hoje aprendemos sobre texto narrativo. A professora pediu para copiar o texto da formiguinha e a neve.", 
+    photo: null, status: "enviado", lessonId: "1" 
+  },
+  { 
+    id: 2, date: "26/02/2026", subject: "Matemática", title: "Tabuada do 3 e 4", 
+    content: "Exercícios de multiplicação por 3 e 4.", 
+    photo: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=200&h=200&fit=crop", 
+    status: "enviado", lessonId: "4" 
+  },
+  { 
+    id: 3, date: "25/02/2026", subject: "Ciências", title: "Ciclo da Água", 
+    content: "Desenho do ciclo da água.", 
+    photo: null, status: "confirmado", lessonId: "8", grade: "Muito Bem!", 
+    teacherNote: "Excelente desenho!", confirmedAt: "26/02/2026 14:20",
+    versions: [
+      { id: "v1", date: "25/02/2026 16:00", grade: "Bom", note: "Pode melhorar os detalhes.", status: "corrigido" }
+    ]
+  },
+  { id: 4, date: "27/02/2026", subject: "Tecnologia e IA", title: "Pensamento Computacional", content: "Aprendemos o que é um algoritmo.", photo: null, status: "enviado", lessonId: "17" },
+  { id: 5, date: "26/02/2026", subject: "Espanhol", title: "Saludos y Presentaciones", content: "Hola, me llamo João.", photo: null, status: "enviado", lessonId: "13" },
   { id: 6, date: "25/02/2026", subject: "Leitura/Literatura", title: "O Pequeno Príncipe - Cap 1", content: "Li o primeiro capítulo e fiz reflexão.", photo: null, status: "corrigido", lessonId: "19", grade: "Lindo! 📚", teacherNote: "Ótima reflexão!" },
 ];
 
