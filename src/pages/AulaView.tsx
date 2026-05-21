@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import DashboardLayout from "@/components/DashboardLayout";
 import CheckInPresenca from "@/components/presenca/CheckInPresenca";
-import { BookOpen, PenLine, Video, Upload, CheckCircle2, Send, Layers } from "lucide-react";
+import { BookOpen, PenLine, Video, Upload, CheckCircle2, Send, Layers, ChevronLeft, Youtube, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { MOCK_LESSONS } from "@/lib/subjects";
 
 const MOCK_LESSON = {
   id: "1",
@@ -37,6 +39,10 @@ A formiguinha tentou carregar um floco de neve para sua casa, mas quando chegou 
 };
 
 export default function AulaView() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const lesson = MOCK_LESSONS.find(l => l.id === id) || MOCK_LESSONS[0];
+  
   const [answers, setAnswers] = useState<Record<number, string>>({});
   const [uploads, setUploads] = useState<Record<number, string>>({});
   const [submitted, setSubmitted] = useState(false);
@@ -51,6 +57,13 @@ export default function AulaView() {
     }
   };
 
+  const getYoutubeId = (url: string) => {
+    if (!url) return "ITi6vX67N8U"; // Default educational video
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : "ITi6vX67N8U";
+  };
+
   return (
     <DashboardLayout role="aluno" userName="João Silva" xp={450} level={5}>
       {!presencaDone && (
@@ -60,12 +73,15 @@ export default function AulaView() {
       )}
 
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-4">
+        <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="mb-2 -ml-2 text-muted-foreground">
+          <ChevronLeft size={14} className="mr-1" /> Voltar
+        </Button>
         <div className="flex items-center gap-2 mb-1">
-          <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">{MOCK_LESSON.subject}</span>
-          <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">{MOCK_LESSON.grade}º Ano</span>
-          <span className="text-xs px-2 py-0.5 rounded-full bg-secondary/10 text-secondary">BNCC: {MOCK_LESSON.bncc}</span>
+          <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">{lesson.subject}</span>
+          <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">Fundamental</span>
+          <span className="text-xs px-2 py-0.5 rounded-full bg-secondary/10 text-secondary">Tipo: {lesson.type}</span>
         </div>
-        <h1 className="text-xl font-bold">{MOCK_LESSON.title}</h1>
+        <h1 className="text-xl font-bold">{lesson.title}</h1>
       </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -76,20 +92,49 @@ export default function AulaView() {
               <BookOpen size={16} />
               <span className="font-bold text-sm">Instruções</span>
             </div>
-            <p className="text-sm leading-relaxed bg-primary/5 rounded-lg p-3 border border-primary/10">{MOCK_LESSON.instructions}</p>
+            <p className="text-sm leading-relaxed bg-primary/5 rounded-lg p-3 border border-primary/10">
+              {lesson.type === 'video' ? 'Assista ao documentário/vídeo com atenção e responda às questões.' : 'Leia o texto abaixo com atenção. Depois, responda as perguntas no caderno digital ao lado.'}
+            </p>
           </div>
 
-          <div className="bg-card rounded-xl border border-border p-5">
-            <div className="flex items-center gap-2 mb-3 text-secondary">
-              <BookOpen size={16} />
-              <span className="font-bold text-sm">Texto</span>
+          {lesson.type === 'video' ? (
+            <div className="bg-card rounded-xl border border-border overflow-hidden">
+              <div className="p-3 bg-muted/50 border-b border-border flex items-center gap-2">
+                <Youtube size={16} className="text-red-600" />
+                <span className="text-xs font-bold">Documentário / Vídeo Aula</span>
+              </div>
+              <div className="aspect-video">
+                <iframe
+                  src={`https://www.youtube.com/embed/${getYoutubeId('')}`}
+                  className="w-full h-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+              <div className="p-4">
+                <h4 className="font-bold text-sm mb-2">Resumo do Vídeo</h4>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Este vídeo aborda os conceitos fundamentais de {lesson.subject}, explorando exemplos do cotidiano e aplicações práticas.
+                </p>
+              </div>
             </div>
-            <div className="prose prose-sm max-w-none">
-              {MOCK_LESSON.content.split("\n\n").map((p, i) => (
-                <p key={i} className="text-sm leading-relaxed mb-3 text-foreground">{p}</p>
-              ))}
+          ) : (
+            <div className="bg-card rounded-xl border border-border p-5">
+              <div className="flex items-center gap-2 mb-3 text-secondary">
+                <FileText size={16} />
+                <span className="font-bold text-sm">Texto de Estudo</span>
+              </div>
+              <div className="prose prose-sm max-w-none">
+                <p className="text-sm leading-relaxed mb-3 text-foreground">
+                  As {lesson.subject} são fundamentais para o desenvolvimento do raciocínio e compreensão do mundo. 
+                  Nesta aula, exploramos {lesson.title.toLowerCase()} através de exemplos práticos e exercícios.
+                </p>
+                <p className="text-sm leading-relaxed mb-3 text-foreground font-serif bg-muted/30 p-4 rounded-lg italic">
+                  "O conhecimento é a única ferramenta que se multiplica quando dividida." — Provérbio Educacional
+                </p>
+              </div>
             </div>
-          </div>
+          )}
         </motion.div>
 
         {/* Notebook side */}
@@ -102,7 +147,11 @@ export default function AulaView() {
             </div>
 
             <div className="space-y-4">
-              {MOCK_LESSON.questions.map(q => (
+              {[
+                { id: 1, text: `Qual o tema principal desta aula de ${lesson.subject}?`, type: lesson.type === 'caderno' ? 'caderno' : 'digital' },
+                { id: 2, text: `Explique com suas palavras o que você entendeu sobre ${lesson.title}.`, type: lesson.type === 'caderno' ? 'caderno' : 'digital' },
+                { id: 3, text: "Atividade Complementar: Desenhe ou faça um esquema no caderno.", type: "caderno" },
+              ].map(q => (
                 <div key={q.id} className="space-y-2">
                   <div className="flex items-start gap-2">
                     <span className="text-xs font-bold text-primary bg-primary/10 rounded-full w-5 h-5 flex items-center justify-center shrink-0 mt-0.5">{q.id}</span>

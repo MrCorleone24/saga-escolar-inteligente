@@ -1,6 +1,8 @@
 import { useRef, useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Pen, Type, Square, Circle, Minus, Eraser, Undo2, Redo2, Smile, Sticker, Download, Trash2 } from "lucide-react";
+import { Pen, Type, Square, Circle, Minus, Eraser, Undo2, Redo2, Smile, Sticker, Download, Trash2, FileJson } from "lucide-react";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
 import { Button } from "@/components/ui/button";
 
 type Tool = "pen" | "text" | "rect" | "circle" | "line" | "eraser";
@@ -204,13 +206,20 @@ export default function CanvasBoard({ onExportPDF }: CanvasBoardProps) {
     setShowStickers(false);
   };
 
-  const exportPDF = () => {
+  const exportPDF = async () => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
-    const link = document.createElement("a");
-    link.download = "lousa-digital.png";
-    link.href = canvas.toDataURL("image/png");
-    link.click();
+    const container = containerRef.current;
+    if (!canvas || !container) return;
+    
+    // Create PDF
+    const pdf = new jsPDF("l", "px", [canvas.width, canvas.height]);
+    
+    // Use html2canvas to capture stickers too
+    const canvasImg = await html2canvas(container);
+    const imgData = canvasImg.toDataURL("image/png");
+    
+    pdf.addImage(imgData, "PNG", 0, 0, canvas.width, canvas.height);
+    pdf.save("lousa-digital.pdf");
     onExportPDF?.();
   };
 

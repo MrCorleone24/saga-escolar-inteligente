@@ -22,9 +22,9 @@ interface LessonPlanFormProps {
 
 export default function LessonPlanForm({ grade = 3, onClose, onSave }: LessonPlanFormProps) {
   const [form, setForm] = useState({
-    title: "", subject: SUBJECTS[0], type: "interativa", grade,
+    title: "", subject: SUBJECTS[0].name, type: "interativa", grade,
     content: "", instructions: "", youtubeUrl: "", bncc: "", duration: "50",
-    activityType: "exercicio",
+    activityType: "exercicio", isGenerating: false,
   });
 
   const update = (key: string, value: string | number) => setForm(f => ({ ...f, [key]: value }));
@@ -124,8 +124,25 @@ export default function LessonPlanForm({ grade = 3, onClose, onSave }: LessonPla
       </div>
 
       <div className="flex gap-3 pt-2">
-        <Button className="gradient-badge border-0 text-primary-foreground" onClick={() => {/* AI generate */}}>
-          <Brain size={14} className="mr-1.5" /> Gerar com IA
+        <Button 
+          className="gradient-badge border-0 text-primary-foreground" 
+          disabled={form.isGenerating}
+          onClick={() => {
+            update("isGenerating", true);
+            setTimeout(() => {
+              const contentMap: Record<string, any> = {
+                "Português": { title: "Leitura de Crônicas", content: "As crônicas são textos curtos que narram fatos do cotidiano...", instructions: "Leia e escreva uma mini-crônica sobre seu dia.", bncc: "EF05LP10" },
+                "Matemática": { title: "Fração e Porcentagem", content: "A porcentagem é uma forma de expressar uma proporção...", instructions: "Resolva os problemas interativos e mostre o cálculo no caderno.", bncc: "EF05MA06" },
+                "Ciências": { title: "O Sistema Solar", content: "O Sistema Solar é formado pelo Sol e todos os corpos que orbitam ao seu redor...", instructions: "Assista ao vídeo e faça o mapa mental no caderno.", youtubeUrl: "https://www.youtube.com/watch?v=ITi6vX67N8U", bncc: "EF05CI11" },
+                "Tecnologia e IA": { title: "Como a IA aprende?", content: "A IA aprende através de padrões em grandes volumes de dados...", instructions: "Crie um algoritmo simples de decisão no caderno.", bncc: "EF05TE01" },
+              };
+              const mock = contentMap[form.subject as string] || { title: `Aula de ${form.subject}`, content: `Conteúdo detalhado sobre ${form.subject}...`, instructions: "Siga as orientações da aula.", bncc: "BNCC-Geral" };
+              setForm(f => ({ ...f, ...mock, isGenerating: false }));
+            }, 1500);
+          }}
+        >
+          <Brain size={14} className={`mr-1.5 ${form.isGenerating ? "animate-pulse" : ""}`} /> 
+          {form.isGenerating ? "Gerando..." : "Gerar com IA"}
         </Button>
         <Button variant="outline" onClick={() => {/* preview */}}>
           <Eye size={14} className="mr-1.5" /> Preview
