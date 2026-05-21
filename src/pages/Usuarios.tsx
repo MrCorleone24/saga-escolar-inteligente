@@ -30,9 +30,10 @@ export default function Usuarios() {
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
-  const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
+  const [currentUser, setCurrentUser] = useState<any | null>(null);
+  const [selectedUser, setSelectedUser] = useState<any | null>(null);
   const [showPerformance, setShowPerformance] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const [performanceData, setPerformanceData] = useState<PerformanceData>({ grade: 0, attendance: 0, engagement: 0 });
 
   // Form states
@@ -42,6 +43,7 @@ export default function Usuarios() {
   const [newRole, setNewRole] = useState("student");
   const [newSchool, setNewSchool] = useState("");
   const [newSubject, setNewSubject] = useState("");
+  const [newBio, setNewBio] = useState("");
   
   // School detailed fields
   const [phone, setPhone] = useState("");
@@ -101,7 +103,8 @@ export default function Usuarios() {
           zipCode,
           taxId,
           website,
-          contactPerson
+          contactPerson,
+          bio: newBio
         }
       });
 
@@ -126,6 +129,7 @@ export default function Usuarios() {
       setTaxId("");
       setWebsite("");
       setContactPerson("");
+      setNewBio("");
     } catch (error: any) {
       toast.error(error.message || "Erro ao criar usuário");
     } finally {
@@ -133,8 +137,14 @@ export default function Usuarios() {
     }
   };
 
-  const handleUserClick = async (user: UserProfile) => {
-    if (user.role === 'student') {
+  const handleUserClick = async (user: any) => {
+    setSelectedUser(user);
+    setShowProfileModal(true);
+  };
+
+  const handleShowPerformance = async (e: React.MouseEvent, user: any) => {
+    e.stopPropagation();
+    if (user.role === 'student' || user.role === 'aluno') {
       setSelectedUser(user);
       setShowPerformance(true);
       
@@ -189,7 +199,9 @@ export default function Usuarios() {
 
   const roleLabels: Record<string, string> = {
     teacher: "Professor",
+    professor: "Professor",
     student: "Aluno",
+    aluno: "Aluno",
     admin: "Administrador",
     school: "Escola",
   };
@@ -254,9 +266,19 @@ export default function Usuarios() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium flex items-center gap-1 ${roleColors[u.role]}`}>
-                        <RoleIcon size={10} /> {roleLabels[u.role]}
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium flex items-center gap-1 ${roleColors[u.role] || "bg-muted text-muted-foreground"}`}>
+                        <RoleIcon size={10} /> {roleLabels[u.role] || u.role}
                       </span>
+                      {(u.role === 'student' || u.role === 'aluno') && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-7 text-[10px] text-secondary hover:text-secondary-foreground"
+                          onClick={(e) => handleShowPerformance(e, u)}
+                        >
+                          Ver Desempenho
+                        </Button>
+                      )}
                       <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
                         u.subscription_status === "active" ? "bg-secondary/10 text-secondary" : "bg-muted text-muted-foreground"
                       }`}>
@@ -346,6 +368,29 @@ export default function Usuarios() {
                         </select>
                       </div>
                     )}
+
+                    {(currentUser?.role === 'teacher' || currentUser?.role === 'professor') && (
+                      <div>
+                        <label className="text-xs font-medium mb-1 block">Tipo de Usuário</label>
+                        <select 
+                          value={newRole} 
+                          disabled
+                          className="w-full h-10 px-3 rounded-md border border-input bg-muted text-sm outline-none"
+                        >
+                          <option value="student">Aluno</option>
+                        </select>
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="text-xs font-medium mb-1 block">Bio / Perfil Interno</label>
+                      <textarea 
+                        value={newBio} 
+                        onChange={e => setNewBio(e.target.value)} 
+                        placeholder="Breve descrição do perfil..."
+                        className="w-full h-24 px-3 py-2 rounded-md border border-input bg-background text-sm outline-none focus:ring-2 focus:ring-primary resize-none"
+                      />
+                    </div>
 
                     {newRole === 'teacher' && (
                       <div>
