@@ -6,8 +6,9 @@ import {
   LayoutDashboard, BookOpen, Users, Trophy, BarChart3,
   GraduationCap, Dumbbell, Settings, LogOut, ChevronLeft,
   ChevronRight, Presentation, ClipboardList, Brain, Menu,
-  PenLine, Calendar, BookMarked, Video
+  PenLine, Calendar, BookMarked, Video, DollarSign
 } from "lucide-react";
+
 
 type Role = "aluno" | "professor" | "admin" | "school";
 
