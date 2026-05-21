@@ -135,6 +135,36 @@ export type Database = {
           },
         ]
       }
+      financial_history: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          id: string
+          payment_method: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          payment_method: string
+          status: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          payment_method?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       lessons: {
         Row: {
           content: string | null
@@ -699,7 +729,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_monthly_revenue: { Args: never; Returns: number }
     }
     Enums: {
       user_role: "admin" | "school" | "teacher" | "student"

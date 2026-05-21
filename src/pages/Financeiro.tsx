@@ -10,31 +10,17 @@ type Role = "admin" | "school" | "professor" | "aluno";
 
 interface Payment {
   id: string;
-  date: string;
+  created_at: string;
   description: string;
   amount: number;
-  status: "paid" | "pending" | "overdue";
-  method: string;
-  invoiceUrl?: string;
+  status: string;
+  payment_method: string;
 }
-
-const MOCK_HISTORY: Payment[] = [
-  { id: "INV-2026-05", date: "2026-05-01", description: "Mensalidade Maio/2026", amount: 149.9, status: "paid", method: "PIX (Woovi)" },
-  { id: "INV-2026-04", date: "2026-04-01", description: "Mensalidade Abril/2026", amount: 149.9, status: "paid", method: "PIX (Woovi)" },
-  { id: "INV-2026-03", date: "2026-03-01", description: "Mensalidade Março/2026", amount: 149.9, status: "paid", method: "Cartão" },
-  { id: "INV-2026-06", date: "2026-06-01", description: "Mensalidade Junho/2026", amount: 149.9, status: "pending", method: "Boleto" },
-];
-
-const ADMIN_OVERVIEW = [
-  { label: "Receita do Mês", value: "R$ 48.230,00", icon: DollarSign, trend: "+12,4%" },
-  { label: "Assinaturas Ativas", value: "324", icon: Users, trend: "+8" },
-  { label: "Inadimplência", value: "R$ 3.120,00", icon: AlertCircle, trend: "-2,1%" },
-  { label: "MRR Projetado", value: "R$ 52.000,00", icon: TrendingUp, trend: "+5,3%" },
-];
 
 const statusMap = {
   paid: { label: "Pago", icon: CheckCircle2, cls: "bg-green-500/15 text-green-700 dark:text-green-400" },
   pending: { label: "Pendente", icon: Clock, cls: "bg-amber-500/15 text-amber-700 dark:text-amber-400" },
+  failed: { label: "Falhou", icon: AlertCircle, cls: "bg-red-500/15 text-red-700 dark:text-red-400" },
   overdue: { label: "Vencido", icon: AlertCircle, cls: "bg-red-500/15 text-red-700 dark:text-red-400" },
 };
 
@@ -42,19 +28,44 @@ export default function Financeiro() {
   const [role, setRole] = useState<Role>("aluno");
   const [userName, setUserName] = useState("Usuário");
   const [loading, setLoading] = useState(true);
+  const [history, setHistory] = useState<Payment[]>([]);
+  const [stats, setStats] = useState({
+    mrr: 0,
+    activeSubs: 0,
+  });
 
   useEffect(() => {
     (async () => {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
+        
         const { data: profile } = await supabase.from("profiles").select("role, full_name").eq("id", user.id).single();
         if (profile) {
           setRole((profile.role as Role) ?? "aluno");
           setUserName(profile.full_name ?? user.email ?? "Usuário");
         }
+
+        // Fetch history
+        const { data: histData } = await supabase
+          .from("financial_history")
+          .select("*")
+          .order("created_at", { ascending: false });
+        
+        if (histData) setHistory(histData as any);
+
+        if (profile?.role === 'admin') {
+          const { data: subs } = await supabase.from("profiles").select("role").eq("subscription_status", "active");
+          const { data: monthlyRevenue } = await supabase.rpc('get_monthly_revenue');
+          
+          setStats({
+            mrr: monthlyRevenue || 0,
+            activeSubs: subs?.length || 0,
+          });
+        }
+
       } catch (e) {
-        console.error("Erro ao carregar perfil:", e);
+        console.error("Erro ao carregar dados financeiros:", e);
       } finally {
         setLoading(false);
       }
@@ -92,16 +103,22 @@ export default function Financeiro() {
 
         {isAdmin && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {ADMIN_OVERVIEW.map((s) => (
-              <Card key={s.label} className="p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <s.icon className="text-primary" size={20} />
-                  <Badge variant="secondary" className="text-xs">{s.trend}</Badge>
-                </div>
-                <p className="text-xs text-muted-foreground">{s.label}</p>
-                <p className="text-xl font-bold mt-1">{s.value}</p>
-              </Card>
-            ))}
+            <Card className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <DollarSign className="text-primary" size={20} />
+                <Badge variant="secondary" className="text-xs">+5.2%</Badge>
+              </div>
+              <p className="text-xs text-muted-foreground">MRR Projetado</p>
+              <p className="text-xl font-bold mt-1">R$ {stats.mrr.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+            </Card>
+            <Card className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <Users className="text-primary" size={20} />
+                <Badge variant="secondary" className="text-xs">Ativo</Badge>
+              </div>
+              <p className="text-xs text-muted-foreground">Assinaturas Ativas</p>
+              <p className="text-xl font-bold mt-1">{stats.activeSubs}</p>
+            </Card>
           </div>
         )}
 
@@ -144,15 +161,15 @@ export default function Financeiro() {
                 </tr>
               </thead>
               <tbody>
-                {MOCK_HISTORY.map((p) => {
-                  const s = statusMap[p.status];
+                {history.map((p) => {
+                  const s = statusMap[p.status as keyof typeof statusMap] || statusMap.pending;
                   return (
                     <tr key={p.id} className="border-b border-border last:border-0">
-                      <td className="py-3 pr-4 font-mono text-xs">{p.id}</td>
-                      <td className="py-3 pr-4">{new Date(p.date).toLocaleDateString("pt-BR")}</td>
+                      <td className="py-3 pr-4 font-mono text-xs">{p.id.substring(0, 8)}</td>
+                      <td className="py-3 pr-4">{new Date(p.created_at).toLocaleDateString("pt-BR")}</td>
                       <td className="py-3 pr-4">{p.description}</td>
-                      <td className="py-3 pr-4 text-muted-foreground">{p.method}</td>
-                      <td className="py-3 pr-4 font-semibold">R$ {p.amount.toFixed(2)}</td>
+                      <td className="py-3 pr-4 text-muted-foreground">{p.payment_method}</td>
+                      <td className="py-3 pr-4 font-semibold">R$ {Number(p.amount).toFixed(2)}</td>
                       <td className="py-3 pr-4">
                         <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs ${s.cls}`}>
                           <s.icon size={12} /> {s.label}
@@ -161,6 +178,13 @@ export default function Financeiro() {
                     </tr>
                   );
                 })}
+                {history.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="py-10 text-center text-muted-foreground">
+                      Nenhuma transação encontrada.
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
