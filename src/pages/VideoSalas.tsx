@@ -50,31 +50,58 @@ export default function VideoSalas() {
   const [isHandRaised, setIsHandRaised] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
+    const initAuth = async () => {
+      const { data } = await supabase.auth.getUser();
       setUserId(data.user?.id || null);
       if (data.user?.id) {
-        supabase.from('profiles').select('role').eq('id', data.user.id).single()
-          .then(({ data: profile }) => setUserRole(profile?.role || null));
+        const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user.id).single();
+        setUserRole(profile?.role || null);
       }
-    });
+    };
+    initAuth();
+  }, []);
 
-    // Subscribe to notifications
-    if (userId) {
-      const channel = supabase
-        .channel('realtime_notifications')
-        .on(
-          'postgres_changes',
-          { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` },
-          (payload) => {
-            toast.info(payload.new.title, {
-              description: payload.new.message,
-            });
-          }
-        )
-        .subscribe();
-      return () => { channel.unsubscribe(); };
-    }
+  useEffect(() => {
+    if (!userId) return;
+
+    const channel = supabase
+      .channel('realtime_notifications')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` },
+        (payload) => {
+          toast.info(payload.new.title, {
+            description: payload.new.message,
+          });
+        }
+      )
+      .subscribe();
+
+    return () => { channel.unsubscribe(); };
   }, [userId]);
+
+  useEffect(() => {
+    if (!activeRoom || !inCall) return;
+
+    const channel = supabase
+      .channel(`room_moderation_${activeRoom.id}`)
+      .on(
+        'postgres_changes',
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'classroom_moderation', 
+          filter: `room_id=eq.${activeRoom.id}` 
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['room_participants', activeRoom.id] });
+        }
+      )
+      .subscribe();
+
+    return () => { channel.unsubscribe(); };
+  }, [activeRoom?.id, inCall, queryClient]);
+
 
   const { data: rooms = [] } = useQuery({
     queryKey: ['rooms'],
