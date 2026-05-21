@@ -100,6 +100,7 @@ const STATUS_CONFIG = {
   pendente: { label: "Pendente", icon: Clock, color: "text-amber-600", bg: "bg-amber-50" },
   corrigido: { label: "Corrigido", icon: Check, color: "text-emerald-600", bg: "bg-emerald-50" },
   devolvido: { label: "Devolvido", icon: RotateCcw, color: "text-red-500", bg: "bg-red-50" },
+  confirmado: { label: "Confirmado", icon: CheckCircle2, color: "text-blue-600", bg: "bg-blue-50" },
 };
 
 export default function MeuCaderno() {
