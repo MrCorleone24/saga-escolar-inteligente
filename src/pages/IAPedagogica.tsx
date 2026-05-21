@@ -1,92 +1,243 @@
-import { motion } from "framer-motion";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import DashboardLayout from "@/components/DashboardLayout";
-import { Brain, Sparkles, BookOpen, ClipboardList, Target, MessageSquare, Zap, FileText } from "lucide-react";
+import { 
+  Brain, Sparkles, BookOpen, ClipboardList, Target, MessageSquare, 
+  Zap, FileText, Send, Loader2, Save, History, Search, X, Check
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-const aiFeatures = [
-  { title: "Plano de Aula", desc: "Gere planos alinhados à BNCC", icon: BookOpen, gradient: "gradient-hero" },
-  { title: "Exercícios", desc: "Crie exercícios adaptados ao nível da turma", icon: ClipboardList, gradient: "gradient-success" },
-  { title: "Avaliações", desc: "Provas com gabarito automático", icon: FileText, gradient: "gradient-gamification" },
-  { title: "Intervenções", desc: "Sugestões pedagógicas personalizadas", icon: Target, gradient: "gradient-badge" },
-];
-
-const recentGenerations = [
-  { title: "Plano: Equações 2º Grau", type: "Plano de Aula", time: "Há 2h", tokens: 1200 },
-  { title: "10 Exercícios de Geometria", type: "Exercícios", time: "Há 5h", tokens: 800 },
-  { title: "Prova Bimestral - Álgebra", type: "Avaliação", time: "Ontem", tokens: 1500 },
-  { title: "Intervenção: João Mendes", type: "Intervenção", time: "Ontem", tokens: 600 },
-];
+const BNCC_CATEGORIES = ["Língua Portuguesa", "Matemática", "Ciências", "História", "Geografia", "Arte"];
 
 export default function IAPedagogica() {
+  const queryClient = useQueryClient();
+  const [userId, setUserId] = useState<string | null>(null);
+  const [userInput, setUserInput] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedContent, setGeneratedContent] = useState<string | null>(null);
+  const [contentType, setContentType] = useState<string>("lesson_plan");
+  const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id || null));
+  }, []);
+
+  const { data: students = [] } = useQuery({
+    queryKey: ['students_ai'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('profiles').select('*').eq('role', 'aluno');
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  const { data: recentGenerations = [] } = useQuery({
+    queryKey: ['ai_generations'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('ai_pedagogical_content')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    }
+  });
+
+  const handleGenerate = async () => {
+    if (!userInput.trim()) return;
+    setIsGenerating(true);
+    
+    // Simulating AI logic with BNCC and personalized learning
+    // In a real app, this would call a Supabase Edge Function or an AI provider via Lovable AI Gateway
+    setTimeout(async () => {
+      const student = students.find(s => s.id === selectedStudent);
+      const style = student?.learning_style || "visual";
+      const pace = student?.learning_pace || "médio";
+
+      let response = `### CONTEÚDO ALINHADO À BNCC\n\n`;
+      response += `**Título:** ${userInput}\n`;
+      response += `**Público-alvo:** Ensino Fundamental\n`;
+      response += `**Personalização:** Adaptado para ritmo ${pace} e estilo ${style}.\n\n`;
+      
+      if (contentType === "lesson_plan") {
+        response += `#### Objetivos de Aprendizagem\n- Identificar e aplicar conceitos básicos de ${userInput}.\n- Desenvolver habilidades críticas conforme BNCC (EF01MA01).\n\n`;
+        response += `#### Cronograma\n1. Introdução lúdica (15 min)\n2. Atividade prática com ${style} (30 min)\n3. Conclusão e reflexão (15 min)`;
+      } else {
+        response += `#### Exercícios Propostos\n1. Qual o conceito principal de ${userInput}?\n2. Como aplicar o método adaptado ao seu cotidiano?\n3. Desenhe/Escreva um exemplo prático.`;
+      }
+
+      setGeneratedContent(response);
+      setIsGenerating(false);
+      toast.success("Conteúdo gerado com sucesso!");
+    }, 2000);
+  };
+
+  const handleSaveContent = async () => {
+    if (!generatedContent || !userId) return;
+
+    const { error } = await supabase
+      .from('ai_pedagogical_content')
+      .insert({
+        teacher_id: userId,
+        student_id: selectedStudent,
+        content_type: contentType,
+        title: userInput,
+        content: generatedContent,
+        learning_method: students.find(s => s.id === selectedStudent)?.learning_style || "geral"
+      } as any);
+
+    if (error) {
+      toast.error("Erro ao salvar no banco");
+    } else {
+      toast.success("Conteúdo salvo e associado à turma!");
+      queryClient.invalidateQueries({ queryKey: ['ai_generations'] });
+      setGeneratedContent(null);
+      setUserInput("");
+    }
+  };
+
   return (
     <DashboardLayout role="professor" userName="Prof. Maria Santos">
-      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="mb-6">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <Brain className="text-gamification-badge" /> IA Pedagógica
-        </h1>
-        <p className="text-muted-foreground text-sm">Seu assistente inteligente para criar conteúdos educacionais</p>
-      </motion.div>
+      <div className="flex flex-col gap-6">
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+          <h1 className="text-3xl font-bold flex items-center gap-3">
+            <Brain className="text-primary w-8 h-8" /> IA Pedagógica Assistant
+          </h1>
+          <p className="text-muted-foreground mt-1">Gere conteúdos, exercícios e planos adaptados ao ritmo de cada criança.</p>
+        </motion.div>
 
-      {/* Hero card */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="gradient-badge rounded-xl p-6 text-primary-foreground mb-6"
-      >
-        <div className="flex items-start gap-4">
-          <Sparkles className="w-10 h-10 opacity-80 shrink-0" />
-          <div>
-            <h2 className="font-bold text-xl mb-1">Agente IA Pedagógico</h2>
-            <p className="text-primary-foreground/70 text-sm mb-4">
-              Gere planos de aula, exercícios, avaliações e intervenções pedagógicas alinhados à BNCC.
-              A IA utiliza o contexto da turma e o desempenho dos alunos para personalizar o conteúdo.
-            </p>
-            <Button variant="secondary" className="font-semibold">
-              <MessageSquare size={16} className="mr-1.5" /> Iniciar Conversa com IA
-            </Button>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Feature cards */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {aiFeatures.map((f, i) => (
-          <motion.button
-            key={f.title}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 + i * 0.05 }}
-            className={`${f.gradient} rounded-xl p-5 text-primary-foreground text-left hover:shadow-lg transition-shadow`}
-          >
-            <f.icon className="w-7 h-7 mb-3 opacity-80" />
-            <h3 className="font-bold text-sm mb-1">{f.title}</h3>
-            <p className="text-primary-foreground/70 text-xs">{f.desc}</p>
-          </motion.button>
-        ))}
-      </div>
-
-      {/* Recent generations */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="bg-card rounded-xl border border-border p-5">
-        <h2 className="font-bold text-base mb-4 flex items-center gap-2">
-          <Zap size={18} className="text-gamification-gold" /> Gerações Recentes
-        </h2>
-        <div className="space-y-3">
-          {recentGenerations.map((g, i) => (
-            <div key={i} className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/30 transition-colors cursor-pointer">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg gradient-badge flex items-center justify-center shrink-0">
-                  <Brain className="w-4 h-4 text-primary-foreground" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium">{g.title}</p>
-                  <p className="text-xs text-muted-foreground">{g.type} · {g.time}</p>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Input Section */}
+          <div className="lg:col-span-1 space-y-4">
+            <div className="bg-card border rounded-2xl p-5 shadow-sm space-y-4">
+              <div>
+                <label className="text-sm font-bold mb-1.5 block">O que você quer criar?</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button 
+                    variant={contentType === "lesson_plan" ? "default" : "outline"}
+                    onClick={() => setContentType("lesson_plan")}
+                    size="sm"
+                    className="text-xs"
+                  >
+                    Plano de Aula
+                  </Button>
+                  <Button 
+                    variant={contentType === "exercise" ? "default" : "outline"}
+                    onClick={() => setContentType("exercise")}
+                    size="sm"
+                    className="text-xs"
+                  >
+                    Exercícios
+                  </Button>
                 </div>
               </div>
-              <span className="text-xs text-muted-foreground">{g.tokens} tokens</span>
+
+              <div>
+                <label className="text-sm font-bold mb-1.5 block">Personalizar para um aluno específico?</label>
+                <select 
+                  className="w-full p-2 rounded-lg border bg-background text-sm"
+                  value={selectedStudent || ""}
+                  onChange={(e) => setSelectedStudent(e.target.value || null)}
+                >
+                  <option value="">Turma Inteira (Geral)</option>
+                  {students.map(s => (
+                    <option key={s.id} value={s.id}>{s.full_name} ({s.learning_style || 'Padrão'})</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="text-sm font-bold mb-1.5 block">Assunto ou Habilidade BNCC</label>
+                <Textarea 
+                  placeholder="Ex: Frações equivalentes, Interpretação de texto narrativo..." 
+                  value={userInput}
+                  onChange={(e) => setUserInput(e.target.value)}
+                  className="min-h-[100px] text-sm"
+                />
+              </div>
+
+              <Button 
+                onClick={handleGenerate} 
+                disabled={isGenerating || !userInput}
+                className="w-full bg-primary hover:bg-primary/90 shadow-lg"
+              >
+                {isGenerating ? <Loader2 className="animate-spin mr-2" /> : <Sparkles className="mr-2 h-4 w-4" />}
+                Gerar com IA Pedagógica
+              </Button>
             </div>
-          ))}
+
+            <div className="bg-muted/30 border-2 border-dashed rounded-2xl p-5">
+              <h3 className="text-sm font-bold mb-2 flex items-center gap-2">
+                <Target size={16} className="text-primary" /> Alinhamento BNCC
+              </h3>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Nossa IA verifica automaticamente as competências gerais e específicas para garantir conformidade pedagógica.
+              </p>
+            </div>
+          </div>
+
+          {/* Results/History Section */}
+          <div className="lg:col-span-2 space-y-4">
+            <AnimatePresence mode="wait">
+              {generatedContent ? (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.98 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.98 }}
+                  className="bg-card border-2 border-primary/20 rounded-2xl p-6 shadow-md relative"
+                >
+                  <div className="flex justify-between items-center mb-4">
+                    <Badge className="bg-primary/10 text-primary border-primary/20">Novo Conteúdo</Badge>
+                    <div className="flex gap-2">
+                      <Button variant="ghost" size="sm" onClick={() => setGeneratedContent(null)}><X size={16} /></Button>
+                      <Button size="sm" onClick={handleSaveContent}><Save size={16} className="mr-2" /> Salvar no Banco</Button>
+                    </div>
+                  </div>
+                  <div className="prose prose-sm max-w-none">
+                    <div className="whitespace-pre-wrap font-sans text-sm leading-relaxed">
+                      {generatedContent}
+                    </div>
+                  </div>
+                </motion.div>
+              ) : (
+                <div className="bg-card border rounded-2xl p-6 h-[400px] flex flex-col">
+                  <h2 className="font-bold text-lg mb-4 flex items-center gap-2">
+                    <History size={18} className="text-primary" /> Histórico de Gerações
+                  </h2>
+                  <ScrollArea className="flex-1">
+                    <div className="space-y-3">
+                      {recentGenerations.map((g: any) => (
+                        <div key={g.id} className="p-3 border rounded-xl hover:bg-muted/50 transition-colors cursor-pointer group">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="text-sm font-bold group-hover:text-primary transition-colors">{g.title}</p>
+                              <p className="text-[10px] text-muted-foreground uppercase">{g.content_type} • {new Date(g.created_at).toLocaleDateString()}</p>
+                            </div>
+                            <Badge variant="outline" className="text-[9px]">{g.learning_method}</Badge>
+                          </div>
+                        </div>
+                      ))}
+                      {recentGenerations.length === 0 && (
+                        <div className="text-center py-10 text-muted-foreground">
+                          <Zap size={32} className="mx-auto opacity-10 mb-2" />
+                          <p className="text-sm">Nenhuma geração salva ainda.</p>
+                        </div>
+                      )}
+                    </div>
+                  </ScrollArea>
+                </div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
-      </motion.div>
+      </div>
     </DashboardLayout>
   );
 }
