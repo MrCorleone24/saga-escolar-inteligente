@@ -4,6 +4,30 @@ export interface Subject {
   emoji: string;
 }
 
+export interface FeedbackVersion {
+  id: string;
+  date: string;
+  grade: string;
+  note: string;
+  status: "corrigido" | "devolvido";
+}
+
+export interface NotebookEntry {
+  id: number;
+  date: string;
+  subject: string;
+  title: string;
+  content: string;
+  photo: string | null;
+  status: "rascunho" | "enviado" | "corrigido" | "devolvido" | "pendente" | "confirmado";
+  grade?: string;
+  teacherNote?: string;
+  lessonId?: string;
+  lessonRef?: string;
+  versions?: FeedbackVersion[];
+  confirmedAt?: string;
+}
+
 export const SUBJECTS: Subject[] = [
   { name: "Português", color: "217 91% 50%", emoji: "📖" },
   { name: "Matemática", color: "152 60% 42%", emoji: "🔢" },
