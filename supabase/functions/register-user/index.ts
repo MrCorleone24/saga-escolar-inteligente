@@ -34,7 +34,10 @@ serve(async (req) => {
 
     if (profileError || !profile) throw new Error('Profile not found')
 
-    const { email, password, fullName, role, schoolName } = await req.json()
+    const { email, password, fullName, role, schoolName, subject } = await req.json()
+
+    let targetSchoolId = null;
+    let targetTeacherId = null;
 
     // Hierarchical validation
     if (profile.role === 'admin') {
@@ -43,25 +46,32 @@ serve(async (req) => {
       if (!['teacher', 'student'].includes(role)) {
         throw new Error('Schools can only register teachers and students')
       }
+      targetSchoolId = profile.id;
+      
       // Check limits
-      const { count: teachersCount } = await supabaseClient
-        .from('profiles')
-        .select('*', { count: 'exact', head: true })
-        .eq('parent_id', profile.id)
-        .eq('role', 'teacher')
+      if (role === 'teacher') {
+        const { count: teachersCount } = await supabaseClient
+          .from('profiles')
+          .select('*', { count: 'exact', head: true })
+          .eq('school_id', profile.id)
+          .eq('role', 'teacher')
 
-      if (profile.max_teachers && teachersCount >= profile.max_teachers) {
-        throw new Error('Limite de professores atingido')
+        if (profile.max_teachers && teachersCount >= profile.max_teachers) {
+          throw new Error('Limite de professores atingido')
+        }
       }
     } else if (profile.role === 'teacher') {
       if (role !== 'student') {
         throw new Error('Teachers can only register students')
       }
+      targetTeacherId = profile.id;
+      targetSchoolId = profile.school_id;
+
       // Check limits
       const { count: studentsCount } = await supabaseClient
         .from('profiles')
         .select('*', { count: 'exact', head: true })
-        .eq('parent_id', profile.id)
+        .eq('teacher_id', profile.id)
         .eq('role', 'student')
 
       if (profile.max_students && studentsCount >= profile.max_students) {
@@ -86,10 +96,12 @@ serve(async (req) => {
       .from('profiles')
       .update({
         role: role,
-        parent_id: profile.role === 'admin' ? null : profile.id,
+        school_id: targetSchoolId,
+        teacher_id: targetTeacherId,
         email: email,
         full_name: fullName,
-        school_name: schoolName || profile.school_name
+        school_name: schoolName || profile.school_name,
+        subject: subject
       })
       .eq('id', newUser.user.id)
 
