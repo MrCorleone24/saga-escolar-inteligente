@@ -1,15 +1,12 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Plus, Brain } from "lucide-react";
+import { Plus, Brain, Calendar, LayoutGrid, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import LessonCard from "./LessonCard";
+import { SUBJECTS } from "@/lib/subjects";
 
 const DAYS = ["Segunda", "Terça", "Quarta", "Quinta", "Sexta"];
 
-const SUBJECTS = [
-  "Português", "Matemática", "Ciências", "História", "Geografia",
-  "Inglês", "Ed. Física", "Artes", "Ensino Religioso",
-];
 
 interface Lesson {
   id: string; title: string; subject: string; type: string; time: string; day: number; bncc?: string;
@@ -40,8 +37,38 @@ interface WeeklyPlanGridProps {
 }
 
 export default function WeeklyPlanGrid({ grade, onCreateLesson, onGenerateAI }: WeeklyPlanGridProps) {
+  const [viewMode, setViewMode] = useState<"day" | "week" | "month">("week");
+
   return (
     <div className="space-y-4">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex bg-muted p-1 rounded-lg">
+          <Button 
+            variant={viewMode === "day" ? "secondary" : "ghost"} 
+            size="sm" 
+            className="h-7 text-[10px] px-3"
+            onClick={() => setViewMode("day")}
+          >
+            Dia
+          </Button>
+          <Button 
+            variant={viewMode === "week" ? "secondary" : "ghost"} 
+            size="sm" 
+            className="h-7 text-[10px] px-3"
+            onClick={() => setViewMode("week")}
+          >
+            Semana
+          </Button>
+          <Button 
+            variant={viewMode === "month" ? "secondary" : "ghost"} 
+            size="sm" 
+            className="h-7 text-[10px] px-3"
+            onClick={() => setViewMode("month")}
+          >
+            Mês
+          </Button>
+        </div>
+      </div>
       <div className="flex items-center justify-between">
         <div>
           <h3 className="font-bold text-sm">{grade}º Ano — Semana 24/02 a 28/02</h3>

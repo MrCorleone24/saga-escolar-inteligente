@@ -27,7 +27,7 @@ export default function LessonPlanForm({ grade = 3, onClose, onSave }: LessonPla
     activityType: "exercicio", isGenerating: false,
   });
 
-  const update = (key: string, value: string | number) => setForm(f => ({ ...f, [key]: value }));
+  const update = (key: string, value: string | number | boolean) => setForm(f => ({ ...f, [key]: value }));
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-xl border border-border p-6 space-y-5">
