@@ -295,47 +295,112 @@ export type Database = {
         }
         Relationships: []
       }
+      plans: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          features: Json | null
+          id: string
+          max_students: number | null
+          max_teachers: number | null
+          name: string
+          price_monthly: number
+          role_type: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          features?: Json | null
+          id?: string
+          max_students?: number | null
+          max_teachers?: number | null
+          name: string
+          price_monthly: number
+          role_type: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          features?: Json | null
+          id?: string
+          max_students?: number | null
+          max_teachers?: number | null
+          name?: string
+          price_monthly?: number
+          role_type?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
           created_at: string
+          email: string | null
           full_name: string | null
           id: string
           interests: string[] | null
           learning_pace: string | null
           learning_style: string | null
           level: number | null
+          max_students: number | null
+          max_teachers: number | null
+          parent_id: string | null
+          plan_type: string | null
           role: string
+          school_name: string | null
+          subscription_status: string | null
           updated_at: string
           xp: number | null
         }
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          email?: string | null
           full_name?: string | null
           id: string
           interests?: string[] | null
           learning_pace?: string | null
           learning_style?: string | null
           level?: number | null
+          max_students?: number | null
+          max_teachers?: number | null
+          parent_id?: string | null
+          plan_type?: string | null
           role: string
+          school_name?: string | null
+          subscription_status?: string | null
           updated_at?: string
           xp?: number | null
         }
         Update: {
           avatar_url?: string | null
           created_at?: string
+          email?: string | null
           full_name?: string | null
           id?: string
           interests?: string[] | null
           learning_pace?: string | null
           learning_style?: string | null
           level?: number | null
+          max_students?: number | null
+          max_teachers?: number | null
+          parent_id?: string | null
+          plan_type?: string | null
           role?: string
+          school_name?: string | null
+          subscription_status?: string | null
           updated_at?: string
           xp?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       room_messages: {
         Row: {
@@ -513,7 +578,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      user_role: "admin" | "school" | "teacher" | "student"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -640,6 +705,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      user_role: ["admin", "school", "teacher", "student"],
+    },
   },
 } as const
