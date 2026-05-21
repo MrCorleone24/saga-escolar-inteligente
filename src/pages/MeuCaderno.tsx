@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import DashboardLayout from "@/components/DashboardLayout";
 import {
@@ -9,90 +9,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { SUBJECTS, MOCK_LESSONS, NotebookEntry, FeedbackVersion } from "@/lib/subjects";
+import { SUBJECTS, LessonLink, NotebookEntry, FeedbackVersion } from "@/lib/subjects";
 import { useNavigate } from "react-router-dom";
 import { jsPDF } from "jspdf";
 import { toast } from "sonner";
-
-const MOCK_ENTRIES: NotebookEntry[] = [
-  {
-    id: 1, date: "27/02/2026", subject: "Português", title: "Texto Narrativo - A Formiguinha e a Neve",
-    content: "Hoje aprendemos sobre texto narrativo. A professora pediu para copiar o texto da formiguinha e a neve.\n\nEra uma vez uma formiguinha que trabalhava o dia inteiro, sem parar. No inverno, quando a neve caiu, ela já tinha comida guardada.\n\nRespondi as perguntas:\n1. Quem é o personagem principal? A formiguinha.\n2. Onde se passa a história? Na floresta.\n3. Qual a moral da história? Devemos nos preparar para o futuro.",
-    photo: null, status: "corrigido", grade: "Muito Bem! ⭐",
-    teacherNote: "Excelente trabalho, João! Suas respostas estão completas e bem escritas. Continue assim!",
-    lessonId: "1", lessonRef: "Aula 12 - Interpretação de Texto",
-    versions: [
-      { id: "v1", date: "26/02/2026 10:00", grade: "Bom", note: "Falta responder a moral da história.", status: "devolvido" }
-    ]
-  },
-  {
-    id: 2, date: "26/02/2026", subject: "Português", title: "Ditado - Palavras com LH e NH",
-    content: "Ditado de palavras:\n\nTrabalho, espelho, abelha, orelha, toalha, milho, filha, galho.\n\nNinho, minha, rainha, vizinha, linha, sonho, banho, cozinha.",
-    photo: null, status: "corrigido", grade: "Bom! 👍",
-    teacherNote: "Muito bem! Apenas 'vizinha' estava com erro. Corrija e pratique.",
-    lessonId: "2",
-  },
-  {
-    id: 3, date: "27/02/2026", subject: "Matemática", title: "Tabuada do 3 e do 4",
-    content: "Exercícios de multiplicação:\n\n3 x 1 = 3\n3 x 2 = 6\n3 x 3 = 9\n3 x 4 = 12\n3 x 5 = 15\n\n4 x 1 = 4\n4 x 2 = 8\n4 x 3 = 12\n4 x 4 = 16\n4 x 5 = 20\n\nProblemas:\n1. Maria tem 3 cestas com 4 maçãs cada. Quantas maçãs ela tem? 3 x 4 = 12 maçãs.\n2. João comprou 4 pacotes com 3 figurinhas. Quantas figurinhas? 4 x 3 = 12 figurinhas.",
-    photo: null, status: "pendente",
-    lessonId: "4", lessonRef: "Aula 15 - Multiplicação",
-  },
-  {
-    id: 4, date: "25/02/2026", subject: "Ciências", title: "Ciclo da Água - Desenho",
-    content: "Fiz o desenho do ciclo da água mostrando:\n- Evaporação (sol aquecendo a água)\n- Condensação (nuvens se formando)\n- Precipitação (chuva caindo)\n- Infiltração (água entrando no solo)",
-    photo: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400&h=300&fit=crop",
-    status: "corrigido", grade: "Bom trabalho! 🌊",
-    teacherNote: "O desenho ficou muito bom! Faltou indicar a transpiração das plantas. Veja a correção.",
-    lessonId: "8",
-  },
-  {
-    id: 5, date: "24/02/2026", subject: "História", title: "Os Povos Indígenas do Brasil",
-    content: "Os povos indígenas foram os primeiros habitantes do Brasil. Eles já viviam aqui muito antes dos portugueses chegarem em 1500.\n\nCulturas importantes:\n- Tupi-Guarani: viviam no litoral\n- Yanomami: viviam na Amazônia\n- Xavante: viviam no cerrado\n\nOs indígenas nos ensinaram muitas coisas como o uso da mandioca, redes para dormir e nomes de lugares (Itapuã, Guanabara, Pará).",
-    photo: null, status: "enviado",
-    lessonId: "9", lessonRef: "Aula 8 - Brasil Indígena",
-  },
-  {
-    id: 6, date: "26/02/2026", subject: "Matemática", title: "Problemas de Adição e Subtração",
-    content: "1. Pedro tinha 45 bolinhas e ganhou mais 23. Quantas bolinhas ele tem agora?\n45 + 23 = 68 bolinhas\n\n2. Ana tinha 80 reais e gastou 35 em um livro. Quanto sobrou?\n80 - 35 = 45 reais",
-    photo: null, status: "corrigido", grade: "Perfeito! 🌟",
-    teacherNote: "Todos os problemas corretos! Parabéns pela organização das contas.",
-    lessonId: "5",
-  },
-  {
-    id: 7, date: "27/02/2026", subject: "Espanhol", title: "Saludos y Presentaciones",
-    content: "Hola, me llamo João. Tengo 9 años. Vivo en Brasil.\n\nSaludos:\n- Buenos días\n- Buenas tardes\n- Buenas noches\n- ¿Cómo estás? - Estoy bien, gracias.",
-    photo: null, status: "pendente", lessonId: "13",
-  },
-  {
-    id: 8, date: "26/02/2026", subject: "Filosofia", title: "O que é Filosofia?",
-    content: "Filosofia é a busca pelo conhecimento. Os filósofos fazem perguntas sobre tudo!\n\nPerguntas filosóficas:\n- O que é a felicidade?\n- Por que existimos?\n- O que é certo e errado?",
-    photo: null, status: "enviado", lessonId: "14",
-  },
-  {
-    id: 9, date: "25/02/2026", subject: "Sociologia", title: "Convivência em Sociedade",
-    content: "Aprendemos sobre regras de convivência:\n- Respeitar os colegas\n- Ouvir antes de falar\n- Compartilhar materiais\n- Trabalhar em equipe",
-    photo: null, status: "corrigido", grade: "Ótimo! 🤝",
-    teacherNote: "Excelentes reflexões sobre convivência!", lessonId: "15",
-  },
-  {
-    id: 10, date: "26/02/2026", subject: "Tecnologia e IA", title: "Pensamento Computacional",
-    content: "Aprendemos o que é um algoritmo: uma sequência de passos para resolver um problema.\n\nExemplo: Fazer um sanduíche\n1. Pegar o pão\n2. Cortar ao meio\n3. Colocar queijo e presunto\n4. Fechar e comer!",
-    photo: null, status: "corrigido", grade: "Excelente! 🤖",
-    teacherNote: "Ótimo exemplo de algoritmo do dia a dia!", lessonId: "17",
-  },
-  {
-    id: 11, date: "25/02/2026", subject: "Empreendedorismo", title: "Minha Primeira Ideia de Negócio",
-    content: "Minha ideia: Vender limonada no recreio!\n\nPlano:\n- Ingredientes: limão, açúcar, água, gelo\n- Preço: R$ 2,00 o copo\n- Custo: R$ 0,50 por copo\n- Lucro: R$ 1,50 por copo!",
-    photo: null, status: "enviado", lessonId: "18",
-  },
-  {
-    id: 12, date: "27/02/2026", subject: "Leitura/Literatura", title: "O Pequeno Príncipe - Cap 1",
-    content: "Li o primeiro capítulo de O Pequeno Príncipe.\n\nO narrador conta que quando era criança, desenhou uma jiboia que engoliu um elefante, mas os adultos acharam que era um chapéu.\n\nReflexão: Os adultos nem sempre entendem a imaginação das crianças.",
-    photo: null, status: "corrigido", grade: "Lindo! 📚",
-    teacherNote: "Sua reflexão mostra maturidade. Continue lendo!", lessonId: "19",
-  },
-];
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 const STATUS_CONFIG = {
   rascunho: { label: "Rascunho", icon: PenLine, color: "text-muted-foreground", bg: "bg-muted" },
@@ -105,7 +27,7 @@ const STATUS_CONFIG = {
 
 export default function MeuCaderno() {
   const navigate = useNavigate();
-  const [entries, setEntries] = useState<NotebookEntry[]>(MOCK_ENTRIES);
+  const queryClient = useQueryClient();
   const [activeSubject, setActiveSubject] = useState(0);
   const [currentPage, setCurrentPage] = useState(0);
   const [isFlipping, setIsFlipping] = useState(false);
@@ -116,10 +38,47 @@ export default function MeuCaderno() {
   const [newPhoto, setNewPhoto] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<"notebook" | "list">("notebook");
   const [showFeedback, setShowFeedback] = useState(false);
-  const [hasConfirmed, setHasConfirmed] = useState<Record<number, boolean>>({});
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("todos");
-  const [showVersionHistory, setShowVersionHistory] = useState<number | null>(null);
+  const [showVersionHistory, setShowVersionHistory] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setUserId(data.user?.id || null);
+    });
+  }, []);
+
+  const { data: entries = [], isLoading } = useQuery({
+    queryKey: ['notebook_entries', userId],
+    queryFn: async () => {
+      if (!userId) return [];
+      const { data, error } = await supabase
+        .from('notebook_entries')
+        .select(`
+          *,
+          feedback_versions (*)
+        `)
+        .eq('student_id', userId)
+        .order('date', { ascending: false });
+      
+      if (error) throw error;
+      return data.map(e => ({
+        ...e,
+        versions: e.feedback_versions
+      })) as NotebookEntry[];
+    },
+    enabled: !!userId
+  });
+
+  const { data: lessons = [] } = useQuery({
+    queryKey: ['lessons'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('lessons').select('*');
+      if (error) throw error;
+      return data as LessonLink[];
+    }
+  });
 
   const subject = SUBJECTS[activeSubject];
   
@@ -136,14 +95,24 @@ export default function MeuCaderno() {
 
   const currentEntry = filtered[currentPage] || null;
 
-  const handleConfirmReading = (entryId: number) => {
-    setEntries(prev => prev.map(e => 
-      e.id === entryId ? { ...e, status: "confirmado", confirmedAt: new Date().toLocaleString() } as NotebookEntry : e
-    ));
+  const handleConfirmReading = async (entryId: string) => {
+    const { error } = await supabase
+      .from('notebook_entries')
+      .update({ 
+        status: "confirmado", 
+        confirmed_at: new Date().toISOString() 
+      })
+      .eq('id', entryId);
+
+    if (error) {
+      toast.error("Erro ao confirmar leitura");
+      return;
+    }
+
+    queryClient.invalidateQueries({ queryKey: ['notebook_entries'] });
     toast.success("Feedback confirmado com sucesso!");
-    // Simulate notification to teacher
-    console.log("Notification sent to teacher: Student confirmed reading feedback.");
   };
+
 
   const exportToPDF = () => {
     const doc = new jsPDF();
