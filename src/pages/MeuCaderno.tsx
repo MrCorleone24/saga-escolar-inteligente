@@ -5,11 +5,14 @@ import {
   PenLine, MessageSquare, Star, ChevronLeft, ChevronRight,
   BookOpen, Camera, Save, RotateCcw, Plus, Check, Clock, Link2,
   FileDown, Search, Filter, History, CheckCircle2, Bell,
-  FileUp, Trash2, FileIcon, ImageIcon, X
+  FileUp, Trash2, FileIcon, ImageIcon, X, Send
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
+
 import { SUBJECTS, NotebookEntry, FeedbackVersion } from "@/lib/subjects";
 import { useNavigate } from "react-router-dom";
 import { jsPDF } from "jspdf";
