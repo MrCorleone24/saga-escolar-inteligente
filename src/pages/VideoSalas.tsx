@@ -204,10 +204,28 @@ export default function VideoSalas() {
         <div className="flex items-center justify-between p-4 bg-[#1a1a1a] text-white border-b border-white/10">
           <div className="flex items-center gap-3">
             <h2 className="font-bold">{activeRoom.name}</h2>
-            <Badge variant="outline" className="text-red-500 border-red-500 animate-pulse">AO VIVO</Badge>
+            <Badge variant="outline" className={`animate-pulse ${activeRoom.room_type === 'administrative' ? 'text-blue-400 border-blue-400' : 'text-red-500 border-red-500'}`}>
+              {activeRoom.room_type === 'administrative' ? 'DIREÇÃO' : 'AO VIVO'}
+            </Badge>
             {isAdmin && <Badge className="bg-blue-600">MODERADOR</Badge>}
           </div>
           <div className="flex items-center gap-2">
+            {!isAdmin && (
+              <Button 
+                variant={isHandRaised ? "secondary" : "ghost"} 
+                size="sm" 
+                onClick={toggleHandRaise}
+                className={isHandRaised ? "bg-amber-500 hover:bg-amber-600" : ""}
+              >
+                <Hand className={`h-5 w-5 ${isHandRaised ? "animate-bounce" : ""}`} />
+                <span className="ml-2 hidden sm:inline">{isHandRaised ? "Mão Levantada" : "Levantar Mão"}</span>
+              </Button>
+            )}
+            {isAdmin && (
+              <Button variant="outline" size="sm" onClick={handleMuteAll} className="text-red-400 border-red-400/30 hover:bg-red-400/10">
+                <VolumeX className="mr-2 h-4 w-4" /> Silenciar Todos
+              </Button>
+            )}
             <Button variant="ghost" size="icon" onClick={() => setShowParticipants(!showParticipants)}>
               <Users className="h-5 w-5" />
             </Button>
