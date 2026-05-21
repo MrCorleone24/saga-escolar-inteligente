@@ -147,7 +147,7 @@ export default function Usuarios() {
   };
 
   return (
-    <DashboardLayout role={currentUser?.role || "admin"} userName={currentUser?.full_name || "Admin"}>
+    <DashboardLayout role={(currentUser?.role as any) || "admin"} userName={currentUser?.full_name || "Admin"}>
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold">Usuários</h1>
