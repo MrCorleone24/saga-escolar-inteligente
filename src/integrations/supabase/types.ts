@@ -729,7 +729,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_monthly_revenue: { Args: never; Returns: number }
     }
     Enums: {
       user_role: "admin" | "school" | "teacher" | "student"
