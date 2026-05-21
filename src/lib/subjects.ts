@@ -27,9 +27,8 @@ export interface NotebookEntry {
   grade?: string;
   teacher_note?: string;
   lesson_id?: string;
-  lesson_ref?: string;
-  versions?: FeedbackVersion[];
   confirmed_at?: string;
+  versions?: FeedbackVersion[];
 }
 
 export interface LessonLink {
@@ -59,11 +58,3 @@ export const SUBJECTS: Subject[] = [
   { id: "12", name: "Empreendedorismo", color: "45 90% 50%", emoji: "🚀" },
   { id: "13", name: "Leitura/Literatura", color: "340 65% 50%", emoji: "📚" },
 ];
-
-export const MOCK_LESSONS: LessonLink[] = [];
-
-export const getSubjects = async () => {
-  const { data, error } = await supabase.from('subjects').select('*').order('name');
-  if (error) throw error;
-  return data as Subject[];
-};
