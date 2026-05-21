@@ -450,26 +450,52 @@ export default function MeuCaderno() {
                               className="mt-5 rounded-xl p-4 border relative overflow-hidden" 
                               style={{ background: `hsl(${subject.color} / 0.05)`, borderColor: `hsl(${subject.color} / 0.15)` }}
                             >
-                              <div className="flex items-center gap-1.5 mb-1.5">
-                                <MessageSquare size={12} style={{ color: subjectColor }} />
-                                <span className="text-xs font-bold" style={{ color: subjectColor }}>Feedback da Professora</span>
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-1.5">
+                                  <MessageSquare size={12} style={{ color: subjectColor }} />
+                                  <span className="text-xs font-bold" style={{ color: subjectColor }}>Feedback da Professora</span>
+                                </div>
+                                {currentEntry.versions && currentEntry.versions.length > 0 && (
+                                  <button 
+                                    onClick={() => setShowVersionHistory(showVersionHistory === currentEntry.id ? null : currentEntry.id)}
+                                    className="text-[10px] font-bold text-primary flex items-center gap-1 hover:underline"
+                                  >
+                                    <History size={10} /> {showVersionHistory === currentEntry.id ? "Ocultar Histórico" : "Ver Histórico"}
+                                  </button>
+                                )}
                               </div>
+
+                              {showVersionHistory === currentEntry.id && currentEntry.versions && (
+                                <div className="mb-3 space-y-2 border-l-2 border-primary/20 pl-3 py-1">
+                                  {currentEntry.versions.map(v => (
+                                    <div key={v.id} className="text-[10px]">
+                                      <p className="font-bold text-muted-foreground">{v.date} · {v.grade}</p>
+                                      <p className="text-muted-foreground italic">"{v.note}"</p>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
                               <p className="text-xs text-muted-foreground leading-relaxed mb-3">{currentEntry.teacherNote}</p>
                               
-                              <div className="flex justify-end">
-                                {hasConfirmed[currentEntry.id] ? (
-                                  <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-600">
-                                    <Check size={12} /> Confirmado
+                              <div className="flex justify-between items-center pt-2 border-t border-border/30">
+                                {currentEntry.status === "confirmado" ? (
+                                  <div className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">
+                                    <CheckCircle2 size={12} /> Confirmado em {currentEntry.confirmedAt}
                                   </div>
                                 ) : (
-                                  <Button 
-                                    size="sm" 
-                                    variant="outline" 
-                                    className="h-7 text-[10px] gap-1 px-3 border-emerald-200 text-emerald-700 hover:bg-emerald-50"
-                                    onClick={() => setHasConfirmed(prev => ({ ...prev, [currentEntry.id]: true }))}
-                                  >
-                                    Confirmar Leitura
-                                  </Button>
+                                  <div className="flex items-center gap-2 ml-auto">
+                                    <span className="text-[10px] text-amber-600 font-medium flex items-center gap-1">
+                                      <Bell size={10} /> Confirme a leitura
+                                    </span>
+                                    <Button 
+                                      size="sm" 
+                                      className="h-8 text-[10px] gap-1.5 px-3 gradient-hero border-0 text-white"
+                                      onClick={() => handleConfirmReading(currentEntry.id)}
+                                    >
+                                      <CheckCircle2 size={12} /> Confirmar Leitura
+                                    </Button>
+                                  </div>
                                 )}
                               </div>
                             </motion.div>
