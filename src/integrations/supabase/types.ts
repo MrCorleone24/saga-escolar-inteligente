@@ -59,6 +59,7 @@ export type Database = {
           can_chat: boolean | null
           can_video: boolean | null
           created_at: string
+          hand_raised: boolean | null
           id: string
           is_muted: boolean | null
           role: string
@@ -70,6 +71,7 @@ export type Database = {
           can_chat?: boolean | null
           can_video?: boolean | null
           created_at?: string
+          hand_raised?: boolean | null
           id?: string
           is_muted?: boolean | null
           role?: string
@@ -81,6 +83,7 @@ export type Database = {
           can_chat?: boolean | null
           can_video?: boolean | null
           created_at?: string
+          hand_raised?: boolean | null
           id?: string
           is_muted?: boolean | null
           role?: string
@@ -485,6 +488,41 @@ export type Database = {
           },
         ]
       }
+      room_invitations: {
+        Row: {
+          created_at: string | null
+          id: string
+          invited_by: string
+          invited_user_id: string
+          room_id: string
+          status: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          invited_by: string
+          invited_user_id: string
+          room_id: string
+          status?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          invited_by?: string
+          invited_user_id?: string
+          room_id?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_invitations_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       room_messages: {
         Row: {
           content: string
@@ -531,6 +569,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           name: string
+          room_type: string | null
           status: string | null
         }
         Insert: {
@@ -539,6 +578,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name: string
+          room_type?: string | null
           status?: string | null
         }
         Update: {
@@ -547,6 +587,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           name?: string
+          room_type?: string | null
           status?: string | null
         }
         Relationships: [

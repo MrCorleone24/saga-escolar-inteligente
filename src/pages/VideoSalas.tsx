@@ -21,6 +21,7 @@ interface Room {
   name: string;
   status: "online" | "offline";
   created_by: string;
+  room_type: "classroom" | "administrative";
 }
 
 interface Participant {
@@ -30,6 +31,7 @@ interface Participant {
   can_audio: boolean;
   can_video: boolean;
   is_muted: boolean;
+  hand_raised: boolean;
   profiles: {
     full_name: string;
     role: string;
@@ -43,7 +45,9 @@ export default function VideoSalas() {
   const [userId, setUserId] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [newRoomName, setNewRoomName] = useState("");
+  const [newRoomType, setNewRoomType] = useState<"classroom" | "administrative">("classroom");
   const [showParticipants, setShowParticipants] = useState(false);
+  const [isHandRaised, setIsHandRaised] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -103,7 +107,8 @@ export default function VideoSalas() {
       .insert({
         name: newRoomName,
         created_by: userId,
-        status: 'online'
+        status: 'online',
+        room_type: newRoomType
       })
       .select()
       .single();
@@ -117,7 +122,10 @@ export default function VideoSalas() {
     await supabase.from('classroom_moderation').insert({
       room_id: roomData.id,
       user_id: userId,
-      role: 'admin'
+      role: 'admin',
+      can_audio: true,
+      can_video: true,
+      can_chat: true
     });
 
     setNewRoomName("");
@@ -150,17 +158,45 @@ export default function VideoSalas() {
   const updateModeration = async (participantId: string, updates: Partial<Participant>) => {
     const { error } = await supabase
       .from('classroom_moderation')
-      .update({ is_muted: updates.is_muted, can_chat: updates.can_chat })
+      .update({ 
+        is_muted: updates.is_muted, 
+        can_chat: updates.can_chat,
+        hand_raised: updates.hand_raised 
+      })
       .eq('room_id', activeRoom?.id)
       .eq('user_id', participantId);
-
 
     if (error) toast.error("Erro ao atualizar moderação");
     else queryClient.invalidateQueries({ queryKey: ['room_participants'] });
   };
 
+  const handleMuteAll = async () => {
+    if (!activeRoom || !isAdmin) return;
+    
+    const otherParticipants = participants.filter(p => p.user_id !== userId);
+    const promises = otherParticipants.map(p => 
+      supabase
+        .from('classroom_moderation')
+        .update({ is_muted: true })
+        .eq('room_id', activeRoom.id)
+        .eq('user_id', p.user_id)
+    );
+
+    await Promise.all(promises);
+    toast.success("Todos os alunos foram silenciados");
+    queryClient.invalidateQueries({ queryKey: ['room_participants'] });
+  };
+
+  const toggleHandRaise = async () => {
+    if (!userId || !activeRoom) return;
+    const newState = !isHandRaised;
+    setIsHandRaised(newState);
+    await updateModeration(userId, { hand_raised: newState });
+    toast.info(newState ? "Você levantou a mão" : "Você abaixou a mão");
+  };
+
   const currentUserModeration = participants.find(p => p.user_id === userId);
-  const isAdmin = currentUserModeration?.role === 'admin' || userRole === 'professor';
+  const isAdmin = currentUserModeration?.role === 'admin' || userRole === 'professor' || userRole === 'admin' || userRole === 'school';
 
   if (inCall && activeRoom) {
     return (
@@ -168,10 +204,28 @@ export default function VideoSalas() {
         <div className="flex items-center justify-between p-4 bg-[#1a1a1a] text-white border-b border-white/10">
           <div className="flex items-center gap-3">
             <h2 className="font-bold">{activeRoom.name}</h2>
-            <Badge variant="outline" className="text-red-500 border-red-500 animate-pulse">AO VIVO</Badge>
+            <Badge variant="outline" className={`animate-pulse ${activeRoom.room_type === 'administrative' ? 'text-blue-400 border-blue-400' : 'text-red-500 border-red-500'}`}>
+              {activeRoom.room_type === 'administrative' ? 'DIREÇÃO' : 'AO VIVO'}
+            </Badge>
             {isAdmin && <Badge className="bg-blue-600">MODERADOR</Badge>}
           </div>
           <div className="flex items-center gap-2">
+            {!isAdmin && (
+              <Button 
+                variant={isHandRaised ? "secondary" : "ghost"} 
+                size="sm" 
+                onClick={toggleHandRaise}
+                className={isHandRaised ? "bg-amber-500 hover:bg-amber-600" : ""}
+              >
+                <Hand className={`h-5 w-5 ${isHandRaised ? "animate-bounce" : ""}`} />
+                <span className="ml-2 hidden sm:inline">{isHandRaised ? "Mão Levantada" : "Levantar Mão"}</span>
+              </Button>
+            )}
+            {isAdmin && (
+              <Button variant="outline" size="sm" onClick={handleMuteAll} className="text-red-400 border-red-400/30 hover:bg-red-400/10">
+                <VolumeX className="mr-2 h-4 w-4" /> Silenciar Todos
+              </Button>
+            )}
             <Button variant="ghost" size="icon" onClick={() => setShowParticipants(!showParticipants)}>
               <Users className="h-5 w-5" />
             </Button>
@@ -208,32 +262,58 @@ export default function VideoSalas() {
                     <div key={p.user_id} className="flex flex-col gap-2 p-3 bg-white/5 rounded-lg border border-white/10">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold relative ${p.user_id === userId ? 'bg-green-600' : 'bg-indigo-600'}`}>
                             {p.profiles?.full_name?.charAt(0) || 'U'}
+                            {p.hand_raised && (
+                              <motion.div 
+                                initial={{ scale: 0 }} 
+                                animate={{ scale: 1 }} 
+                                className="absolute -top-1 -right-1 bg-amber-500 rounded-full p-0.5"
+                              >
+                                <Hand className="h-3 w-3 text-white" />
+                              </motion.div>
+                            )}
                           </div>
                           <div>
-                            <p className="text-sm font-medium">{p.profiles?.full_name}</p>
+                            <div className="flex items-center gap-1">
+                              <p className="text-sm font-medium">{p.profiles?.full_name}</p>
+                              {p.user_id === userId && <span className="text-[10px] opacity-50">(Você)</span>}
+                            </div>
                             <p className="text-[10px] opacity-60 uppercase">{p.role}</p>
                           </div>
                         </div>
-                        {isAdmin && p.user_id !== userId && (
+                        {isAdmin && (
                           <div className="flex items-center gap-1">
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="h-7 w-7 text-red-400"
-                              onClick={() => updateModeration(p.user_id, { is_muted: !p.is_muted })}
-                            >
-                              {p.is_muted ? <MicOff className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="h-7 w-7 text-amber-400"
-                              onClick={() => updateModeration(p.user_id, { can_chat: !p.can_chat })}
-                            >
-                              {p.can_chat ? <MessageSquare className="h-3.5 w-3.5" /> : <X className="h-3.5 w-3.5" />}
-                            </Button>
+                            {p.hand_raised && (
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-7 w-7 text-amber-400"
+                                onClick={() => updateModeration(p.user_id, { hand_raised: false })}
+                              >
+                                <Hand className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
+                            {p.user_id !== userId && (
+                              <>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-7 w-7 text-red-400"
+                                  onClick={() => updateModeration(p.user_id, { is_muted: !p.is_muted })}
+                                >
+                                  {p.is_muted ? <MicOff className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-7 w-7 text-amber-400"
+                                  onClick={() => updateModeration(p.user_id, { can_chat: !p.can_chat })}
+                                >
+                                  {p.can_chat ? <MessageSquare className="h-3.5 w-3.5" /> : <X className="h-3.5 w-3.5" />}
+                                </Button>
+                              </>
+                            )}
                           </div>
                         )}
                       </div>
@@ -256,17 +336,30 @@ export default function VideoSalas() {
             <h1 className="text-3xl font-bold tracking-tight">Salas de Aula Virtual</h1>
             <p className="text-muted-foreground">Ambiente seguro para aulas ao vivo e moderação em tempo real.</p>
           </div>
-          {userRole === 'professor' && (
-            <div className="flex gap-2">
-              <Input 
-                placeholder="Nome da sala..." 
-                value={newRoomName} 
-                onChange={e => setNewRoomName(e.target.value)} 
-                className="max-w-[200px]"
-              />
-              <Button className="bg-indigo-600 hover:bg-indigo-700" onClick={handleCreateRoom}>
-                <Plus className="mr-2 h-4 w-4" /> Criar Sala
-              </Button>
+          {(userRole === 'professor' || userRole === 'admin' || userRole === 'school') && (
+            <div className="flex flex-col gap-2 bg-card p-4 rounded-xl border border-dashed border-primary/50">
+              <h3 className="font-semibold text-sm mb-1">Nova Sala</h3>
+              <div className="flex gap-2">
+                <Input 
+                  placeholder="Nome da sala..." 
+                  value={newRoomName} 
+                  onChange={e => setNewRoomName(e.target.value)} 
+                  className="flex-1"
+                />
+                <select 
+                  className="bg-background border rounded px-2 text-sm"
+                  value={newRoomType}
+                  onChange={(e) => setNewRoomType(e.target.value as any)}
+                >
+                  <option value="classroom">Aula</option>
+                  {(userRole === 'admin' || userRole === 'school') && (
+                    <option value="administrative">Direção</option>
+                  )}
+                </select>
+                <Button className="bg-indigo-600 hover:bg-indigo-700" onClick={handleCreateRoom}>
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           )}
         </div>
@@ -276,21 +369,23 @@ export default function VideoSalas() {
             <motion.div
               key={room.id}
               whileHover={{ y: -4 }}
-              className="bg-card border rounded-xl overflow-hidden shadow-sm flex flex-col"
+              className={`bg-card border rounded-xl overflow-hidden shadow-sm flex flex-col ${room.room_type === 'administrative' ? 'border-blue-200 shadow-blue-50' : ''}`}
             >
               <div className="p-5 flex-1">
                 <div className="flex justify-between items-start mb-4">
-                  <div className="p-2 bg-indigo-100 rounded-lg">
-                    <Video className="h-5 w-5 text-indigo-600" />
+                  <div className={`p-2 rounded-lg ${room.room_type === 'administrative' ? 'bg-blue-100' : 'bg-indigo-100'}`}>
+                    {room.room_type === 'administrative' ? <Shield className="h-5 w-5 text-blue-600" /> : <Video className="h-5 w-5 text-indigo-600" />}
                   </div>
-                  <Badge className="bg-green-500/10 text-green-600 border-green-200">Online</Badge>
+                  <Badge className={room.room_type === 'administrative' ? 'bg-blue-500/10 text-blue-600 border-blue-200' : 'bg-green-500/10 text-green-600 border-green-200'}>
+                    {room.room_type === 'administrative' ? 'Sala da Direção' : 'Online'}
+                  </Badge>
                 </div>
                 <h3 className="font-bold text-lg mb-1">{room.name}</h3>
                 <p className="text-sm text-muted-foreground">ID da sala: {room.id.substring(0,8)}</p>
               </div>
               <div className="p-4 bg-muted/30 border-t">
                 <Button 
-                  className="w-full bg-indigo-600 hover:bg-indigo-700" 
+                  className={`w-full ${room.room_type === 'administrative' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-indigo-600 hover:bg-indigo-700'}`} 
                   onClick={() => handleJoinRoom(room)}
                 >
                   Entrar na Sala
