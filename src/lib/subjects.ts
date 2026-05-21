@@ -20,7 +20,6 @@ export interface NotebookEntry {
   student_id: string;
   date: string;
   subject: string;
-  subject_id?: string;
   title: string;
   content: string;
   photo_url: string | null;
@@ -37,7 +36,6 @@ export interface LessonLink {
   id: string;
   title: string;
   subject: string;
-  subject_id?: string;
   date: string;
   type: "interativa" | "caderno" | "mista" | "video";
   teacher: string;
@@ -62,13 +60,10 @@ export const SUBJECTS: Subject[] = [
   { id: "13", name: "Leitura/Literatura", color: "340 65% 50%", emoji: "📚" },
 ];
 
-export const MOCK_LESSONS: LessonLink[] = [
-  // These will be replaced by DB fetching but kept as fallback or for types
-];
+export const MOCK_LESSONS: LessonLink[] = [];
 
 export const getSubjects = async () => {
   const { data, error } = await supabase.from('subjects').select('*').order('name');
   if (error) throw error;
   return data as Subject[];
 };
-
