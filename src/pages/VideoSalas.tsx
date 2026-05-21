@@ -48,6 +48,9 @@ export default function VideoSalas() {
   const [newRoomType, setNewRoomType] = useState<"classroom" | "administrative">("classroom");
   const [showParticipants, setShowParticipants] = useState(false);
   const [isHandRaised, setIsHandRaised] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [isInviting, setIsInviting] = useState(false);
 
   useEffect(() => {
     const initAuth = async () => {
@@ -220,6 +223,52 @@ export default function VideoSalas() {
     setIsHandRaised(newState);
     await updateModeration(userId, { hand_raised: newState });
     toast.info(newState ? "Você levantou a mão" : "Você abaixou a mão");
+  };
+
+  const handleInvite = async () => {
+    if (!activeRoom || !inviteEmail.trim()) return;
+    setIsInviting(true);
+    try {
+      // Find user by email
+      const { data: userToInvite } = await supabase
+        .from('profiles')
+        .select('id, full_name')
+        .eq('email', inviteEmail.trim())
+        .single();
+      
+      if (!userToInvite) {
+        toast.error("Usuário não encontrado.");
+        return;
+      }
+
+      // Create invitation
+      const { error: inviteError } = await supabase
+        .from('room_invitations')
+        .insert({
+          room_id: activeRoom.id,
+          invited_user_id: userToInvite.id,
+          inviter_id: userId,
+          status: 'pending'
+        });
+
+      if (inviteError) throw inviteError;
+
+      // Create notification
+      await supabase.from('notifications').insert({
+        user_id: userToInvite.id,
+        title: "Convite de Sala",
+        message: `Você foi convidado por ${currentUserModeration?.profiles?.full_name || 'um moderador'} para entrar na sala ${activeRoom.name}.`,
+        type: 'room_invitation'
+      });
+
+      toast.success(`Convite enviado para ${userToInvite.full_name}`);
+      setShowInviteModal(false);
+      setInviteEmail("");
+    } catch (e: any) {
+      toast.error("Erro ao enviar convite");
+    } finally {
+      setIsInviting(false);
+    }
   };
 
   const currentUserModeration = participants.find(p => p.user_id === userId);
