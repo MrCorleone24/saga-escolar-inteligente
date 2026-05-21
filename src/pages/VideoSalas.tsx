@@ -158,17 +158,45 @@ export default function VideoSalas() {
   const updateModeration = async (participantId: string, updates: Partial<Participant>) => {
     const { error } = await supabase
       .from('classroom_moderation')
-      .update({ is_muted: updates.is_muted, can_chat: updates.can_chat })
+      .update({ 
+        is_muted: updates.is_muted, 
+        can_chat: updates.can_chat,
+        hand_raised: updates.hand_raised 
+      })
       .eq('room_id', activeRoom?.id)
       .eq('user_id', participantId);
-
 
     if (error) toast.error("Erro ao atualizar moderação");
     else queryClient.invalidateQueries({ queryKey: ['room_participants'] });
   };
 
+  const handleMuteAll = async () => {
+    if (!activeRoom || !isAdmin) return;
+    
+    const otherParticipants = participants.filter(p => p.user_id !== userId);
+    const promises = otherParticipants.map(p => 
+      supabase
+        .from('classroom_moderation')
+        .update({ is_muted: true })
+        .eq('room_id', activeRoom.id)
+        .eq('user_id', p.user_id)
+    );
+
+    await Promise.all(promises);
+    toast.success("Todos os alunos foram silenciados");
+    queryClient.invalidateQueries({ queryKey: ['room_participants'] });
+  };
+
+  const toggleHandRaise = async () => {
+    if (!userId || !activeRoom) return;
+    const newState = !isHandRaised;
+    setIsHandRaised(newState);
+    await updateModeration(userId, { hand_raised: newState });
+    toast.info(newState ? "Você levantou a mão" : "Você abaixou a mão");
+  };
+
   const currentUserModeration = participants.find(p => p.user_id === userId);
-  const isAdmin = currentUserModeration?.role === 'admin' || userRole === 'professor';
+  const isAdmin = currentUserModeration?.role === 'admin' || userRole === 'professor' || userRole === 'admin' || userRole === 'school';
 
   if (inCall && activeRoom) {
     return (
