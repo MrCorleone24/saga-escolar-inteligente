@@ -292,7 +292,7 @@ export default function Usuarios() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-md bg-card border border-border rounded-2xl shadow-xl overflow-hidden"
+              className="w-full max-w-2xl bg-card border border-border rounded-2xl shadow-xl overflow-hidden"
             >
               <div className="p-6 border-b border-border flex justify-between items-center">
                 <h3 className="text-xl font-bold">Novo Usuário</h3>
@@ -300,66 +300,106 @@ export default function Usuarios() {
                   <X size={20} />
                 </button>
               </div>
-              <form onSubmit={handleCreateUser} className="p-6 space-y-4">
-                <div>
-                  <label className="text-sm font-medium mb-1 block">Nome Completo</label>
-                  <Input value={newName} onChange={e => setNewName(e.target.value)} placeholder="Ex: João Silva" required />
+              <form onSubmit={handleCreateUser} className="p-6 overflow-y-auto max-h-[80vh]">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <h4 className="font-bold text-sm text-primary uppercase tracking-wider">Acesso e Perfil</h4>
+                    <div>
+                      <label className="text-xs font-medium mb-1 block">Nome Completo</label>
+                      <Input value={newName} onChange={e => setNewName(e.target.value)} placeholder="Ex: João Silva" required />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium mb-1 block">Email</label>
+                      <Input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="email@exemplo.com" required />
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium mb-1 block">Senha Temporária</label>
+                      <Input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="No mínimo 6 caracteres" required minLength={6} />
+                    </div>
+                    
+                    {currentUser?.role === 'admin' && (
+                      <div>
+                        <label className="text-xs font-medium mb-1 block">Tipo de Usuário (Hierarquia)</label>
+                        <select 
+                          value={newRole} 
+                          onChange={e => setNewRole(e.target.value)}
+                          className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm outline-none focus:ring-2 focus:ring-primary"
+                        >
+                          <option value="school">Escola</option>
+                          <option value="teacher">Professor</option>
+                          <option value="student">Aluno</option>
+                          <option value="admin">Administrador Geral</option>
+                        </select>
+                      </div>
+                    )}
+
+                    {currentUser?.role === 'school' && (
+                      <div>
+                        <label className="text-xs font-medium mb-1 block">Tipo de Usuário</label>
+                        <select 
+                          value={newRole} 
+                          onChange={e => setNewRole(e.target.value)}
+                          className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm outline-none focus:ring-2 focus:ring-primary"
+                        >
+                          <option value="teacher">Professor</option>
+                          <option value="student">Aluno</option>
+                        </select>
+                      </div>
+                    )}
+
+                    {newRole === 'teacher' && (
+                      <div>
+                        <label className="text-xs font-medium mb-1 block">Matéria</label>
+                        <Input value={newSubject} onChange={e => setNewSubject(e.target.value)} placeholder="Ex: Matemática" required />
+                      </div>
+                    )}
+
+                    {newRole === 'school' && (
+                      <div>
+                        <label className="text-xs font-medium mb-1 block">Nome da Instituição</label>
+                        <Input value={newSchool} onChange={e => setNewSchool(e.target.value)} placeholder="Nome da instituição" required />
+                      </div>
+                    )}
+                  </div>
+
+                  {newRole === 'school' && (
+                    <div className="space-y-4">
+                      <h4 className="font-bold text-sm text-primary uppercase tracking-wider">Dados Institucionais</h4>
+                      <div>
+                        <label className="text-xs font-medium mb-1 block">CNPJ / Identificação</label>
+                        <Input value={taxId} onChange={e => setTaxId(e.target.value)} placeholder="00.000.000/0001-00" />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium mb-1 block">Telefone</label>
+                        <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="(00) 0000-0000" />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium mb-1 block">Pessoa de Contato / Diretor</label>
+                        <Input value={contactPerson} onChange={e => setContactPerson(e.target.value)} placeholder="Nome do responsável" />
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-xs font-medium mb-1 block">CEP</label>
+                          <Input value={zipCode} onChange={e => setZipCode(e.target.value)} placeholder="00000-000" />
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium mb-1 block">Cidade</label>
+                          <Input value={city} onChange={e => setCity(e.target.value)} placeholder="Cidade" />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium mb-1 block">Endereço</label>
+                        <Input value={address} onChange={e => setAddress(e.target.value)} placeholder="Rua, número, complemento" />
+                      </div>
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <label className="text-sm font-medium mb-1 block">Email</label>
-                  <Input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="email@exemplo.com" required />
+
+                <div className="mt-8">
+                  <Button type="submit" className="w-full gradient-hero py-6 font-bold" disabled={submitting}>
+                    {submitting ? <Loader2 className="animate-spin mr-2" /> : "Criar Usuário / Escola"}
+                  </Button>
                 </div>
-                <div>
-                  <label className="text-sm font-medium mb-1 block">Senha Temporária</label>
-                  <Input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="No mínimo 6 caracteres" required minLength={6} />
-                </div>
-                
-                {currentUser?.role === 'admin' && (
-                  <div>
-                    <label className="text-sm font-medium mb-1 block">Tipo de Usuário</label>
-                    <select 
-                      value={newRole} 
-                      onChange={e => setNewRole(e.target.value)}
-                      className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm outline-none focus:ring-2 focus:ring-primary"
-                    >
-                      <option value="school">Escola</option>
-                      <option value="teacher">Professor</option>
-                      <option value="student">Aluno</option>
-                    </select>
-                  </div>
-                )}
-
-                {currentUser?.role === 'school' && (
-                  <div>
-                    <label className="text-sm font-medium mb-1 block">Tipo de Usuário</label>
-                    <select 
-                      value={newRole} 
-                      onChange={e => setNewRole(e.target.value)}
-                      className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm outline-none focus:ring-2 focus:ring-primary"
-                    >
-                      <option value="teacher">Professor</option>
-                      <option value="student">Aluno</option>
-                    </select>
-                  </div>
-                )}
-
-                {newRole === 'teacher' && (
-                  <div>
-                    <label className="text-sm font-medium mb-1 block">Matéria</label>
-                    <Input value={newSubject} onChange={e => setNewSubject(e.target.value)} placeholder="Ex: Matemática" required />
-                  </div>
-                )}
-
-                {(currentUser?.role === 'admin' || currentUser?.role === 'school') && (
-                  <div>
-                    <label className="text-sm font-medium mb-1 block">Nome da Escola (Opcional)</label>
-                    <Input value={newSchool} onChange={e => setNewSchool(e.target.value)} placeholder="Nome da instituição" />
-                  </div>
-                )}
-
-                <Button type="submit" className="w-full gradient-hero py-6 font-bold" disabled={submitting}>
-                  {submitting ? <Loader2 className="animate-spin mr-2" /> : "Criar Usuário"}
-                </Button>
               </form>
             </motion.div>
           </div>
