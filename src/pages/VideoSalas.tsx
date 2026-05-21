@@ -176,7 +176,7 @@ export default function VideoSalas() {
       await supabase.from('classroom_moderation').insert({
         room_id: room.id,
         user_id: userId,
-        role: userRole === 'professor' ? 'admin' : 'participante'
+        role: ['professor', 'teacher', 'admin', 'school'].includes(userRole || '') ? 'admin' : 'participante'
       });
     }
 
@@ -272,7 +272,8 @@ export default function VideoSalas() {
   };
 
   const currentUserModeration = participants.find(p => p.user_id === userId);
-  const isAdmin = currentUserModeration?.role === 'admin' || userRole === 'professor' || userRole === 'admin' || userRole === 'school';
+  const isAdmin = currentUserModeration?.role === 'admin' || userRole === 'professor' || userRole === 'teacher' || userRole === 'admin' || userRole === 'school';
+  const canCreate = userRole === 'professor' || userRole === 'teacher' || userRole === 'admin' || userRole === 'school';
 
   if (inCall && activeRoom) {
     return (
@@ -441,7 +442,7 @@ export default function VideoSalas() {
             <h1 className="text-3xl font-bold tracking-tight">Salas de Aula Virtual</h1>
             <p className="text-muted-foreground">Ambiente seguro para aulas ao vivo e moderação em tempo real.</p>
           </div>
-          {(userRole === 'professor' || userRole === 'admin' || userRole === 'school') && (
+          {canCreate && (
             <div className="flex flex-col gap-2 bg-card p-4 rounded-xl border border-dashed border-primary/50">
               <h3 className="font-semibold text-sm mb-1">Nova Sala</h3>
               <div className="flex gap-2">
@@ -465,6 +466,7 @@ export default function VideoSalas() {
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
+              <p className="text-[10px] text-muted-foreground">Câmera, microfone, chat e moderação habilitados ao entrar.</p>
             </div>
           )}
         </div>
