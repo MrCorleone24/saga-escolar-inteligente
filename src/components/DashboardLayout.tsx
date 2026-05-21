@@ -5,7 +5,7 @@ import {
   LayoutDashboard, BookOpen, Users, Trophy, BarChart3,
   GraduationCap, Dumbbell, Settings, LogOut, ChevronLeft,
   ChevronRight, Presentation, ClipboardList, Brain, Menu,
-  PenLine, Calendar, BookMarked
+  PenLine, Calendar, BookMarked, Video
 } from "lucide-react";
 
 type Role = "aluno" | "professor" | "admin";
@@ -20,6 +20,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard", roles: ["aluno", "professor", "admin"] },
   { label: "Minhas Aulas", icon: BookOpen, path: "/aulas", roles: ["aluno"] },
+  { label: "Salas Virtuais", icon: Video, path: "/salas", roles: ["aluno", "professor"] },
   { label: "Meu Caderno", icon: PenLine, path: "/meu-caderno", roles: ["aluno"] },
   { label: "Calendário", icon: Calendar, path: "/calendario", roles: ["aluno"] },
   { label: "Leitura", icon: BookMarked, path: "/leitura", roles: ["aluno"] },

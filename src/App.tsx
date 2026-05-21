@@ -26,6 +26,7 @@ import CalendarioEscolar from "./pages/CalendarioEscolar";
 import Leitura from "./pages/Leitura";
 import CadernoAlunos from "./pages/CadernoAlunos";
 import GerenciarLeitura from "./pages/GerenciarLeitura";
+import VideoSalas from "./pages/VideoSalas";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -47,6 +48,7 @@ const App = () => (
           <Route path="/calendario" element={<CalendarioEscolar />} />
           <Route path="/leitura" element={<Leitura />} />
           <Route path="/aula/:id" element={<AulaView />} />
+          <Route path="/salas" element={<VideoSalas />} />
           <Route path="/professor" element={<TeacherDashboard />} />
           <Route path="/turmas" element={<Turmas />} />
           <Route path="/planejamento" element={<Planejamento />} />
