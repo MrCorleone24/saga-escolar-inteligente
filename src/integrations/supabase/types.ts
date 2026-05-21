@@ -295,8 +295,63 @@ export type Database = {
         }
         Relationships: []
       }
+      performance_reports: {
+        Row: {
+          ai_feedback: string | null
+          attendance: number | null
+          created_at: string | null
+          engagement_score: number | null
+          grade: number | null
+          id: string
+          student_id: string
+          subject: string
+          teacher_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          ai_feedback?: string | null
+          attendance?: number | null
+          created_at?: string | null
+          engagement_score?: number | null
+          grade?: number | null
+          id?: string
+          student_id: string
+          subject: string
+          teacher_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          ai_feedback?: string | null
+          attendance?: number | null
+          created_at?: string | null
+          engagement_score?: number | null
+          grade?: number | null
+          id?: string
+          student_id?: string
+          subject?: string
+          teacher_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "performance_reports_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "performance_reports_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       plans: {
         Row: {
+          checkout_url: string | null
           created_at: string | null
           description: string | null
           features: Json | null
@@ -308,6 +363,7 @@ export type Database = {
           role_type: string
         }
         Insert: {
+          checkout_url?: string | null
           created_at?: string | null
           description?: string | null
           features?: Json | null
@@ -319,6 +375,7 @@ export type Database = {
           role_type: string
         }
         Update: {
+          checkout_url?: string | null
           created_at?: string | null
           description?: string | null
           features?: Json | null
@@ -347,9 +404,13 @@ export type Database = {
           parent_id: string | null
           plan_type: string | null
           role: string
+          school_id: string | null
           school_name: string | null
+          subject: string | null
           subscription_status: string | null
+          teacher_id: string | null
           updated_at: string
+          woovi_checkout_url: string | null
           xp: number | null
         }
         Insert: {
@@ -367,9 +428,13 @@ export type Database = {
           parent_id?: string | null
           plan_type?: string | null
           role: string
+          school_id?: string | null
           school_name?: string | null
+          subject?: string | null
           subscription_status?: string | null
+          teacher_id?: string | null
           updated_at?: string
+          woovi_checkout_url?: string | null
           xp?: number | null
         }
         Update: {
@@ -387,15 +452,33 @@ export type Database = {
           parent_id?: string | null
           plan_type?: string | null
           role?: string
+          school_id?: string | null
           school_name?: string | null
+          subject?: string | null
           subscription_status?: string | null
+          teacher_id?: string | null
           updated_at?: string
+          woovi_checkout_url?: string | null
           xp?: number | null
         }
         Relationships: [
           {
             foreignKeyName: "profiles_parent_id_fkey"
             columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_teacher_id_fkey"
+            columns: ["teacher_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
