@@ -306,10 +306,11 @@ export default function MeuCaderno() {
                     <p className="text-xs text-muted-foreground mb-4 line-clamp-3">{entry.content}</p>
                     
                     <div className="mt-auto space-y-4">
-                      {entry.teacherNote && (
+                      {entry.teacher_note && (
                         <div className="bg-emerald-50 border border-emerald-100 p-3 rounded-xl">
                           <p className="text-[10px] font-bold text-emerald-700 uppercase mb-1">Feedback do Professor</p>
-                          <p className="text-xs text-emerald-900">{entry.teacherNote}</p>
+                          <p className="text-xs text-emerald-900">{entry.teacher_note}</p>
+
                           {entry.grade && <p className="text-sm font-bold mt-1">Nota: {entry.grade}</p>}
                           {entry.status === 'corrigido' && (
                             <Button 
