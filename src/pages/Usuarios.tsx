@@ -30,9 +30,10 @@ export default function Usuarios() {
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null);
-  const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
+  const [currentUser, setCurrentUser] = useState<any | null>(null);
+  const [selectedUser, setSelectedUser] = useState<any | null>(null);
   const [showPerformance, setShowPerformance] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
   const [performanceData, setPerformanceData] = useState<PerformanceData>({ grade: 0, attendance: 0, engagement: 0 });
 
   // Form states
@@ -42,6 +43,7 @@ export default function Usuarios() {
   const [newRole, setNewRole] = useState("student");
   const [newSchool, setNewSchool] = useState("");
   const [newSubject, setNewSubject] = useState("");
+  const [newBio, setNewBio] = useState("");
   
   // School detailed fields
   const [phone, setPhone] = useState("");
@@ -71,7 +73,7 @@ export default function Usuarios() {
       // Hierarchy filtering
       if (profile.role === 'school') {
         query = query.eq('school_id', profile.id);
-      } else if (profile.role === 'teacher') {
+      } else if (profile.role === 'teacher' || profile.role === 'professor') {
         query = query.eq('teacher_id', profile.id).eq('role', 'student');
       }
 
@@ -101,7 +103,8 @@ export default function Usuarios() {
           zipCode,
           taxId,
           website,
-          contactPerson
+          contactPerson,
+          bio: newBio
         }
       });
 
@@ -126,6 +129,7 @@ export default function Usuarios() {
       setTaxId("");
       setWebsite("");
       setContactPerson("");
+      setNewBio("");
     } catch (error: any) {
       toast.error(error.message || "Erro ao criar usuário");
     } finally {
@@ -133,8 +137,14 @@ export default function Usuarios() {
     }
   };
 
-  const handleUserClick = async (user: UserProfile) => {
-    if (user.role === 'student') {
+  const handleUserClick = async (user: any) => {
+    setSelectedUser(user);
+    setShowProfileModal(true);
+  };
+
+  const handleShowPerformance = async (e: React.MouseEvent, user: any) => {
+    e.stopPropagation();
+    if (user.role === 'student' || user.role === 'aluno') {
       setSelectedUser(user);
       setShowPerformance(true);
       
@@ -182,14 +192,18 @@ export default function Usuarios() {
 
   const roleIcons: Record<string, React.ElementType> = {
     teacher: GraduationCap,
+    professor: GraduationCap,
     student: BookOpen,
+    aluno: BookOpen,
     admin: Shield,
     school: Shield,
   };
 
   const roleLabels: Record<string, string> = {
     teacher: "Professor",
+    professor: "Professor",
     student: "Aluno",
+    aluno: "Aluno",
     admin: "Administrador",
     school: "Escola",
   };
@@ -254,9 +268,19 @@ export default function Usuarios() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium flex items-center gap-1 ${roleColors[u.role]}`}>
-                        <RoleIcon size={10} /> {roleLabels[u.role]}
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium flex items-center gap-1 ${roleColors[u.role] || "bg-muted text-muted-foreground"}`}>
+                        <RoleIcon size={10} /> {roleLabels[u.role] || u.role}
                       </span>
+                      {(u.role === 'student' || u.role === 'aluno') && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-7 text-[10px] text-secondary hover:text-secondary-foreground"
+                          onClick={(e) => handleShowPerformance(e, u)}
+                        >
+                          Ver Desempenho
+                        </Button>
+                      )}
                       <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
                         u.subscription_status === "active" ? "bg-secondary/10 text-secondary" : "bg-muted text-muted-foreground"
                       }`}>
@@ -346,6 +370,29 @@ export default function Usuarios() {
                         </select>
                       </div>
                     )}
+
+                    {(currentUser?.role === 'teacher' || currentUser?.role === 'professor') && (
+                      <div>
+                        <label className="text-xs font-medium mb-1 block">Tipo de Usuário</label>
+                        <select 
+                          value={newRole} 
+                          disabled
+                          className="w-full h-10 px-3 rounded-md border border-input bg-muted text-sm outline-none"
+                        >
+                          <option value="student">Aluno</option>
+                        </select>
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="text-xs font-medium mb-1 block">Bio / Perfil Interno</label>
+                      <textarea 
+                        value={newBio} 
+                        onChange={e => setNewBio(e.target.value)} 
+                        placeholder="Breve descrição do perfil..."
+                        className="w-full h-24 px-3 py-2 rounded-md border border-input bg-background text-sm outline-none focus:ring-2 focus:ring-primary resize-none"
+                      />
+                    </div>
 
                     {newRole === 'teacher' && (
                       <div>
@@ -456,39 +503,96 @@ export default function Usuarios() {
                       {[
                         { label: "Pensamento Crítico", value: 85 },
                         { label: "Colaboração", value: 92 },
-                        { label: "Comunicação", value: 78 },
-                        { label: "Cultura Digital", value: 95 },
-                      ].map((c) => (
-                        <div key={c.label}>
+                        { label: "Autonomia", value: 78 }
+                      ].map(comp => (
+                        <div key={comp.label}>
                           <div className="flex justify-between text-xs mb-1">
-                            <span>{c.label}</span>
-                            <span>{c.value}%</span>
+                            <span>{comp.label}</span>
+                            <span>{comp.value}%</span>
                           </div>
-                          <div className="h-2 bg-muted rounded-full overflow-hidden">
-                            <motion.div 
-                              initial={{ width: 0 }}
-                              animate={{ width: `${c.value}%` }}
-                              className="h-full bg-primary"
-                            />
+                          <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                            <div className="h-full bg-primary" style={{ width: `${comp.value}%` }} />
                           </div>
                         </div>
                       ))}
                     </div>
                   </div>
-                  
-                  <div className="p-4 rounded-xl bg-muted/30 border border-border">
-                    <h4 className="font-bold text-sm mb-2 flex items-center gap-2 text-primary">
-                      <Brain size={16} /> Insight da IA Pedagógica
-                    </h4>
-                    <p className="text-sm text-muted-foreground italic leading-relaxed">
-                      "O aluno demonstra excelente progresso em competências digitais, mas poderia se beneficiar de mais atividades de comunicação verbal em grupo para equilibrar seu desenvolvimento socioemocional."
-                    </p>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* User Profile View Modal */}
+      <AnimatePresence>
+        {showProfileModal && selectedUser && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-lg bg-card border border-border rounded-2xl shadow-xl overflow-hidden"
+            >
+              <div className="h-24 gradient-hero" />
+              <div className="px-6 pb-6 relative">
+                <div className="absolute -top-12 left-6">
+                  <div className="w-24 h-24 rounded-2xl bg-card border-4 border-card shadow-lg flex items-center justify-center overflow-hidden">
+                    {selectedUser.avatar_url ? (
+                      <img src={selectedUser.avatar_url} alt={selectedUser.full_name} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full gradient-hero flex items-center justify-center text-white text-3xl font-bold">
+                        {selectedUser.full_name?.charAt(0) || 'U'}
+                      </div>
+                    )}
                   </div>
                 </div>
+                <div className="pt-14 flex justify-between items-start">
+                  <div>
+                    <h3 className="text-2xl font-bold">{selectedUser.full_name}</h3>
+                    <p className="text-muted-foreground">{roleLabels[selectedUser.role] || selectedUser.role} {selectedUser.school_name && `· ${selectedUser.school_name}`}</p>
+                  </div>
+                  <button onClick={() => setShowProfileModal(false)} className="p-2 hover:bg-muted rounded-full transition-colors">
+                    <X size={20} />
+                  </button>
+                </div>
 
-                <div className="mt-8 flex justify-end gap-3">
-                  <Button variant="outline" className="text-sm h-10">Exportar PDF</Button>
-                  <Button className="gradient-hero border-0 text-white text-sm h-10">Enviar para Responsáveis</Button>
+                <div className="mt-6 space-y-6">
+                  {selectedUser.bio && (
+                    <div>
+                      <h4 className="text-xs font-bold text-primary uppercase tracking-wider mb-2">Sobre</h4>
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        {selectedUser.bio}
+                      </p>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-3 bg-muted/30 rounded-lg">
+                      <span className="text-[10px] text-muted-foreground uppercase block mb-1">XP Total</span>
+                      <span className="font-bold flex items-center gap-1.5 text-primary">
+                        <Brain size={14} /> {selectedUser.xp || 0}
+                      </span>
+                    </div>
+                    <div className="p-3 bg-muted/30 rounded-lg">
+                      <span className="text-[10px] text-muted-foreground uppercase block mb-1">Nível</span>
+                      <span className="font-bold flex items-center gap-1.5 text-secondary">
+                        <Users size={14} /> Nível {selectedUser.level || 1}
+                      </span>
+                    </div>
+                  </div>
+
+                  {(selectedUser.role === 'student' || selectedUser.role === 'aluno') && (
+                    <Button 
+                      className="w-full gradient-hero font-bold"
+                      onClick={(e) => {
+                        setShowProfileModal(false);
+                        handleShowPerformance(e as any, selectedUser);
+                      }}
+                    >
+                      Ver Relatório Completo
+                    </Button>
+                  )}
                 </div>
               </div>
             </motion.div>
