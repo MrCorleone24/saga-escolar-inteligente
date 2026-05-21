@@ -150,9 +150,10 @@ export default function VideoSalas() {
   const updateModeration = async (participantId: string, updates: Partial<Participant>) => {
     const { error } = await supabase
       .from('classroom_moderation')
-      .update(updates)
+      .update({ is_muted: updates.is_muted, can_chat: updates.can_chat })
       .eq('room_id', activeRoom?.id)
       .eq('user_id', participantId);
+
 
     if (error) toast.error("Erro ao atualizar moderação");
     else queryClient.invalidateQueries({ queryKey: ['room_participants'] });
