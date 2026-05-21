@@ -55,7 +55,11 @@ export default function DashboardLayout({ children, role: initialRole, userName,
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [currentRole, setCurrentRole] = useState<Role>(initialRole);
+  const [currentRole, setCurrentRole] = useState<Role>(() => {
+    // Restore admin's chosen view mode from localStorage
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('admin_view_role') : null;
+    return (saved as Role) || initialRole;
+  });
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -68,9 +72,10 @@ export default function DashboardLayout({ children, role: initialRole, userName,
         setUserEmail(user.email || null);
         const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
         if (profile?.role) {
-          // Se não for superuser ou se for a primeira carga, usa a role do banco
+          // For non-superusers, always use DB role. For superusers, only use DB role if no override is saved
           if (user.email !== "jrseguim@gmail.com") {
             setCurrentRole(profile.role as Role);
+            localStorage.removeItem('admin_view_role');
           }
         }
       }
@@ -83,6 +88,8 @@ export default function DashboardLayout({ children, role: initialRole, userName,
 
   const handleRoleSwitch = (newRole: Role) => {
     setCurrentRole(newRole);
+    // Persist the admin's chosen mode so it doesn't reset on navigation
+    localStorage.setItem('admin_view_role', newRole);
     const dashboardPaths: Record<Role, string> = {
       aluno: "/dashboard",
       professor: "/professor",
