@@ -46,9 +46,9 @@ export default function Landing() {
             <Link to="/login">
               <Button variant="ghost" size="sm">Entrar</Button>
             </Link>
-            <Link to="/login">
+            <Link to="/planos">
               <Button size="sm" className="gradient-hero border-0 text-primary-foreground">
-                Começar Grátis
+                Ver Planos
               </Button>
             </Link>
           </div>
@@ -162,9 +162,9 @@ export default function Landing() {
             <p className="text-primary-foreground/70 mb-6 max-w-lg mx-auto">
               Junte-se a centenas de escolas que já utilizam IA para melhorar o aprendizado.
             </p>
-            <Link to="/login">
+            <Link to="/planos">
               <Button size="lg" variant="secondary" className="px-8 text-base font-semibold">
-                Criar Conta Grátis <ArrowRight className="ml-2" size={18} />
+                Ver Planos e Preços <ArrowRight className="ml-2" size={18} />
               </Button>
             </Link>
           </motion.div>
