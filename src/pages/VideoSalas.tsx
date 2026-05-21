@@ -45,7 +45,9 @@ export default function VideoSalas() {
   const [userId, setUserId] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [newRoomName, setNewRoomName] = useState("");
+  const [newRoomType, setNewRoomType] = useState<"classroom" | "administrative">("classroom");
   const [showParticipants, setShowParticipants] = useState(false);
+  const [isHandRaised, setIsHandRaised] = useState(false);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
