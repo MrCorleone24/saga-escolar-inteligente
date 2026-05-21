@@ -235,7 +235,6 @@ export default function Planos() {
           </div>
         </div>
       </div>
-      </div>
 
       <AnimatePresence>
         {showFormModal && (
