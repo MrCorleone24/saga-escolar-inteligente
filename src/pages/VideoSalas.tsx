@@ -262,32 +262,58 @@ export default function VideoSalas() {
                     <div key={p.user_id} className="flex flex-col gap-2 p-3 bg-white/5 rounded-lg border border-white/10">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center text-xs font-bold">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold relative ${p.user_id === userId ? 'bg-green-600' : 'bg-indigo-600'}`}>
                             {p.profiles?.full_name?.charAt(0) || 'U'}
+                            {p.hand_raised && (
+                              <motion.div 
+                                initial={{ scale: 0 }} 
+                                animate={{ scale: 1 }} 
+                                className="absolute -top-1 -right-1 bg-amber-500 rounded-full p-0.5"
+                              >
+                                <Hand className="h-3 w-3 text-white" />
+                              </motion.div>
+                            )}
                           </div>
                           <div>
-                            <p className="text-sm font-medium">{p.profiles?.full_name}</p>
+                            <div className="flex items-center gap-1">
+                              <p className="text-sm font-medium">{p.profiles?.full_name}</p>
+                              {p.user_id === userId && <span className="text-[10px] opacity-50">(Você)</span>}
+                            </div>
                             <p className="text-[10px] opacity-60 uppercase">{p.role}</p>
                           </div>
                         </div>
-                        {isAdmin && p.user_id !== userId && (
+                        {isAdmin && (
                           <div className="flex items-center gap-1">
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="h-7 w-7 text-red-400"
-                              onClick={() => updateModeration(p.user_id, { is_muted: !p.is_muted })}
-                            >
-                              {p.is_muted ? <MicOff className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              className="h-7 w-7 text-amber-400"
-                              onClick={() => updateModeration(p.user_id, { can_chat: !p.can_chat })}
-                            >
-                              {p.can_chat ? <MessageSquare className="h-3.5 w-3.5" /> : <X className="h-3.5 w-3.5" />}
-                            </Button>
+                            {p.hand_raised && (
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-7 w-7 text-amber-400"
+                                onClick={() => updateModeration(p.user_id, { hand_raised: false })}
+                              >
+                                <Hand className="h-3.5 w-3.5" />
+                              </Button>
+                            )}
+                            {p.user_id !== userId && (
+                              <>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-7 w-7 text-red-400"
+                                  onClick={() => updateModeration(p.user_id, { is_muted: !p.is_muted })}
+                                >
+                                  {p.is_muted ? <MicOff className="h-3.5 w-3.5" /> : <VolumeX className="h-3.5 w-3.5" />}
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-7 w-7 text-amber-400"
+                                  onClick={() => updateModeration(p.user_id, { can_chat: !p.can_chat })}
+                                >
+                                  {p.can_chat ? <MessageSquare className="h-3.5 w-3.5" /> : <X className="h-3.5 w-3.5" />}
+                                </Button>
+                              </>
+                            )}
                           </div>
                         )}
                       </div>
