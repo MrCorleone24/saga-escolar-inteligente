@@ -2,10 +2,12 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import DashboardLayout from "@/components/DashboardLayout";
 import StatCard from "@/components/StatCard";
-import { School, Users, GraduationCap, TrendingUp, Plus, MapPin, Loader2 } from "lucide-react";
+import { School, Users, GraduationCap, TrendingUp, Plus, MapPin, Loader2, Edit2, X, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { AnimatePresence } from "framer-motion";
 
 interface SchoolProfile {
   id: string;
@@ -19,11 +21,14 @@ interface SchoolProfile {
 export default function Escolas() {
   const [schools, setSchools] = useState<SchoolProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [editingSchool, setEditingSchool] = useState<SchoolProfile | null>(null);
   const [stats, setStats] = useState({
     schoolsCount: 0,
     studentsCount: 0,
     teachersCount: 0,
   });
+  const [formLimits, setFormLimits] = useState({ max_students: 0, max_teachers: 0 });
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     fetchSchools();
@@ -52,6 +57,39 @@ export default function Escolas() {
       });
     }
     setLoading(false);
+  };
+
+  const handleUpdateLimits = async () => {
+    if (!editingSchool) return;
+    setSubmitting(true);
+    
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          max_students: formLimits.max_students,
+          max_teachers: formLimits.max_teachers
+        })
+        .eq('id', editingSchool.id);
+
+      if (error) throw error;
+      
+      toast.success("Limites atualizados com sucesso");
+      setEditingSchool(null);
+      fetchSchools();
+    } catch (error: any) {
+      toast.error("Erro ao atualizar: " + error.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const startEdit = (school: SchoolProfile) => {
+    setEditingSchool(school);
+    setFormLimits({
+      max_students: school.max_students || 0,
+      max_teachers: school.max_teachers || 0
+    });
   };
 
   return (
@@ -110,6 +148,9 @@ export default function Escolas() {
                     }`}>
                       {s.subscription_status === 'active' ? 'Ativa' : 'Pendente'}
                     </span>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => startEdit(s)}>
+                      <Edit2 size={14} />
+                    </Button>
                   </div>
                 </motion.div>
               ))
@@ -117,6 +158,54 @@ export default function Escolas() {
           </div>
         </motion.div>
       )}
+
+      <AnimatePresence>
+        {editingSchool && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="w-full max-w-md bg-card border border-border rounded-2xl shadow-xl overflow-hidden"
+            >
+              <div className="p-6 border-b border-border flex justify-between items-center">
+                <h3 className="text-xl font-bold">Editar Limites</h3>
+                <button onClick={() => setEditingSchool(null)} className="text-muted-foreground hover:text-foreground">
+                  <X size={20} />
+                </button>
+              </div>
+              <div className="p-6 space-y-4">
+                <div className="p-3 bg-muted/30 rounded-lg mb-4">
+                  <p className="text-sm font-bold">{editingSchool.school_name}</p>
+                  <p className="text-xs text-muted-foreground">{editingSchool.email}</p>
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Máximo de Alunos</label>
+                  <Input 
+                    type="number" 
+                    value={formLimits.max_students} 
+                    onChange={e => setFormLimits({...formLimits, max_students: parseInt(e.target.value)})}
+                  />
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Máximo de Professores</label>
+                  <Input 
+                    type="number" 
+                    value={formLimits.max_teachers} 
+                    onChange={e => setFormLimits({...formLimits, max_teachers: parseInt(e.target.value)})}
+                  />
+                </div>
+
+                <Button className="w-full gradient-hero py-6 font-bold" onClick={handleUpdateLimits} disabled={submitting}>
+                  {submitting ? <Loader2 className="animate-spin mr-2" /> : <><Save className="mr-2" size={18} /> Salvar Alterações</>}
+                </Button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </DashboardLayout>
   );
 }
