@@ -145,7 +145,8 @@ export default function MeuCaderno() {
         status: status,
         date: new Date().toLocaleDateString('pt-BR'),
         file_urls: uploadedUrls
-      });
+      } as any);
+
 
     if (error) {
       toast.error("Erro ao salvar atividade");
