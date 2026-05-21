@@ -119,6 +119,89 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* Pricing Plans */}
+      <section className="py-24 px-4 bg-muted/30" id="planos">
+        <div className="container max-w-6xl">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-extrabold mb-4">Planos para Professores e Escolas</h2>
+            <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+              Escolha a melhor opção para transformar sua metodologia de ensino. Pagamento seguro via Woovi/Pix.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {[
+              {
+                name: "Professor Solo",
+                price: "49,90",
+                desc: "Ideal para professores particulares",
+                features: ["IA Pedagógica", "Gestão de 50 Alunos", "Relatórios Individuais"],
+                cta: "Começar Agora",
+                checkout: "https://woovi.com/checkout/teacher_solo"
+              },
+              {
+                name: "Escola Essencial",
+                price: "299,00",
+                desc: "Para pequenas escolas e centros",
+                features: ["Gestão de 15 Professores", "300 Alunos", "IA Pedagógica Premium"],
+                cta: "Assinar Agora",
+                checkout: "https://woovi.com/checkout/school_essencial",
+                popular: true
+              },
+              {
+                name: "Escola Premium",
+                price: "899,00",
+                desc: "Para grandes instituições",
+                features: ["50 Professores", "1000 Alunos", "Gestão de Rede Completa"],
+                cta: "Falar com Consultor",
+                checkout: "https://woovi.com/checkout/school_premium"
+              }
+            ].map((p, i) => (
+              <motion.div
+                key={p.name}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 + i * 0.1 }}
+                className={`bg-card p-8 rounded-3xl border-2 flex flex-col relative ${p.popular ? 'border-primary shadow-xl scale-105 z-10' : 'border-border'}`}
+              >
+                {p.popular && (
+                  <span className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-white text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full">
+                    Mais Popular
+                  </span>
+                )}
+                <h3 className="text-xl font-bold mb-1">{p.name}</h3>
+                <p className="text-xs text-muted-foreground mb-6">{p.desc}</p>
+                <div className="mb-8">
+                  <span className="text-3xl font-bold">R$ {p.price}</span>
+                  <span className="text-muted-foreground text-sm">/mês</span>
+                </div>
+                <ul className="space-y-4 mb-10 flex-1">
+                  {p.features.map(f => (
+                    <li key={f} className="flex items-center gap-3 text-sm">
+                      <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                        <ArrowRight size={12} className="text-primary" />
+                      </div>
+                      {f}
+                    </li>
+                  ))}
+                </ul>
+                <Button 
+                  onClick={() => window.open(p.checkout, '_blank')}
+                  variant={p.popular ? "default" : "outline"} 
+                  className={`w-full h-12 font-bold rounded-xl ${p.popular ? 'gradient-hero border-0 text-white' : ''}`}
+                >
+                  {p.cta}
+                </Button>
+                <div className="mt-4 flex items-center justify-center gap-2 grayscale opacity-50">
+                  <span className="text-[10px] font-medium uppercase tracking-wider">Pagamento via Pix</span>
+                  <span className="font-bold text-xs italic">Woovi</span>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Subjects */}
       <section className="py-20 px-4 bg-card border-y border-border">
         <div className="container max-w-5xl">
