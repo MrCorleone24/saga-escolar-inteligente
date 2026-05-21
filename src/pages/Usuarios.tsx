@@ -29,6 +29,7 @@ export default function Usuarios() {
   const [newName, setNewName] = useState("");
   const [newRole, setNewRole] = useState("student");
   const [newSchool, setNewSchool] = useState("");
+  const [newSubject, setNewSubject] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -46,9 +47,9 @@ export default function Usuarios() {
       
       // Hierarchy filtering
       if (profile.role === 'school') {
-        query = query.eq('parent_id', profile.id);
+        query = query.eq('school_id', profile.id);
       } else if (profile.role === 'teacher') {
-        query = query.eq('parent_id', profile.id).eq('role', 'student');
+        query = query.eq('teacher_id', profile.id).eq('role', 'student');
       }
 
       const { data, error } = await query;
@@ -68,7 +69,8 @@ export default function Usuarios() {
           password: newPassword,
           fullName: newName,
           role: newRole,
-          schoolName: newSchool || currentUser?.school_name
+          schoolName: newSchool || currentUser?.school_name,
+          subject: newSubject
         }
       });
 
@@ -84,6 +86,7 @@ export default function Usuarios() {
       setNewPassword("");
       setNewName("");
       setNewSchool("");
+      setNewSubject("");
     } catch (error: any) {
       toast.error(error.message || "Erro ao criar usuário");
     } finally {
@@ -244,6 +247,13 @@ export default function Usuarios() {
                       <option value="teacher">Professor</option>
                       <option value="student">Aluno</option>
                     </select>
+                  </div>
+                )}
+
+                {newRole === 'teacher' && (
+                  <div>
+                    <label className="text-sm font-medium mb-1 block">Matéria</label>
+                    <Input value={newSubject} onChange={e => setNewSubject(e.target.value)} placeholder="Ex: Matemática" required />
                   </div>
                 )}
 
