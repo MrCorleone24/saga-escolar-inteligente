@@ -42,6 +42,17 @@ export default function Usuarios() {
   const [newRole, setNewRole] = useState("student");
   const [newSchool, setNewSchool] = useState("");
   const [newSubject, setNewSubject] = useState("");
+  
+  // School detailed fields
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
+  const [zipCode, setZipCode] = useState("");
+  const [taxId, setTaxId] = useState("");
+  const [website, setWebsite] = useState("");
+  const [contactPerson, setContactPerson] = useState("");
+  
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
@@ -82,7 +93,15 @@ export default function Usuarios() {
           fullName: newName,
           role: newRole,
           schoolName: newSchool || currentUser?.school_name,
-          subject: newSubject
+          subject: newSubject,
+          phone,
+          address,
+          city,
+          state,
+          zipCode,
+          taxId,
+          website,
+          contactPerson
         }
       });
 
@@ -99,6 +118,14 @@ export default function Usuarios() {
       setNewName("");
       setNewSchool("");
       setNewSubject("");
+      setPhone("");
+      setAddress("");
+      setCity("");
+      setState("");
+      setZipCode("");
+      setTaxId("");
+      setWebsite("");
+      setContactPerson("");
     } catch (error: any) {
       toast.error(error.message || "Erro ao criar usuário");
     } finally {
