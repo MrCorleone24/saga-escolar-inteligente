@@ -21,11 +21,6 @@ const statusMap = {
   paid: { label: "Pago", icon: CheckCircle2, cls: "bg-green-500/15 text-green-700 dark:text-green-400" },
   pending: { label: "Pendente", icon: Clock, cls: "bg-amber-500/15 text-amber-700 dark:text-amber-400" },
   failed: { label: "Falhou", icon: AlertCircle, cls: "bg-red-500/15 text-red-700 dark:text-red-400" },
-};
-
-const statusMap = {
-  paid: { label: "Pago", icon: CheckCircle2, cls: "bg-green-500/15 text-green-700 dark:text-green-400" },
-  pending: { label: "Pendente", icon: Clock, cls: "bg-amber-500/15 text-amber-700 dark:text-amber-400" },
   overdue: { label: "Vencido", icon: AlertCircle, cls: "bg-red-500/15 text-red-700 dark:text-red-400" },
 };
 
