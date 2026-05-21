@@ -28,7 +28,9 @@ export interface NotebookEntry {
   teacher_note?: string;
   lesson_id?: string;
   confirmed_at?: string;
+  file_urls?: string[];
   versions?: FeedbackVersion[];
+
 }
 
 export interface LessonLink {
