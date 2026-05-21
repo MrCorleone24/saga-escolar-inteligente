@@ -178,9 +178,6 @@ export default function MeuCaderno() {
     toast.success("PDF exportado com sucesso!");
   };
 
-  const subject = SUBJECTS[activeSubject];
-  const filtered = MOCK_ENTRIES.filter(e => e.subject === subject.name);
-  const currentEntry = filtered[currentPage] || null;
 
   const subjectLessons = MOCK_LESSONS.filter(l => l.subject === subject.name);
 
