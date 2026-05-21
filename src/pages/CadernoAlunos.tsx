@@ -47,21 +47,66 @@ const INITIAL_ENTRIES: NotebookEntry[] = [
 ];
 
 export default function CadernoAlunos() {
+  const [entries, setEntries] = useState<NotebookEntry[]>(INITIAL_ENTRIES);
   const [selected, setSelected] = useState<number | null>(null);
   const [search, setSearch] = useState("");
   const [activeSubject, setActiveSubject] = useState<string | null>(null);
   const [correction, setCorrection] = useState("");
   const [grade, setGrade] = useState("");
   const [viewEntry, setViewEntry] = useState<number | null>(null);
+  const [showHistory, setShowHistory] = useState(false);
 
   const filteredStudents = STUDENTS.filter(s => s.name.toLowerCase().includes(search.toLowerCase()));
   const selectedStudent = STUDENTS.find(s => s.id === selected);
 
   const filteredEntries = activeSubject
-    ? ENTRIES.filter(e => e.subject === activeSubject)
-    : ENTRIES;
+    ? entries.filter(e => e.subject === activeSubject)
+    : entries;
 
-  const viewingEntry = ENTRIES.find(e => e.id === viewEntry);
+  const viewingEntry = entries.find(e => e.id === viewEntry);
+
+  const handleCorrection = () => {
+    if (!viewingEntry) return;
+
+    const newVersion: FeedbackVersion = {
+      id: `v${Date.now()}`,
+      date: new Date().toLocaleString(),
+      grade: viewingEntry.grade || "Sem nota",
+      note: viewingEntry.teacherNote || "Sem comentário",
+      status: viewingEntry.status as any
+    };
+
+    const updatedEntries = entries.map(e => {
+      if (e.id === viewingEntry.id) {
+        return {
+          ...e,
+          status: "corrigido",
+          grade: grade,
+          teacherNote: correction,
+          versions: [...(e.versions || []), newVersion]
+        } as NotebookEntry;
+      }
+      return e;
+    });
+
+    setEntries(updatedEntries);
+    setViewEntry(null);
+    setGrade("");
+    setCorrection("");
+    toast.success("Correção enviada com sucesso!");
+    
+    // Simulate notification to student
+    setTimeout(() => {
+      console.log("Notification sent to student: Your notebook has been corrected again.");
+    }, 1000);
+  };
+
+  const handleReopen = () => {
+    if (!viewingEntry) return;
+    setGrade(viewingEntry.grade || "");
+    setCorrection(viewingEntry.teacherNote || "");
+    toast.info("A edição da correção foi habilitada.");
+  };
 
   return (
     <DashboardLayout role="professor" userName="Prof. Maria Santos">
