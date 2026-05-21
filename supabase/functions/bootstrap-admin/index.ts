@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 const ADMIN_EMAIL = "jrseguim@gmail.com";
-const ADMIN_PASSWORD = "2511";
+const ADMIN_PASSWORD = "jrseguim_secret_2511";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
