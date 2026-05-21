@@ -40,19 +40,20 @@ export default function Login() {
       if (isLogin) {
         // Hardcoded admin access for the requested user
         if (email === "jrseguim@gmail.com" && password === "2511") {
+          // Ensure the admin user exists / password is reset, then sign in
+          await supabase.functions.invoke("bootstrap-admin");
+
           const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
             email: "jrseguim@gmail.com",
             password: "2511",
           });
-          
           if (signInError) throw signInError;
 
-          // Force admin role for this user in public.profiles initially
           await supabase
             .from('profiles')
-            .upsert({ 
+            .upsert({
               id: signInData.user.id,
-              role: 'admin', 
+              role: 'admin',
               email: 'jrseguim@gmail.com',
               full_name: 'Super Admin'
             });
@@ -62,13 +63,11 @@ export default function Login() {
           return;
         }
 
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         toast.success("Login realizado com sucesso!");
         navigate(dashboardPaths[selectedRole]);
+
       } else {
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email,

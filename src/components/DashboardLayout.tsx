@@ -6,8 +6,9 @@ import {
   LayoutDashboard, BookOpen, Users, Trophy, BarChart3,
   GraduationCap, Dumbbell, Settings, LogOut, ChevronLeft,
   ChevronRight, Presentation, ClipboardList, Brain, Menu,
-  PenLine, Calendar, BookMarked, Video
+  PenLine, Calendar, BookMarked, Video, DollarSign
 } from "lucide-react";
+
 
 type Role = "aluno" | "professor" | "admin" | "school";
 
@@ -36,7 +37,9 @@ const navItems: NavItem[] = [
   { label: "Relatórios", icon: BarChart3, path: "/relatorios", roles: ["professor", "admin", "school"] },
   { label: "Gestão Escolar", icon: GraduationCap, path: "/escolas", roles: ["admin", "school"] },
   { label: "Usuários", icon: Users, path: "/usuarios", roles: ["admin", "school", "professor"] },
+  { label: "Financeiro", icon: DollarSign, path: "/financeiro", roles: ["admin", "school", "professor"] },
   { label: "Configurações", icon: Settings, path: "/configuracoes", roles: ["admin", "school", "professor"] },
+
 ];
 
 interface DashboardLayoutProps {
