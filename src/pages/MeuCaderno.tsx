@@ -1,29 +1,19 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import DashboardLayout from "@/components/DashboardLayout";
 import {
   PenLine, MessageSquare, Star, ChevronLeft, ChevronRight,
-  BookOpen, Camera, Save, RotateCcw, Plus, Check, Clock, Link2
+  BookOpen, Camera, Save, RotateCcw, Plus, Check, Clock, Link2,
+  FileDown, Search, Filter, History, CheckCircle2, Bell
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { SUBJECTS, MOCK_LESSONS } from "@/lib/subjects";
+import { SUBJECTS, MOCK_LESSONS, NotebookEntry, FeedbackVersion } from "@/lib/subjects";
 import { useNavigate } from "react-router-dom";
-
-interface NotebookEntry {
-  id: number;
-  date: string;
-  subject: string;
-  title: string;
-  content: string;
-  photo: string | null;
-  status: "rascunho" | "enviado" | "corrigido" | "devolvido" | "pendente";
-  grade?: string;
-  teacherNote?: string;
-  lessonId?: string;
-  lessonRef?: string;
-}
+import { jsPDF } from "jspdf";
+import { toast } from "sonner";
+import autoTable from "jspdf-autotable"; // jspdf-autotable is usually available with jspdf in these environments
 
 const MOCK_ENTRIES: NotebookEntry[] = [
   {
@@ -32,6 +22,9 @@ const MOCK_ENTRIES: NotebookEntry[] = [
     photo: null, status: "corrigido", grade: "Muito Bem! ⭐",
     teacherNote: "Excelente trabalho, João! Suas respostas estão completas e bem escritas. Continue assim!",
     lessonId: "1", lessonRef: "Aula 12 - Interpretação de Texto",
+    versions: [
+      { id: "v1", date: "26/02/2026 10:00", grade: "Bom", note: "Falta responder a moral da história.", status: "devolvido" }
+    ]
   },
   {
     id: 2, date: "26/02/2026", subject: "Português", title: "Ditado - Palavras com LH e NH",
