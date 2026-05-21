@@ -423,7 +423,10 @@ export type Database = {
       }
       profiles: {
         Row: {
+          address: string | null
           avatar_url: string | null
+          city: string | null
+          contact_person: string | null
           created_at: string
           email: string | null
           full_name: string | null
@@ -435,19 +438,27 @@ export type Database = {
           max_students: number | null
           max_teachers: number | null
           parent_id: string | null
+          phone: string | null
           plan_type: string | null
           role: string
           school_id: string | null
           school_name: string | null
+          state: string | null
           subject: string | null
           subscription_status: string | null
+          tax_id: string | null
           teacher_id: string | null
           updated_at: string
+          website: string | null
           woovi_checkout_url: string | null
           xp: number | null
+          zip_code: string | null
         }
         Insert: {
+          address?: string | null
           avatar_url?: string | null
+          city?: string | null
+          contact_person?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
@@ -459,19 +470,27 @@ export type Database = {
           max_students?: number | null
           max_teachers?: number | null
           parent_id?: string | null
+          phone?: string | null
           plan_type?: string | null
           role: string
           school_id?: string | null
           school_name?: string | null
+          state?: string | null
           subject?: string | null
           subscription_status?: string | null
+          tax_id?: string | null
           teacher_id?: string | null
           updated_at?: string
+          website?: string | null
           woovi_checkout_url?: string | null
           xp?: number | null
+          zip_code?: string | null
         }
         Update: {
+          address?: string | null
           avatar_url?: string | null
+          city?: string | null
+          contact_person?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
@@ -483,16 +502,21 @@ export type Database = {
           max_students?: number | null
           max_teachers?: number | null
           parent_id?: string | null
+          phone?: string | null
           plan_type?: string | null
           role?: string
           school_id?: string | null
           school_name?: string | null
+          state?: string | null
           subject?: string | null
           subscription_status?: string | null
+          tax_id?: string | null
           teacher_id?: string | null
           updated_at?: string
+          website?: string | null
           woovi_checkout_url?: string | null
           xp?: number | null
+          zip_code?: string | null
         }
         Relationships: [
           {
