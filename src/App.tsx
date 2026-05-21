@@ -27,6 +27,7 @@ import Leitura from "./pages/Leitura";
 import CadernoAlunos from "./pages/CadernoAlunos";
 import GerenciarLeitura from "./pages/GerenciarLeitura";
 import VideoSalas from "./pages/VideoSalas";
+import Planos from "./pages/Planos";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -61,7 +62,7 @@ const App = () => (
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/escolas" element={<Escolas />} />
           <Route path="/usuarios" element={<Usuarios />} />
-          <Route path="/planos" element={<NotFound />} /> {/* Placeholder for Plans page */}
+          <Route path="/planos" element={<Planos />} />
           <Route path="/configuracoes" element={<Configuracoes />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
