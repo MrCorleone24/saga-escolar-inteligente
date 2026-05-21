@@ -176,7 +176,7 @@ export default function VideoSalas() {
       await supabase.from('classroom_moderation').insert({
         room_id: room.id,
         user_id: userId,
-        role: userRole === 'professor' ? 'admin' : 'participante'
+        role: ['professor', 'teacher', 'admin', 'school'].includes(userRole || '') ? 'admin' : 'participante'
       });
     }
 
