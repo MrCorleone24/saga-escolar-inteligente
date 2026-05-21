@@ -36,7 +36,7 @@ serve(async (req) => {
 
     const { 
       email, password, fullName, role, schoolName, subject,
-      phone, address, city, state, zipCode, taxId, website, contactPerson 
+      phone, address, city, state, zipCode, taxId, website, contactPerson, bio
     } = await req.json()
 
     let targetSchoolId = null;
@@ -112,7 +112,8 @@ serve(async (req) => {
         zip_code: zipCode,
         tax_id: taxId,
         website: website,
-        contact_person: contactPerson
+        contact_person: contactPerson,
+        bio: bio
       })
       .eq('id', newUser.user.id)
 
