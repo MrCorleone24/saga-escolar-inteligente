@@ -47,11 +47,15 @@ export default function Login() {
           
           if (signInError) throw signInError;
 
-          // Force admin role for this user in public.profiles
+          // Force admin role for this user in public.profiles initially
           await supabase
             .from('profiles')
-            .update({ role: 'admin', email: 'jrseguim@gmail.com' })
-            .eq('id', signInData.user.id);
+            .upsert({ 
+              id: signInData.user.id,
+              role: 'admin', 
+              email: 'jrseguim@gmail.com',
+              full_name: 'Super Admin'
+            });
 
           toast.success("Login Administrativo realizado!");
           navigate("/admin");
