@@ -556,11 +556,12 @@ export default function MeuCaderno() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-xs text-muted-foreground">{entry.date}</span>
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-lg font-bold bg-muted text-muted-foreground">{entry.subject}</span>
                       {entry.lessonId && (
                         <span className="text-[10px] text-primary flex items-center gap-0.5"><Link2 size={8} /> Aula</span>
                       )}
-                      <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${STATUS_CONFIG[entry.status].bg} ${STATUS_CONFIG[entry.status].color}`}>
-                        {STATUS_CONFIG[entry.status].label}
+                      <div className={`flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${STATUS_CONFIG[entry.status]?.bg || "bg-muted"} ${STATUS_CONFIG[entry.status]?.color || "text-muted-foreground"}`}>
+                        {STATUS_CONFIG[entry.status]?.label || entry.status}
                       </div>
                     </div>
                     <h4 className="font-bold text-sm group-hover:text-primary transition-colors truncate">{entry.title}</h4>
