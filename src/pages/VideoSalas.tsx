@@ -343,7 +343,7 @@ export default function VideoSalas() {
                     <div key={p.user_id} className="flex flex-col gap-2 p-3 bg-white/5 rounded-lg border border-white/10">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold relative ${p.user_id === userId ? 'bg-green-600' : 'bg-indigo-600'}`}>
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold relative shrink-0 ${p.user_id === userId ? 'bg-green-600' : 'bg-indigo-600'}`}>
                             {p.profiles?.full_name?.charAt(0) || 'U'}
                             {p.hand_raised && (
                               <motion.div 
@@ -409,6 +409,30 @@ export default function VideoSalas() {
     );
   }
 
+  const { data: invitations = [] } = useQuery({
+    queryKey: ['pending_invitations', userId],
+    queryFn: async () => {
+      if (!userId) return [];
+      const { data, error } = await supabase
+        .from('room_invitations')
+        .select('*, rooms(name, id), invited_by_profile:profiles!invited_by(full_name)')
+        .eq('invited_user_id', userId)
+        .eq('status', 'pending');
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!userId
+  });
+
+  const handleAcceptInvite = async (invite: any) => {
+    await supabase.from('room_invitations').update({ status: 'accepted' }).eq('id', invite.id);
+    const room = rooms.find(r => r.id === invite.room_id);
+    if (room) {
+      handleJoinRoom(room);
+    }
+    queryClient.invalidateQueries({ queryKey: ['pending_invitations'] });
+  };
+
   return (
     <DashboardLayout role={(userRole as any) || "aluno"} userName="Usuário" xp={0} level={1}>
       <div className="space-y-6">
@@ -428,7 +452,7 @@ export default function VideoSalas() {
                   className="flex-1"
                 />
                 <select 
-                  className="bg-background border rounded px-2 text-sm"
+                  className="bg-background border rounded px-2 text-sm outline-none"
                   value={newRoomType}
                   onChange={(e) => setNewRoomType(e.target.value as any)}
                 >
@@ -444,6 +468,25 @@ export default function VideoSalas() {
             </div>
           )}
         </div>
+
+        {invitations.length > 0 && (
+          <div className="bg-primary/10 border border-primary/20 rounded-xl p-4">
+            <h3 className="font-bold text-sm mb-3 flex items-center gap-2">
+              <Plus className="text-primary rotate-45" size={16} /> Convites Pendentes
+            </h3>
+            <div className="flex flex-wrap gap-3">
+              {invitations.map((inv: any) => (
+                <div key={inv.id} className="bg-card border border-border p-3 rounded-lg flex items-center gap-4 shadow-sm">
+                  <div>
+                    <p className="text-xs font-bold">{inv.rooms?.name}</p>
+                    <p className="text-[10px] text-muted-foreground">De: {inv.invited_by_profile?.full_name}</p>
+                  </div>
+                  <Button size="sm" onClick={() => handleAcceptInvite(inv)}>Entrar</Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {rooms.map((room) => (

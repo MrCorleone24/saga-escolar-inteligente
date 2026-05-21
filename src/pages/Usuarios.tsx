@@ -110,12 +110,40 @@ export default function Usuarios() {
     if (user.role === 'student') {
       setSelectedUser(user);
       setShowPerformance(true);
-      // Mock performance data for now, could be fetched from performance_reports table
-      setPerformanceData({
-        grade: Math.floor(Math.random() * 4) + 6.5,
-        attendance: Math.floor(Math.random() * 20) + 80,
-        engagement: Math.floor(Math.random() * 30) + 70,
-      });
+      
+      // Fetch real performance data from performance_reports table
+      const { data, error } = await supabase
+        .from("performance_reports")
+        .select("grade, attendance, engagement_score")
+        .eq("student_id", user.id);
+
+      if (!error && data && data.length > 0) {
+        const avgGrade = data.reduce((acc, curr) => acc + Number(curr.grade), 0) / data.length;
+        const avgAttendance = data.reduce((acc, curr) => acc + Number(curr.attendance), 0) / data.length;
+        const avgEngagement = data.reduce((acc, curr) => acc + (curr.engagement_score || 0), 0) / data.length;
+        
+        setPerformanceData({
+          grade: avgGrade,
+          attendance: Math.round(avgAttendance),
+          engagement: Math.round(avgEngagement),
+        });
+      } else {
+        setPerformanceData({ grade: 0, attendance: 0, engagement: 0 });
+      }
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    if (!confirm("Tem certeza que deseja excluir este usuário? Esta ação não pode ser desfeita.")) return;
+    
+    try {
+      const { error } = await supabase.from('profiles').delete().eq('id', userId);
+      if (error) throw error;
+      
+      toast.success("Usuário excluído com sucesso");
+      fetchData();
+    } catch (error: any) {
+      toast.error("Erro ao excluir usuário: " + error.message);
     }
   };
 
@@ -187,10 +215,9 @@ export default function Usuarios() {
                     initial={{ opacity: 0, x: -10 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.03 }}
-                    className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/30 transition-colors cursor-pointer"
-                    onClick={() => handleUserClick(u)}
+                    className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/30 transition-colors group"
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-1 cursor-pointer" onClick={() => handleUserClick(u)}>
                       <div className="w-10 h-10 rounded-full gradient-hero flex items-center justify-center text-primary-foreground text-sm font-bold">
                         {u.full_name?.charAt(0) || u.email?.charAt(0)}
                       </div>
@@ -208,6 +235,19 @@ export default function Usuarios() {
                       }`}>
                         {u.subscription_status === 'active' ? 'Ativo' : 'Pendente'}
                       </span>
+                      {(currentUser?.role === 'admin' || (currentUser?.role === 'school' && u.role !== 'admin')) && (
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteUser(u.id);
+                          }}
+                        >
+                          <X size={14} />
+                        </Button>
+                      )}
                     </div>
                   </motion.div>
                 );
