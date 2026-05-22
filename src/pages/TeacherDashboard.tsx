@@ -24,7 +24,7 @@ export default function TeacherDashboard() {
       if (!profile?.id) return null;
       const { count: studentsCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('teacher_id', profile.id);
       const { count: lessonsCount } = await supabase.from('lessons').select('*', { count: 'exact', head: true }).eq('teacher_id', profile.id);
-      const { data: classesData } = await supabase.from('rooms').select('*, profiles(count)').eq('teacher_id', profile.id);
+      const { data: classesData } = await supabase.from('rooms').select('*').eq('created_by', profile.id);
       
       return {
         students: studentsCount || 0,
@@ -73,30 +73,8 @@ export default function TeacherDashboard() {
               Minhas Turmas
             </h2>
             <div className="space-y-3">
-              {classes.map((c, i) => (
-                <motion.div
-                  key={c.name}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.15 + i * 0.05 }}
-                  className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-muted/30 transition-colors cursor-pointer"
-                >
-                  <div>
-                    <p className="font-semibold text-sm">{c.name}</p>
-                    <p className="text-xs text-muted-foreground">{c.students} alunos</p>
-                  </div>
-                  <div className="flex gap-4 text-sm">
-                    <div className="text-center">
-                      <p className="font-bold">{c.avg}</p>
-                      <p className="text-[10px] text-muted-foreground">Média</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="font-bold">{c.attendance}%</p>
-                      <p className="text-[10px] text-muted-foreground">Presença</p>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
+              {/* To be implemented: Fetch real rooms and student counts */}
+              <p className="text-xs text-muted-foreground py-4 text-center italic">Gerencie suas turmas na seção de Turmas.</p>
             </div>
           </motion.div>
 
@@ -111,7 +89,7 @@ export default function TeacherDashboard() {
                 <div key={i} className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/30 transition-colors cursor-pointer">
                   <div>
                     <p className="text-sm font-medium">{p.title}</p>
-                    <p className="text-xs text-muted-foreground">{p.subject} · {new Date(p.created_at).toLocaleDateString()}</p>
+                    <p className="text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</p>
                   </div>
                   <span className={`text-xs px-2.5 py-1 rounded-full font-medium bg-secondary/10 text-secondary`}>
                     Publicado
@@ -139,22 +117,10 @@ export default function TeacherDashboard() {
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="bg-card rounded-xl border border-border p-5">
             <h2 className="font-bold text-base mb-4 flex items-center gap-2">
               <AlertTriangle size={18} className="text-gamification-streak" />
-              Alunos em Risco
+              Alunos com Baixo Engajamento
             </h2>
-            <div className="space-y-3">
-              {atRiskStudents.map((s, i) => (
-                <div key={i} className="p-3 rounded-lg border border-border">
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-sm font-semibold">{s.name}</p>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold
-                      ${s.risk === "Alto" ? "bg-destructive/10 text-destructive" : "bg-gamification-gold/10 text-gamification-gold"}`}>
-                      {s.risk}
-                    </span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">{s.reason}</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">{s.class}</p>
-                </div>
-              ))}
+            <div className="space-y-3 text-center py-4">
+              <p className="text-xs text-muted-foreground italic">Monitoramento em tempo real baseado em XP e atividades.</p>
             </div>
           </motion.div>
 
