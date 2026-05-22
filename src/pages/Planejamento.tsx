@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import WeeklyPlanGrid from "@/components/planejamento/WeeklyPlanGrid";
 import LessonPlanForm from "@/components/planejamento/LessonPlanForm";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export default function Planejamento() {
   const [grade, setGrade] = useState(3);
@@ -58,8 +59,32 @@ export default function Planejamento() {
         <LessonPlanForm
           grade={grade}
           onClose={() => setView("grid")}
-          onSave={() => setView("grid")}
+          onSave={async (formData) => {
+            const { error } = await supabase
+              .from('lessons')
+              .insert({
+                title: formData.title,
+                subject_id: (await supabase.from('subjects').select('id').eq('name', formData.subject).single()).data?.id,
+                teacher_id: userId,
+                grade_level: `${formData.grade}º Ano`,
+                day_of_week: 0, // Need to pass day from grid
+                bncc_code: formData.bncc,
+                start_time: "07:30",
+                content_type: formData.type,
+                content: formData.content,
+                duration: formData.duration,
+                status: 'planejada'
+              } as any);
+            
+            if (error) {
+              toast.error("Erro ao salvar aula");
+            } else {
+              toast.success("Aula planejada com sucesso!");
+              setView("grid");
+            }
+          }}
         />
+
       )}
     </DashboardLayout>
   );
