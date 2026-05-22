@@ -8,9 +8,10 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 interface AttendanceListProps {
   lessonId: string;
   students: any[];
+  lessonName?: string;
 }
 
-export default function AttendanceList({ lessonId, students }: AttendanceListProps) {
+export default function AttendanceList({ lessonId, students, lessonName }: AttendanceListProps) {
   const queryClient = useQueryClient();
   const [submitting, setSubmitting] = useState<string | null>(null);
 
