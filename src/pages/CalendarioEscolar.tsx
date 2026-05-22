@@ -119,7 +119,7 @@ export default function CalendarioEscolar() {
         end_time: new Date(eventDate).toISOString(),
         school_id: targetId,
         created_by: userProfile.id
-      });
+      } as any);
 
     setLoading(false);
     if (error) {
