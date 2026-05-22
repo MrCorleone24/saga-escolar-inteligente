@@ -30,6 +30,24 @@ interface DayData {
   xp?: number;
 }
 
+interface SchoolEvent {
+  id: string;
+  title: string;
+  event_type: string;
+  start_time: string;
+  end_time: string;
+  school_id: string;
+  created_by: string;
+}
+
+interface AttendanceRecord {
+  id: string;
+  student_id: string;
+  lesson_id: string;
+  status: string;
+  date: string;
+}
+
 export default function CalendarioEscolar() {
   const queryClient = useQueryClient();
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -52,7 +70,7 @@ export default function CalendarioEscolar() {
     });
   }, []);
 
-  const { data: schoolEvents = [] } = useQuery({
+  const { data: schoolEvents = [] } = useQuery<SchoolEvent[]>({
     queryKey: ['school-events', userProfile?.school_id, currentDate.getMonth()],
     queryFn: async () => {
       if (!userProfile?.school_id && !['school', 'admin'].includes(userProfile?.role)) return [];
@@ -64,12 +82,12 @@ export default function CalendarioEscolar() {
         .eq('school_id', targetId);
       
       if (error) throw error;
-      return data;
+      return data as SchoolEvent[];
     },
     enabled: !!userProfile
   });
 
-  const { data: attendanceData = [] } = useQuery({
+  const { data: attendanceData = [] } = useQuery<AttendanceRecord[]>({
     queryKey: ['user-attendance', userProfile?.id],
     queryFn: async () => {
       if (!userProfile?.id || userProfile.role !== 'aluno') return [];
@@ -78,7 +96,7 @@ export default function CalendarioEscolar() {
         .select('*')
         .eq('student_id', userProfile.id);
       if (error) throw error;
-      return data;
+      return data as AttendanceRecord[];
     },
     enabled: !!userProfile && userProfile.role === 'aluno'
   });
