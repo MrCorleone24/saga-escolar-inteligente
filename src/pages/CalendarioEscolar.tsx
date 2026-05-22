@@ -19,6 +19,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 const DAYS_OF_WEEK = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
@@ -53,7 +54,7 @@ interface AttendanceRecord {
 export default function CalendarioEscolar() {
   const queryClient = useQueryClient();
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [userProfile, setUserProfile] = useState<any>(null);
+  const { user: userProfile, loading: userLoading } = useCurrentUser();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -61,28 +62,31 @@ export default function CalendarioEscolar() {
   const [eventTitle, setEventTitle] = useState("");
   const [eventType, setEventType] = useState("aula");
   const [eventDate, setEventDate] = useState("");
+  const [eventSchoolId, setEventSchoolId] = useState("");
 
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user?.id) {
-        supabase.from('profiles').select('*').eq('id', data.user.id).single().then(({ data: p }) => {
-          setUserProfile(p);
-        });
-      }
-    });
-  }, []);
-
-  const { data: schoolEvents = [] } = useQuery<SchoolEvent[]>({
-    queryKey: ['school-events', userProfile?.school_id, currentDate.getMonth()],
+  const { data: schools = [] } = useQuery({
+    queryKey: ['schools-list'],
     queryFn: async () => {
-      if (!userProfile?.school_id && !['school', 'admin'].includes(userProfile?.role)) return [];
+      const { data, error } = await supabase.from('profiles').select('id, full_name, school_name').eq('role', 'school');
+      if (error) return [];
+      return data;
+    },
+    enabled: userProfile?.role === 'admin'
+  });
+
+  const { data: schoolEvents = [], isLoading: eventsLoading } = useQuery<SchoolEvent[]>({
+    queryKey: ['school-events', userProfile?.school_id, userProfile?.role, currentDate.getMonth()],
+    queryFn: async () => {
+      if (!userProfile) return [];
       
-      const targetId = userProfile.school_id || userProfile.id;
-      const { data, error } = await supabase
-        .from('school_calendar_events')
-        .select('*')
-        .eq('school_id', targetId);
+      let query = supabase.from('school_calendar_events').select('*');
       
+      if (userProfile.role !== 'admin') {
+        const targetId = userProfile.school_id || userProfile.id;
+        query = query.eq('school_id', targetId);
+      }
+      
+      const { data, error } = await query;
       if (error) throw error;
       return data as SchoolEvent[];
     },
@@ -109,8 +113,13 @@ export default function CalendarioEscolar() {
       return;
     }
 
+    if (userProfile?.role === 'admin' && !eventSchoolId) {
+      toast.error("Selecione uma escola para o evento");
+      return;
+    }
+
     setLoading(true);
-    const targetId = userProfile.school_id || userProfile.id;
+    const targetId = userProfile?.role === 'admin' ? eventSchoolId : (userProfile?.school_id || userProfile?.id);
 
     const { error } = await supabase
       .from('school_calendar_events')
@@ -120,7 +129,7 @@ export default function CalendarioEscolar() {
         start_time: new Date(eventDate).toISOString(),
         end_time: new Date(eventDate).toISOString(),
         school_id: targetId,
-        created_by: userProfile.id
+        created_by: userProfile?.id
       } as any);
 
     setLoading(false);
@@ -131,6 +140,7 @@ export default function CalendarioEscolar() {
       setIsModalOpen(false);
       setEventTitle("");
       setEventDate("");
+      setEventSchoolId("");
       queryClient.invalidateQueries({ queryKey: ['school-events'] });
     }
   };
@@ -229,6 +239,16 @@ export default function CalendarioEscolar() {
     }
   };
 
+  if (userLoading || eventsLoading) {
+    return (
+      <DashboardLayout role="aluno" userName="Carregando...">
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="animate-spin h-8 w-8 text-primary" />
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout 
       role={(userProfile?.role as any) || "aluno"} 
@@ -300,6 +320,21 @@ export default function CalendarioEscolar() {
                       <Label htmlFor="date">Data</Label>
                       <Input id="date" type="date" value={eventDate} onChange={e => setEventDate(e.target.value)} />
                     </div>
+                    {userProfile?.role === 'admin' && (
+                      <div className="grid gap-2">
+                        <Label htmlFor="school">Escola</Label>
+                        <Select value={eventSchoolId} onValueChange={setEventSchoolId}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Vincular à Escola" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {schools.map(s => (
+                              <SelectItem key={s.id} value={s.id}>{s.school_name || s.full_name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                   </div>
                   <DialogFooter>
                     <Button variant="outline" onClick={() => setIsModalOpen(false)}>Cancelar</Button>

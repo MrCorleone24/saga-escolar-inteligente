@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 interface UserProfile {
   id: string;
@@ -30,7 +31,7 @@ export default function Usuarios() {
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [currentUser, setCurrentUser] = useState<any | null>(null);
+  const { user: currentUser, loading: profileLoading } = useCurrentUser();
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
   const [showPerformance, setShowPerformance] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -66,41 +67,27 @@ export default function Usuarios() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (currentUser) fetchData();
+  }, [currentUser]);
 
   const fetchData = async () => {
     setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
-      setCurrentUser(profile);
-
+    if (currentUser) {
       let query = supabase.from("profiles").select("*");
       
-      const role = profile.role?.toLowerCase();
+      const role = currentUser.role?.toLowerCase();
       
-      // Hierarchy filtering
       if (role === 'admin') {
-        // Admin sees everyone
       } else if (role === 'school') {
-        // School sees teachers and students belonging to it
-        query = query.eq('school_id', profile.id);
+        query = query.eq('school_id', currentUser.id);
       } else if (role === 'teacher' || role === 'professor') {
-        // Teacher sees only their own students if they are a solo teacher
-        // Or students from the school they belong to? 
-        // User says: "para os professosres solo é cadastro de alunos" 
-        // and "Professor da Escola: Visualização de turmas atribuídas pela escola. Sem acesso a cadastro de turmas, alunos ou financeiro."
-        
-        if (profile.school_id) {
-          // School teacher - can see students of that school
-          query = query.eq('school_id', profile.school_id).eq('role', 'student');
+        if (currentUser.school_id) {
+          query = query.eq('school_id', currentUser.school_id).eq('role', 'student');
         } else {
-          // Solo teacher - see their own students
-          query = query.eq('teacher_id', profile.id).eq('role', 'student');
+          query = query.eq('teacher_id', currentUser.id).eq('role', 'student');
         }
       } else {
-        query = query.eq('id', user.id);
+        query = query.eq('id', currentUser.id);
       }
 
       const { data, error } = await query;
@@ -120,7 +107,7 @@ export default function Usuarios() {
           password: newPassword,
           fullName: newName,
           role: newRole,
-          schoolName: newSchool || currentUser?.school_name,
+          schoolName: newSchool || (currentUser as any)?.school_name,
           subject: newSubject,
           phone,
           address,

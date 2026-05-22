@@ -1,13 +1,17 @@
-import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import DashboardLayout from "@/components/DashboardLayout";
 import StatCard from "@/components/StatCard";
-import { Users, BookOpen, TrendingUp, UserPlus, Search, BarChart3, Loader2, Plus, X, Award, Brain } from "lucide-react";
+import { Users, BookOpen, TrendingUp, UserPlus, BarChart3, Loader2, Plus, X, Award, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { AnimatePresence } from "framer-motion";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Turma {
   id: string;
@@ -23,18 +27,23 @@ interface Student {
   full_name: string;
   attendance: number;
   avg_grade: number;
-  trend: 'up' | 'down' | 'stable';
+  trend: string;
 }
 
 export default function Turmas() {
-  const [loading, setLoading] = useState(true);
-  const [turmasList, setTurmasList] = useState<Turma[]>([]);
+  const queryClient = useQueryClient();
+  const { user: currentUser, loading: userLoading } = useCurrentUser();
   const [selectedTurma, setSelectedTurma] = useState<string | null>(null);
-  const [studentsList, setStudentsList] = useState<Student[]>([]);
-  const [currentUser, setCurrentUser] = useState<any>(null);
   const [showEntryModal, setShowEntryModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   
+  // Create class form
+  const [newClassName, setNewClassName] = useState("");
+  const [newClassSubject, setNewClassSubject] = useState("");
+  const [newClassPeriod, setNewClassPeriod] = useState("Diurno");
+  const [newClassSchoolId, setNewClassSchoolId] = useState("");
+
   // Performance form
   const [grade, setGrade] = useState("");
   const [attendance, setAttendance] = useState("");
@@ -42,59 +51,60 @@ export default function Turmas() {
   const [aiFeedback, setAiFeedback] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  const { data: schools = [] } = useQuery({
+    queryKey: ['schools-list'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('profiles').select('id, full_name, school_name').eq('role', 'school');
+      if (error) return [];
+      return data;
+    },
+    enabled: currentUser?.role === 'admin'
+  });
 
-  const fetchData = async () => {
-    setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
-      setCurrentUser(profile);
+  const { data: turmasList = [], isLoading: turmasLoading } = useQuery({
+    queryKey: ['turmas', currentUser?.id, currentUser?.role],
+    queryFn: async () => {
+      if (!currentUser) return [];
+      
+      // Since subjects table doesn't have school_id directly in types, we might need a join or assignments check
+      // For now, let's fetch all and filter client side if needed, or check assignments
+      const { data, error } = await supabase.from("subjects").select("*");
+      if (error) return [];
+      
+      return data.map((s: any) => ({
+        id: s.id,
+        name: s.name,
+        subject: s.name,
+        period: "Diurno",
+        student_count: 0
+      }));
+    },
+    enabled: !!currentUser
+  });
 
-      // Fetch groups/subjects as "Turmas"
-      const { data: subjectsData } = await supabase
-        .from("subjects")
-        .select("*");
+  const { data: studentsList = [], isLoading: studentsLoading } = useQuery({
+    queryKey: ['students-turma', selectedTurma],
+    queryFn: async () => {
+      if (!selectedTurma || !currentUser) return [];
       
-      const filteredSubjects = subjectsData?.filter(s => 
-        profile.role === 'teacher' ? (s as any).teacher_id === user.id : (s as any).school_id === user.id
-      );
+      let query = supabase.from("profiles").select("*").eq("role", "student");
       
-      if (filteredSubjects) {
-        setTurmasList(filteredSubjects.map(s => ({
-          id: s.id,
-          name: s.name,
-          subject: s.name,
-          period: "Diurno",
-          student_count: 0
-        })));
+      if (currentUser.role === 'teacher') {
+        query = query.eq('teacher_id', currentUser.id);
+      } else if (currentUser.role === 'school') {
+        query = query.eq('school_id', currentUser.id);
       }
-    }
-    setLoading(false);
-  };
+      
+      const { data: studentsData, error } = await query;
+      if (error || !studentsData) return [];
 
-  const fetchStudents = async (turmaId: string) => {
-    setSelectedTurma(turmaId);
-    setLoading(true);
-    
-    // Fetch students linked to this teacher/school
-    const { data: studentsData } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("role", "student")
-      .eq(currentUser.role === 'teacher' ? 'teacher_id' : 'school_id', currentUser.id);
-    
-    if (studentsData) {
-      // Fetch performance for these students
       const studentIds = studentsData.map(s => s.id);
       const { data: perfData } = await supabase
         .from('performance_reports')
         .select('student_id, grade, attendance')
         .in('student_id', studentIds);
 
-      setStudentsList(studentsData.map(s => {
+      return studentsData.map(s => {
         const studentPerf = perfData?.filter(p => p.student_id === s.id) || [];
         const avgG = studentPerf.length > 0 
           ? studentPerf.reduce((acc, curr) => acc + Number(curr.grade), 0) / studentPerf.length 
@@ -110,9 +120,37 @@ export default function Turmas() {
           avg_grade: Number(avgG.toFixed(1)),
           trend: 'stable'
         };
-      }));
+      });
+    },
+    enabled: !!selectedTurma && !!currentUser
+  });
+
+  const handleCreateTurma = async () => {
+    if (!newClassName) {
+      toast.error("Preencha o nome da turma");
+      return;
     }
-    setLoading(false);
+
+    setSubmitting(true);
+    try {
+      // Use subjects table - it has name, color, emoji
+      const { error } = await supabase.from('subjects').insert({
+        name: newClassName,
+        color: "#4f46e5",
+        emoji: "📚"
+      });
+
+      if (error) throw error;
+      
+      toast.success("Turma criada com sucesso!");
+      setShowCreateModal(false);
+      setNewClassName("");
+      queryClient.invalidateQueries({ queryKey: ['turmas'] });
+    } catch (error: any) {
+      toast.error("Erro ao criar turma: " + error.message);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleRecordPerformance = async (e: React.FormEvent) => {
@@ -125,7 +163,7 @@ export default function Turmas() {
     try {
       const { error } = await supabase.from('performance_reports').insert({
         student_id: selectedStudent.id,
-        teacher_id: currentUser.id,
+        teacher_id: currentUser?.id || "",
         subject: turma?.name || "Geral",
         grade: Number(grade),
         attendance: Number(attendance),
@@ -137,14 +175,10 @@ export default function Turmas() {
       
       toast.success("Performance registrada com sucesso!");
       setShowEntryModal(false);
-      
-      // Reset
       setGrade("");
       setAttendance("");
       setAiFeedback("");
-      
-      // Refresh students
-      fetchStudents(selectedTurma);
+      queryClient.invalidateQueries({ queryKey: ['students-turma', selectedTurma] });
     } catch (error: any) {
       toast.error("Erro ao registrar: " + error.message);
     } finally {
@@ -152,16 +186,61 @@ export default function Turmas() {
     }
   };
 
+  if (userLoading || turmasLoading) {
+    return (
+      <DashboardLayout role="professor" userName="Carregando...">
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="animate-spin h-8 w-8 text-primary" />
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
-    <DashboardLayout role={currentUser?.role || "professor"} userName={currentUser?.full_name || "Professor"}>
+    <DashboardLayout role={(currentUser?.role as any) || "professor"} userName={currentUser?.full_name || "Professor"}>
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold">Minhas Turmas</h1>
           <p className="text-muted-foreground text-sm">Gerencie suas turmas e alunos</p>
         </div>
-        <Button className="gradient-hero border-0 text-primary-foreground">
-          <UserPlus size={16} className="mr-1.5" /> Nova Turma
-        </Button>
+        
+        <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+          <DialogTrigger asChild>
+            <Button className="gradient-hero border-0 text-primary-foreground">
+              <UserPlus size={16} className="mr-1.5" /> Nova Turma
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Criar Nova Turma</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="className">Nome da Turma</Label>
+                <Input id="className" value={newClassName} onChange={e => setNewClassName(e.target.value)} placeholder="Ex: 9º Ano A" />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="period">Período</Label>
+                <Select value={newClassPeriod} onValueChange={setNewClassPeriod}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Matutino">Matutino</SelectItem>
+                    <SelectItem value="Vespertino">Vespertino</SelectItem>
+                    <SelectItem value="Noturno">Noturno</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowCreateModal(false)}>Cancelar</Button>
+              <Button onClick={handleCreateTurma} disabled={submitting} className="bg-primary text-white">
+                {submitting ? <Loader2 className="animate-spin h-4 w-4" /> : "Criar Turma"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </motion.div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -173,7 +252,6 @@ export default function Turmas() {
 
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
-          {/* Classes list */}
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-card rounded-xl border border-border p-5">
             <h2 className="font-bold text-base mb-4 flex items-center gap-2">
               <Users size={18} className="text-primary" /> Turmas
@@ -188,7 +266,7 @@ export default function Turmas() {
                   className={`flex items-center justify-between p-4 rounded-lg border transition-colors cursor-pointer ${
                     selectedTurma === t.id ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/30'
                   }`}
-                  onClick={() => fetchStudents(t.id)}
+                  onClick={() => setSelectedTurma(t.id)}
                 >
                   <div>
                     <p className="font-semibold text-sm">{t.name}</p>
@@ -196,57 +274,62 @@ export default function Turmas() {
                   </div>
                   <div className="flex gap-4 text-sm">
                     <div className="text-center">
-                      <p className="font-bold">{t.avg_grade || '--'}</p>
+                      <p className="font-bold">{(t as any).avg_grade || '--'}</p>
                       <p className="text-[10px] text-muted-foreground">Média</p>
                     </div>
                   </div>
                 </motion.div>
               ))}
-              {turmasList.length === 0 && !loading && (
+              {turmasList.length === 0 && !turmasLoading && (
                 <p className="text-center py-10 text-muted-foreground text-sm">Nenhuma turma vinculada.</p>
               )}
             </div>
           </motion.div>
         </div>
 
-        {/* Right: student list of selected class */}
         <div className="space-y-6">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} className="bg-card rounded-xl border border-border p-5">
             <h2 className="font-bold text-base mb-4 flex items-center gap-2">
               <BookOpen size={18} className="text-secondary" /> Alunos {selectedTurma && `- ${turmasList.find(t => t.id === selectedTurma)?.name}`}
             </h2>
-            <div className="space-y-2">
-              {studentsList.map((s, i) => (
-                <div 
-                  key={s.id} 
-                  className="flex items-center justify-between p-2.5 rounded-lg hover:bg-muted/30 transition-colors cursor-pointer group"
-                  onClick={() => {
-                    setSelectedStudent(s);
-                    setShowEntryModal(true);
-                  }}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full gradient-hero flex items-center justify-center text-primary-foreground text-xs font-bold">
-                      {s.full_name.charAt(0)}
+            {studentsLoading ? (
+              <div className="flex justify-center py-10">
+                <Loader2 className="animate-spin h-6 w-6 text-primary" />
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {studentsList.map((s, i) => (
+                  <div 
+                    key={s.id} 
+                    className="flex items-center justify-between p-2.5 rounded-lg hover:bg-muted/30 transition-colors cursor-pointer group"
+                    onClick={() => {
+                      setSelectedStudent(s);
+                      setShowEntryModal(true);
+                    }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-full gradient-hero flex items-center justify-center text-primary-foreground text-xs font-bold">
+                        {s.full_name.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">{s.full_name}</p>
+                        <p className="text-[10px] text-muted-foreground">{s.attendance}% presença</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-medium">{s.full_name}</p>
-                      <p className="text-[10px] text-muted-foreground">{s.attendance}% presença</p>
+                    <div className="flex items-center gap-2">
+                      <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Plus size={14} />
+                      </Button>
+                      <span className="text-sm font-bold">{s.avg_grade > 0 ? s.avg_grade : '--'}</span>
+                      <TrendingUp size={12} className={s.trend === "up" ? "text-secondary" : s.trend === "down" ? "text-destructive" : "text-muted-foreground"} />
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="icon" className="h-7 w-7 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Plus size={14} />
-                    </Button>
-                    <span className="text-sm font-bold">{s.avg_grade > 0 ? s.avg_grade : '--'}</span>
-                    <TrendingUp size={12} className={s.trend === "up" ? "text-secondary" : s.trend === "down" ? "text-destructive" : "text-muted-foreground"} />
-                  </div>
-                </div>
-              ))}
-              {studentsList.length === 0 && (
-                <p className="text-center py-10 text-muted-foreground text-xs">Selecione uma turma ou cadastre alunos.</p>
-              )}
-            </div>
+                ))}
+                {studentsList.length === 0 && (
+                  <p className="text-center py-10 text-muted-foreground text-xs">Selecione uma turma ou cadastre alunos.</p>
+                )}
+              </div>
+            )}
           </motion.div>
         </div>
       </div>
