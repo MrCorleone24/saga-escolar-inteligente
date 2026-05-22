@@ -138,7 +138,6 @@ export default function Usuarios() {
           schoolId: schoolId || (currentUser?.role === 'school' ? currentUser.id : null),
           teacherCategory: teacherCategory
         }
-        }
       });
 
       if (error) throw error;
