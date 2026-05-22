@@ -86,10 +86,19 @@ export default function Usuarios() {
         // School sees teachers and students belonging to it
         query = query.eq('school_id', profile.id);
       } else if (role === 'teacher' || role === 'professor') {
-        // Teacher sees only their own students
-        query = query.eq('teacher_id', profile.id).eq('role', 'student');
+        // Teacher sees only their own students if they are a solo teacher
+        // Or students from the school they belong to? 
+        // User says: "para os professosres solo é cadastro de alunos" 
+        // and "Professor da Escola: Visualização de turmas atribuídas pela escola. Sem acesso a cadastro de turmas, alunos ou financeiro."
+        
+        if (profile.school_id) {
+          // School teacher - can see students of that school
+          query = query.eq('school_id', profile.school_id).eq('role', 'student');
+        } else {
+          // Solo teacher - see their own students
+          query = query.eq('teacher_id', profile.id).eq('role', 'student');
+        }
       } else {
-        // Others (students) see nothing in this list generally
         query = query.eq('id', user.id);
       }
 
@@ -404,14 +413,20 @@ export default function Usuarios() {
                               onChange={e => setNewRole(e.target.value)}
                               className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm outline-none focus:ring-2 focus:ring-primary"
                             >
-                              <option value="school_admin">Segundo Admin da Escola</option>
                               <option value="teacher">Professor da Escola</option>
                               <option value="student">Aluno da Escola</option>
                             </select>
                           </div>
                         )}
 
-                        {(currentUser?.role === 'teacher' || currentUser?.role === 'professor') && (
+                        {(currentUser?.role === 'teacher' || currentUser?.role === 'professor') && !currentUser?.school_id && (
+                          <div>
+                            <label className="text-xs font-medium mb-1 block">Cadastrar Aluno</label>
+                            <Input value="student" disabled className="bg-muted" />
+                            <p className="text-[10px] text-muted-foreground mt-1">Como professor solo, você pode cadastrar seus próprios alunos.</p>
+                          </div>
+                        )}
+
                           <div>
                             <label className="text-xs font-medium mb-1 block">Tipo de Usuário</label>
                             <select 
