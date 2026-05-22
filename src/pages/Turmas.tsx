@@ -118,7 +118,7 @@ export default function Turmas() {
           full_name: s.full_name || "Estudante",
           attendance: Math.round(avgA) || 0,
           avg_grade: Number(avgG.toFixed(1)),
-          trend: 'stable' as const
+          trend: 'stable'
         };
       });
     },
