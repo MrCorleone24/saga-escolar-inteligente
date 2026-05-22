@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import DashboardLayout from "@/components/DashboardLayout";
-import { Calendar, ChevronLeft, ChevronRight, CheckCircle2, Clock, BookOpen, XCircle, Flame } from "lucide-react";
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, CheckCircle2, Clock, BookOpen, XCircle, Flame, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 const DAYS_OF_WEEK = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
 
@@ -12,66 +15,113 @@ interface DayData {
   day: number;
   status: DayStatus;
   lessons?: string[];
+  events?: any[];
   xp?: number;
 }
 
-const generateMonth = (): DayData[] => {
-  const days: DayData[] = [];
-  const startDay = 0; // Feb 2026 starts on Sunday
-  for (let i = 0; i < startDay; i++) days.push({ day: 0, status: "future" });
-  for (let d = 1; d <= 28; d++) {
-    const dow = (startDay + d - 1) % 7;
-    if (dow === 0 || dow === 6) {
-      days.push({ day: d, status: "weekend" });
-    } else if (d < 26) {
+export default function CalendarioEscolar() {
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [userProfile, setUserProfile] = useState<any>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user?.id) {
+        supabase.from('profiles').select('*').eq('id', data.user.id).single().then(({ data: p }) => {
+          setUserProfile(p);
+        });
+      }
+    });
+  }, []);
+
+  const { data: schoolEvents = [] } = useQuery({
+    queryKey: ['school-events', userProfile?.school_id, currentDate.getMonth()],
+    queryFn: async () => {
+      if (!userProfile?.school_id && userProfile?.role !== 'school' && userProfile?.role !== 'admin') return [];
+      
+      const targetId = userProfile.school_id || userProfile.id;
+      const { data, error } = await supabase
+        .from('school_calendar_events')
+        .select('*')
+        .eq('school_id', targetId);
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!userProfile
+  });
+
+  const generateMonthData = (): DayData[] => {
+    const days: DayData[] = [];
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    
+    const firstDayOfMonth = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    
+    // Previous month padding
+    for (let i = 0; i < firstDayOfMonth; i++) {
+      days.push({ day: 0, status: "future" });
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    for (let d = 1; d <= daysInMonth; d++) {
+      const date = new Date(year, month, d);
+      const dow = date.getDay();
+      
+      let status: DayStatus = "future";
+      if (dow === 0 || dow === 6) {
+        status = "weekend";
+      } else if (date < today) {
+        status = "present"; // Placeholder for real attendance logic
+      } else if (date.getTime() === today.getTime()) {
+        status = "pending";
+      }
+
+      // Check for school events
+      const dayEvents = schoolEvents.filter(e => {
+        const eventDate = new Date(e.start_time);
+        return eventDate.getDate() === d && eventDate.getMonth() === month && eventDate.getFullYear() === year;
+      });
+
+      if (dayEvents.some(e => e.event_type === 'feriado')) {
+        status = "holiday";
+      }
+
       days.push({
         day: d,
-        status: d % 7 === 0 ? "absent" : "present",
-        lessons: d % 2 === 0 ? ["Português", "Matemática", "Ciências"] : ["História", "Geografia", "Inglês"],
-        xp: d % 7 === 0 ? 0 : 10 + (d % 5) * 5,
+        status,
+        events: dayEvents,
+        lessons: status === "present" ? ["Aula Concluída"] : undefined
       });
-    } else if (d === 26) {
-      days.push({ day: d, status: "pending", lessons: ["Português", "Matemática", "Ciências"] });
-    } else {
-      days.push({ day: d, status: "future" });
     }
-  }
-  return days;
-};
 
-const statusStyles: Record<DayStatus, string> = {
-  present: "bg-secondary/10 border-secondary/30 text-foreground",
-  absent: "bg-destructive/10 border-destructive/30 text-foreground",
-  pending: "bg-gamification-gold/10 border-gamification-gold/30 text-foreground animate-pulse-glow",
-  weekend: "bg-muted/50 text-muted-foreground",
-  future: "bg-background text-muted-foreground/40",
-  holiday: "bg-accent/10 border-accent/30 text-foreground",
-};
+    return days;
+  };
 
-const statusIcon: Record<DayStatus, React.ReactNode> = {
-  present: <CheckCircle2 size={10} className="text-secondary" />,
-  absent: <XCircle size={10} className="text-destructive" />,
-  pending: <Clock size={10} className="text-gamification-gold" />,
-  weekend: null,
-  future: null,
-  holiday: null,
-};
-
-export default function CalendarioEscolar() {
-  const days = generateMonth();
-  const streak = 12;
+  const days = generateMonthData();
+  const streak = 12; // Placeholder
   const totalPresent = days.filter(d => d.status === "present").length;
-  const totalDays = days.filter(d => d.status !== "weekend" && d.status !== "future" && d.day > 0).length;
+  const workDays = days.filter(d => d.day > 0 && d.status !== "weekend" && d.status !== "future").length;
+  const attendanceRate = workDays > 0 ? Math.round((totalPresent / workDays) * 100) : 0;
 
   return (
-    <DashboardLayout role="aluno" userName="João Silva" xp={450} level={5}>
+    <DashboardLayout 
+      role={(userProfile?.role as any) || "aluno"} 
+      userName={userProfile?.full_name || "Usuário"} 
+      xp={userProfile?.xp || 0} 
+      level={userProfile?.level || 1}
+    >
+
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Calendar className="text-primary" size={24} /> Calendário Escolar
+            <CalendarIcon className="text-primary" size={24} /> Calendário Escolar
           </h1>
-          <p className="text-muted-foreground text-sm">Acompanhe suas aulas, presença e progresso diário</p>
+          <p className="text-muted-foreground text-sm">Acompanhe suas aulas, presença e eventos da escola</p>
         </div>
+
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-1.5 text-gamification-streak">
             <Flame size={18} />
@@ -101,10 +151,17 @@ export default function CalendarioEscolar() {
 
       {/* Month nav */}
       <div className="flex items-center justify-between mb-4">
-        <Button variant="ghost" size="sm"><ChevronLeft size={16} /></Button>
-        <h2 className="font-bold">Fevereiro 2026</h2>
-        <Button variant="ghost" size="sm"><ChevronRight size={16} /></Button>
+        <Button variant="ghost" size="sm" onClick={() => setCurrentDate(new Date(currentDate.setMonth(currentDate.getMonth() - 1)))}>
+          <ChevronLeft size={16} />
+        </Button>
+        <h2 className="font-bold uppercase tracking-widest text-sm">
+          {currentDate.toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}
+        </h2>
+        <Button variant="ghost" size="sm" onClick={() => setCurrentDate(new Date(currentDate.setMonth(currentDate.getMonth() + 1)))}>
+          <ChevronRight size={16} />
+        </Button>
       </div>
+
 
       {/* Calendar grid */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-xl border border-border p-4">

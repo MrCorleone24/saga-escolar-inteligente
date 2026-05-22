@@ -445,6 +445,86 @@ export default function VideoSalas() {
     );
   }
 
+  return (
+    <DashboardLayout role={(userRole as any) || "aluno"} userName="Usuário">
+      <div className="max-w-7xl mx-auto space-y-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+            <h1 className="text-3xl font-bold flex items-center gap-3">
+              <Video className="text-primary h-8 w-8" /> Salas Virtuais e Videoconferência
+            </h1>
+            <p className="text-muted-foreground mt-1">Conecte-se em tempo real com sua turma e professores</p>
+          </motion.div>
+          
+          {canCreate && (
+            <div className="flex gap-2">
+              <Input 
+                placeholder="Nome da nova sala..." 
+                value={newRoomName}
+                onChange={(e) => setNewRoomName(e.target.value)}
+                className="max-w-[200px]"
+              />
+              <select 
+                value={newRoomType}
+                onChange={(e: any) => setNewRoomType(e.target.value)}
+                className="h-10 px-3 rounded-md border border-input bg-background text-sm outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="classroom">Aula</option>
+                <option value="administrative">Reunião ADM</option>
+                {isSchoolAdmin && <option value="direction">Direção</option>}
+              </select>
+              <Button onClick={handleCreateRoom} className="gradient-hero border-0 text-white">
+                <Plus className="mr-2 h-4 w-4" /> Criar Sala
+              </Button>
+            </div>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {rooms.map((room) => (
+            <motion.div
+              key={room.id}
+              whileHover={{ y: -5 }}
+              className="bg-card border border-border rounded-xl overflow-hidden shadow-sm hover:shadow-md transition-all group"
+            >
+              <div className={`h-2 ${room.room_type === 'direction' ? 'bg-amber-500' : room.room_type === 'administrative' ? 'bg-blue-500' : 'bg-primary'}`} />
+              <div className="p-5">
+                <div className="flex justify-between items-start mb-4">
+                  <div className={`p-3 rounded-lg ${room.room_type === 'direction' ? 'bg-amber-500/10' : room.room_type === 'administrative' ? 'bg-blue-500/10' : 'bg-primary/10'}`}>
+                    {room.room_type === 'direction' ? <Shield className="h-6 w-6 text-amber-600" /> : room.room_type === 'administrative' ? <Users className="h-6 w-6 text-blue-600" /> : <Video className="h-6 w-6 text-primary" />}
+                  </div>
+                  <Badge variant="secondary" className="bg-green-500/10 text-green-600 border-green-200">
+                    Online
+                  </Badge>
+                </div>
+                <h3 className="text-lg font-bold mb-1">{room.name}</h3>
+                <p className="text-xs text-muted-foreground mb-4 uppercase tracking-wider font-semibold">
+                  {room.room_type === 'direction' ? 'Sala da Direção' : room.room_type === 'administrative' ? 'Reunião Administrativa' : 'Sala de Aula'}
+                </p>
+                <Button 
+                  className="w-full gradient-hero border-0 text-white group-hover:shadow-lg transition-all"
+                  onClick={() => handleJoinRoom(room)}
+                >
+                  Entrar na Sala
+                </Button>
+              </div>
+            </motion.div>
+          ))}
+          
+          {rooms.length === 0 && (
+            <div className="col-span-full py-20 text-center bg-muted/30 rounded-2xl border-2 border-dashed border-border">
+              <VideoOff className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-20" />
+              <h3 className="text-lg font-medium text-muted-foreground">Nenhuma sala disponível no momento</h3>
+              <p className="text-sm text-muted-foreground/60">Aguarde o início da aula ou crie uma nova sala.</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </DashboardLayout>
+  );
+}
+
+
   const { data: invitations = [] } = useQuery({
     queryKey: ['pending_invitations', userId],
     queryFn: async () => {
