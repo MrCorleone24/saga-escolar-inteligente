@@ -1,32 +1,54 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import DashboardLayout from "@/components/DashboardLayout";
 import StatCard from "@/components/StatCard";
 import { Users, BookOpen, Brain, ClipboardList, BarChart3, Calendar, Plus, TrendingUp, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-const classes = [
-  { name: "9º Ano A", students: 32, avg: 7.8, attendance: 92 },
-  { name: "9º Ano B", students: 30, avg: 8.2, attendance: 88 },
-  { name: "8º Ano A", students: 28, avg: 7.5, attendance: 95 },
-];
-
-const recentPlans = [
-  { title: "Equações do 2º Grau", subject: "Matemática", date: "Hoje", status: "IA Gerado" },
-  { title: "Romantismo Brasileiro", subject: "Português", date: "Ontem", status: "Publicado" },
-  { title: "Ciclo da Água", subject: "Ciências", date: "Seg", status: "Rascunho" },
-];
-
-const atRiskStudents = [
-  { name: "João Mendes", risk: "Alto", reason: "Frequência baixa (68%)", class: "9º Ano A" },
-  { name: "Carla Lima", risk: "Médio", reason: "Notas em queda", class: "9º Ano B" },
-];
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 export default function TeacherDashboard() {
+  const [profile, setProfile] = useState<any>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user) {
+        supabase.from('profiles').select('*').eq('id', user.id).single().then(({ data }) => setProfile(data));
+      }
+    });
+  }, []);
+
+  const { data: stats } = useQuery({
+    queryKey: ['teacherStats', profile?.id],
+    queryFn: async () => {
+      if (!profile?.id) return null;
+      const { count: studentsCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('teacher_id', profile.id);
+      const { count: lessonsCount } = await supabase.from('lessons').select('*', { count: 'exact', head: true }).eq('teacher_id', profile.id);
+      const { data: classesData } = await supabase.from('rooms').select('*').eq('created_by', profile.id);
+      
+      return {
+        students: studentsCount || 0,
+        lessons: lessonsCount || 0,
+        classesCount: classesData?.length || 0
+      };
+    },
+    enabled: !!profile?.id
+  });
+
+  const { data: recentLessons = [] } = useQuery({
+    queryKey: ['recentLessons', profile?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from('lessons').select('*').eq('teacher_id', profile?.id).order('created_at', { ascending: false }).limit(5);
+      return data || [];
+    },
+    enabled: !!profile?.id
+  });
+
   return (
-    <DashboardLayout role="professor" userName="Prof. Maria Santos">
+    <DashboardLayout role="professor" userName={profile?.full_name || "Professora"}>
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Bem-vinda, Profª Maria!</h1>
+          <h1 className="text-2xl font-bold">Bem-vinda, {profile?.full_name?.split(' ')[0] || "Profª"}!</h1>
           <p className="text-muted-foreground text-sm">Acompanhe suas turmas e planeje com IA</p>
         </div>
         <Button className="gradient-hero border-0 text-primary-foreground">
@@ -36,8 +58,8 @@ export default function TeacherDashboard() {
 
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard title="Alunos" value="90" icon={<Users size={20} />} gradient="hero" subtitle="3 turmas" />
-        <StatCard title="Aulas Planejadas" value="24" icon={<Calendar size={20} />} gradient="success" subtitle="Este mês" />
+        <StatCard title="Alunos" value={stats?.students.toString() || "0"} icon={<Users size={20} />} gradient="hero" subtitle={`${stats?.classesCount || 0} turmas`} />
+        <StatCard title="Aulas Planejadas" value={stats?.lessons.toString() || "0"} icon={<Calendar size={20} />} gradient="success" subtitle="Total" />
         <StatCard title="Média Geral" value="7.8" icon={<TrendingUp size={20} />} gradient="gamification" subtitle="↑ 0.3" />
         <StatCard title="IA Sugestões" value="12" icon={<Brain size={20} />} gradient="badge" subtitle="Novas" />
       </div>
@@ -51,30 +73,8 @@ export default function TeacherDashboard() {
               Minhas Turmas
             </h2>
             <div className="space-y-3">
-              {classes.map((c, i) => (
-                <motion.div
-                  key={c.name}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.15 + i * 0.05 }}
-                  className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-muted/30 transition-colors cursor-pointer"
-                >
-                  <div>
-                    <p className="font-semibold text-sm">{c.name}</p>
-                    <p className="text-xs text-muted-foreground">{c.students} alunos</p>
-                  </div>
-                  <div className="flex gap-4 text-sm">
-                    <div className="text-center">
-                      <p className="font-bold">{c.avg}</p>
-                      <p className="text-[10px] text-muted-foreground">Média</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="font-bold">{c.attendance}%</p>
-                      <p className="text-[10px] text-muted-foreground">Presença</p>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
+              {/* To be implemented: Fetch real rooms and student counts */}
+              <p className="text-xs text-muted-foreground py-4 text-center italic">Gerencie suas turmas na seção de Turmas.</p>
             </div>
           </motion.div>
 
@@ -85,21 +85,18 @@ export default function TeacherDashboard() {
               Planejamentos Recentes
             </h2>
             <div className="space-y-2">
-              {recentPlans.map((p, i) => (
+              {recentLessons.map((p, i) => (
                 <div key={i} className="flex items-center justify-between p-3 rounded-lg hover:bg-muted/30 transition-colors cursor-pointer">
                   <div>
                     <p className="text-sm font-medium">{p.title}</p>
-                    <p className="text-xs text-muted-foreground">{p.subject} · {p.date}</p>
+                    <p className="text-xs text-muted-foreground">{new Date(p.created_at).toLocaleDateString()}</p>
                   </div>
-                  <span className={`text-xs px-2.5 py-1 rounded-full font-medium
-                    ${p.status === "IA Gerado" ? "bg-gamification-badge/10 text-gamification-badge" :
-                      p.status === "Publicado" ? "bg-secondary/10 text-secondary" :
-                      "bg-muted text-muted-foreground"}
-                  `}>
-                    {p.status}
+                  <span className={`text-xs px-2.5 py-1 rounded-full font-medium bg-secondary/10 text-secondary`}>
+                    Publicado
                   </span>
                 </div>
               ))}
+              {recentLessons.length === 0 && <p className="text-xs text-muted-foreground py-4 text-center">Nenhum planejamento encontrado.</p>}
             </div>
           </motion.div>
         </div>
@@ -120,22 +117,10 @@ export default function TeacherDashboard() {
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} className="bg-card rounded-xl border border-border p-5">
             <h2 className="font-bold text-base mb-4 flex items-center gap-2">
               <AlertTriangle size={18} className="text-gamification-streak" />
-              Alunos em Risco
+              Alunos com Baixo Engajamento
             </h2>
-            <div className="space-y-3">
-              {atRiskStudents.map((s, i) => (
-                <div key={i} className="p-3 rounded-lg border border-border">
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="text-sm font-semibold">{s.name}</p>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold
-                      ${s.risk === "Alto" ? "bg-destructive/10 text-destructive" : "bg-gamification-gold/10 text-gamification-gold"}`}>
-                      {s.risk}
-                    </span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">{s.reason}</p>
-                  <p className="text-[10px] text-muted-foreground mt-0.5">{s.class}</p>
-                </div>
-              ))}
+            <div className="space-y-3 text-center py-4">
+              <p className="text-xs text-muted-foreground italic">Monitoramento em tempo real baseado em XP e atividades.</p>
             </div>
           </motion.div>
 

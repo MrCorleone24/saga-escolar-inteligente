@@ -142,7 +142,7 @@ export default function Financeiro() {
                 <p className="text-sm opacity-90 mt-1">
                   {isSchool ? "Gestão total de alunos e professores ilimitados" : isProfessor ? "Gestão de alunos e turmas ilimitadas (Modo Solo)" : "Acesso completo às aulas e materiais"}
                 </p>
-                <p className="text-xs font-semibold mt-2">Próximo vencimento: 01/06/2026 — R$ {isSchool ? "499,90" : isProfessor ? "149,90" : "49,90"}</p>
+                <p className="text-xs font-semibold mt-2">Próximo vencimento: Próximo Mês — R$ {isSchool ? "499,90" : isProfessor ? "149,90" : "49,90"}</p>
               </div>
               {isProfessor && (
                 <div className="flex flex-col gap-2">
