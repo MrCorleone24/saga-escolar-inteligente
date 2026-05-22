@@ -47,6 +47,7 @@ export default function VideoSalas() {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [newRoomName, setNewRoomName] = useState("");
   const [newRoomType, setNewRoomType] = useState<"classroom" | "administrative" | "direction">("classroom");
+  const [showMeetingControls, setShowMeetingControls] = useState(false);
   const [showParticipants, setShowParticipants] = useState(false);
   const [isHandRaised, setIsHandRaised] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);

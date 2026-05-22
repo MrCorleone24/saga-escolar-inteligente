@@ -111,6 +111,41 @@ export default function Financeiro() {
         </header>
 
         {isAdmin && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <Card className="p-4 border-l-4 border-primary">
+              <div className="flex items-center justify-between mb-2">
+                <DollarSign className="text-primary" size={20} />
+                <Badge variant="secondary" className="text-xs">Meta: 85%</Badge>
+              </div>
+              <p className="text-xs text-muted-foreground">MRR Total (Global)</p>
+              <p className="text-xl font-bold mt-1">R$ {stats.mrr.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+            </Card>
+            <Card className="p-4 border-l-4 border-secondary">
+              <div className="flex items-center justify-between mb-2">
+                <Users className="text-secondary" size={20} />
+                <Badge variant="outline" className="text-[10px]">Escolas: {history.filter(h => h.description.includes('Escola')).length}</Badge>
+              </div>
+              <p className="text-xs text-muted-foreground">Assinaturas Ativas</p>
+              <p className="text-xl font-bold mt-1">{stats.activeSubs}</p>
+            </Card>
+            <Card className="p-4 border-l-4 border-amber-500">
+              <div className="flex items-center justify-between mb-2">
+                <TrendingUp className="text-amber-500" size={20} />
+                <Badge variant="outline" className="text-[10px]">Churn: 1.2%</Badge>
+              </div>
+              <p className="text-xs text-muted-foreground">Crescimento Mensal</p>
+              <p className="text-xl font-bold mt-1">+12.5%</p>
+            </Card>
+            <Card className="p-4 border-l-4 border-blue-500">
+              <div className="flex items-center justify-between mb-2">
+                <CreditCard className="text-blue-500" size={20} />
+                <Badge variant="outline" className="text-[10px]">PIX: 92%</Badge>
+              </div>
+              <p className="text-xs text-muted-foreground">Inadimplência</p>
+              <p className="text-xl font-bold mt-1">2.4%</p>
+            </Card>
+          </div>
+        )}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card className="p-4">
               <div className="flex items-center justify-between mb-2">
