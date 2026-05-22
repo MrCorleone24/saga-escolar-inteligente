@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 
 
-type Role = "aluno" | "professor" | "admin" | "school";
+type Role = "aluno" | "professor" | "admin" | "school" | "teacher_solo" | "teacher_institutional";
 
 interface NavItem {
   label: string;
@@ -70,11 +70,15 @@ export default function DashboardLayout({ children, role: initialRole, userName,
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         setUserEmail(user.email || null);
-        const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single();
-        if (profile?.role) {
-          // For non-superusers, always use DB role. For superusers, only use DB role if no override is saved
+        const { data: profile } = await supabase.from('profiles').select('role, teacher_category').eq('id', user.id).single();
+        if (profile) {
+          let roleToSet = profile.role as Role;
+          if (roleToSet === 'professor') {
+            roleToSet = profile.teacher_category === 'solo' ? 'teacher_solo' : 'teacher_institutional';
+          }
+          
           if (user.email !== "jrseguim@gmail.com") {
-            setCurrentRole(profile.role as Role);
+            setCurrentRole(roleToSet);
             localStorage.removeItem('admin_view_role');
           }
         }
@@ -93,6 +97,8 @@ export default function DashboardLayout({ children, role: initialRole, userName,
     const dashboardPaths: Record<Role, string> = {
       aluno: "/dashboard",
       professor: "/professor",
+      teacher_solo: "/professor",
+      teacher_institutional: "/professor",
       school: "/admin",
       admin: "/admin",
     };
@@ -102,6 +108,8 @@ export default function DashboardLayout({ children, role: initialRole, userName,
   const roleLabels: Record<Role, string> = {
     aluno: "Aluno",
     professor: "Professor",
+    teacher_solo: "Professor (Solo)",
+    teacher_institutional: "Professor",
     admin: "Administrador",
     school: "Escola",
   };
@@ -138,7 +146,7 @@ export default function DashboardLayout({ children, role: initialRole, userName,
           <div className="mt-4 px-2">
             <p className="text-[10px] uppercase font-bold text-sidebar-foreground/40 mb-2">Alternar Modo</p>
             <div className="grid grid-cols-2 gap-1">
-              {(["aluno", "professor", "school", "admin"] as Role[]).map((r) => (
+              {(["aluno", "teacher_solo", "teacher_institutional", "school", "admin"] as Role[]).map((r) => (
                 <button
                   key={r}
                   onClick={() => handleRoleSwitch(r)}
