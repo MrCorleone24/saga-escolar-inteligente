@@ -23,27 +23,24 @@ export default function AdminDashboard() {
         const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).single();
         setProfile(p);
 
-        // Fetch counts
-        const { count: sCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'school');
-        const { count: stCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'student');
-        const { count: tCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'teacher');
+        // Fetch counts via RPC
+        const { data: statsData, error: statsError } = await supabase.rpc('get_dashboard_stats');
         
-        // Fetch MRR
-        const { data: mrrData } = await supabase.rpc('get_monthly_revenue');
+        if (!statsError && statsData) {
+          setStats({ 
+            schools: statsData.schools || 0, 
+            students: statsData.students || 0, 
+            teachers: statsData.teachers || 0,
+            mrr: statsData.mrr || 0
+          });
+        }
 
-        setStats({ 
-          schools: sCount || 0, 
-          students: stCount || 0, 
-          teachers: tCount || 0,
-          mrr: mrrData || 0
-        });
-
-        // Fetch schools list with basic aggregates
+        // Fetch real schools list
         const { data: schoolsList } = await supabase
           .from('profiles')
-          .select('id, school_name, full_name')
+          .select('id, school_name, full_name, role')
           .eq('role', 'school')
-          .limit(5);
+          .limit(10);
 
         if (schoolsList) {
           const schoolsWithCounts = await Promise.all(schoolsList.map(async (school) => {
@@ -53,7 +50,7 @@ export default function AdminDashboard() {
               name: school.school_name || school.full_name || "Escola sem nome",
               students: st || 0,
               teachers: tc || 0,
-              avg: (Math.random() * (9 - 7) + 7).toFixed(1) // Keep a bit of simulated avg for now
+              avg: "8.5" // This could be fetched from a performance table later
             };
           }));
           setSchools(schoolsWithCounts);
