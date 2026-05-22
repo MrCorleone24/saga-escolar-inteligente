@@ -107,7 +107,7 @@ export default function Usuarios() {
           password: newPassword,
           fullName: newName,
           role: newRole,
-          schoolName: newSchool || currentUser?.school_name,
+          schoolName: newSchool || (currentUser as any)?.school_name,
           subject: newSubject,
           phone,
           address,
