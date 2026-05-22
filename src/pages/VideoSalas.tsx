@@ -58,7 +58,9 @@ export default function VideoSalas() {
       setUserId(data.user?.id || null);
       if (data.user?.id) {
         const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user.id).single();
-        setUserRole(profile?.role || null);
+        // Normalize role to lowercase and handle Portuguese aliases
+        const role = profile?.role?.toLowerCase();
+        setUserRole(role || null);
       }
     };
     initAuth();
@@ -281,8 +283,9 @@ export default function VideoSalas() {
   };
 
   const currentUserModeration = participants.find(p => p.user_id === userId);
-  const isAdmin = currentUserModeration?.role === 'admin' || ['professor', 'teacher', 'admin', 'school'].includes(userRole || '');
-  const canCreate = ['professor', 'teacher', 'admin', 'school'].includes(userRole || '');
+  const normalizedRole = userRole?.toLowerCase();
+  const isAdmin = currentUserModeration?.role === 'admin' || ['professor', 'teacher', 'admin', 'school'].includes(normalizedRole || '');
+  const canCreate = ['professor', 'teacher', 'admin', 'school'].includes(normalizedRole || '');
 
   if (inCall && activeRoom) {
     return (

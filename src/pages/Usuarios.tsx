@@ -70,11 +70,20 @@ export default function Usuarios() {
 
       let query = supabase.from("profiles").select("*");
       
+      const role = profile.role?.toLowerCase();
+      
       // Hierarchy filtering
-      if (profile.role === 'school') {
+      if (role === 'admin') {
+        // Admin sees everyone
+      } else if (role === 'school') {
+        // School sees teachers and students belonging to it
         query = query.eq('school_id', profile.id);
-      } else if (profile.role === 'teacher' || profile.role === 'professor') {
+      } else if (role === 'teacher' || role === 'professor') {
+        // Teacher sees only their own students
         query = query.eq('teacher_id', profile.id).eq('role', 'student');
+      } else {
+        // Others (students) see nothing in this list generally
+        query = query.eq('id', user.id);
       }
 
       const { data, error } = await query;
