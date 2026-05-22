@@ -36,6 +36,17 @@ export default function Usuarios() {
   const [showPerformance, setShowPerformance] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [performanceData, setPerformanceData] = useState<PerformanceData>({ grade: 0, attendance: 0, engagement: 0 });
+  const [schools, setSchools] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (currentUser?.role === 'admin') {
+      const fetchSchools = async () => {
+        const { data } = await supabase.from('profiles').select('id, full_name, school_name').eq('role', 'school');
+        if (data) setSchools(data);
+      };
+      fetchSchools();
+    }
+  }, [currentUser]);
 
   // Form states
   const [newEmail, setNewEmail] = useState("");
@@ -399,17 +410,22 @@ export default function Usuarios() {
                           </div>
                         )}
 
-                        {currentUser?.role === 'admin' && (newRole === 'teacher' || newRole === 'student' || newRole === 'aluno') && (
+                        {currentUser?.role === 'admin' && (newRole === 'teacher' || newRole === 'student' || newRole === 'aluno' || newRole === 'school') && (
                           <div className="grid gap-4">
                             <div>
                               <label className="text-xs font-medium mb-1 block">Vincular à Escola (Opcional)</label>
-                              <Input 
+                              <select 
                                 value={schoolId} 
-                                onChange={e => setSchoolId(e.target.value)} 
-                                placeholder="ID da Escola (ou deixe vazio para Solo)" 
-                              />
+                                onChange={e => setSchoolId(e.target.value)}
+                                className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm outline-none focus:ring-2 focus:ring-primary"
+                              >
+                                <option value="">Sem vínculo (Solo)</option>
+                                {schools.map(s => (
+                                  <option key={s.id} value={s.id}>{s.school_name || s.full_name}</option>
+                                ))}
+                              </select>
                             </div>
-                            {newRole === 'student' && (
+                            {(newRole === 'student' || newRole === 'aluno') && (
                               <div>
                                 <label className="text-xs font-medium mb-1 block">Vincular ao Professor (Opcional)</label>
                                 <Input 
