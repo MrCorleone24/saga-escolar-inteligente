@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DollarSign, TrendingUp, Users, CreditCard, Download, CheckCircle2, Clock, AlertCircle } from "lucide-react";
 
-type Role = "admin" | "school" | "professor" | "aluno";
+type Role = "aluno" | "professor" | "admin" | "school" | "teacher_solo" | "teacher_institutional";
 
 interface Payment {
   id: string;
@@ -43,15 +43,20 @@ export default function Financeiro() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
         
-        const { data: profile } = await supabase.from("profiles").select("role, full_name, school_id").eq("id", user.id).single();
+        const { data: profile } = await supabase.from("profiles").select("role, full_name, school_id, teacher_category").eq("id", user.id).single();
         if (profile) {
-          if (profile.role === 'professor' && profile.school_id) {
+          let roleToSet = profile.role as Role;
+          if (roleToSet === 'professor') {
+            roleToSet = profile.teacher_category === 'solo' ? 'teacher_solo' : 'teacher_institutional';
+          }
+
+          if (roleToSet === 'teacher_institutional') {
             // School teacher shouldn't be here
             toast.error("Acesso restrito ao financeiro institucional");
             navigate("/dashboard");
             return;
           }
-          setRole((profile.role as Role) ?? "aluno");
+          setRole(roleToSet);
           setUserName(profile.full_name ?? user.email ?? "Usuário");
         }
 
@@ -83,7 +88,7 @@ export default function Financeiro() {
 
   const isAdmin = role === "admin";
   const isSchool = role === "school";
-  const isProfessor = role === "professor";
+  const isProfessor = role === "teacher_solo" || role === "professor";
 
 
   const handleTestPayment = async () => {
