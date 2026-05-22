@@ -4,7 +4,7 @@ import {
   Video, Mic, MicOff, VideoOff, MessageSquare, Users, 
   Settings, PhoneOff, Plus, MoreVertical, Shield, 
   Hand, Share2, Maximize2, Send, X, Search,
-  Lock, Unlock, UserMinus, VolumeX, ClipboardList, UserCheck
+  Lock, Unlock, UserMinus, VolumeX, ClipboardList, UserCheck, Loader2
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -12,10 +12,12 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import AttendanceList from "@/components/presenca/AttendanceList";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 interface Room {
   id: string;
@@ -42,27 +44,16 @@ interface Participant {
 
 export default function VideoSalas() {
   const queryClient = useQueryClient();
+  const { user, loading: userLoading } = useCurrentUser();
   const [inCall, setInCall] = useState(false);
   const [activeRoom, setActiveRoom] = useState<Room | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
-  const [userRole, setUserRole] = useState<string | null>(null);
   const [newRoomName, setNewRoomName] = useState("");
   const [newRoomType, setNewRoomType] = useState<"classroom" | "administrative" | "direction">("classroom");
   const [rightPanel, setRightPanel] = useState<'participants' | 'attendance' | null>(null);
   const [isHandRaised, setIsHandRaised] = useState(false);
-  const [privateCallTarget, setPrivateCallTarget] = useState<string | null>(null);
-
-  useEffect(() => {
-    const initAuth = async () => {
-      const { data } = await supabase.auth.getUser();
-      setUserId(data.user?.id || null);
-      if (data.user?.id) {
-        const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user.id).single();
-        setUserRole(profile?.role?.toLowerCase() || null);
-      }
-    };
-    initAuth();
-  }, []);
+  
+  const userId = user?.id;
+  const userRole = user?.role?.toLowerCase();
 
   // Set up Realtime for moderation commands
   useEffect(() => {
@@ -72,8 +63,6 @@ export default function VideoSalas() {
       .on('broadcast', { event: 'moderation' }, ({ payload }) => {
         if (payload.action === 'mute_all' && payload.targetId !== userId) {
           toast.info("O moderador silenciou todos.");
-          // In a real WebRTC app, we would mute the local track here
-          // For Jitsi, we could try to use the IFrame API if we had it initialized
         }
         if (payload.action === 'kick' && payload.targetId === userId) {
           toast.error("Você foi removido da sala pelo moderador.");
@@ -82,7 +71,6 @@ export default function VideoSalas() {
         }
         if (payload.action === 'private_call' && payload.targetId === userId) {
           toast.info(`${payload.fromName} iniciou uma conversa reservada.`);
-          // Open private meeting URL in a new tab or overlay
           const privateRoomUrl = `https://meet.jit.si/EduBrasil-Private-${payload.roomId}-${userId}`;
           window.open(privateRoomUrl, '_blank', 'width=800,height=600');
         }
@@ -94,9 +82,10 @@ export default function VideoSalas() {
     };
   }, [activeRoom, inCall, userId]);
 
-  const { data: rooms = [] } = useQuery({
+  const { data: rooms = [], isLoading: roomsLoading } = useQuery({
     queryKey: ['rooms', userId, userRole],
     queryFn: async () => {
+      if (!userId) return [];
       let query = supabase.from('rooms').select('*').eq('is_active', true);
       
       if (['aluno', 'student'].includes(userRole || '')) {
@@ -108,6 +97,11 @@ export default function VideoSalas() {
       }
       
       const { data, error } = await query.order('created_at', { ascending: false });
+      if (error) return [];
+      return data as Room[];
+    },
+    enabled: !!userId
+  });
       if (error) return [];
       return data as Room[];
     },
@@ -337,8 +331,18 @@ export default function VideoSalas() {
     );
   }
 
+  if (userLoading || roomsLoading) {
+    return (
+      <DashboardLayout role={(userRole as any) || "aluno"} userName="Carregando...">
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="animate-spin h-8 w-8 text-primary" />
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
-    <DashboardLayout role={(userRole as any) || "aluno"} userName="Usuário">
+    <DashboardLayout role={(userRole as any) || "aluno"} userName={user?.full_name || "Usuário"}>
       <div className="max-w-7xl mx-auto space-y-8">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -352,13 +356,23 @@ export default function VideoSalas() {
           </div>
           
           {canCreate && (
-            <div className="flex gap-2 items-center bg-card p-2 rounded-xl border shadow-sm">
+            <div className="flex flex-wrap gap-2 items-center bg-card p-2 rounded-xl border shadow-sm">
               <Input 
-                placeholder="Nome da nova sala..." 
+                placeholder="Nome da sala..." 
                 className="max-w-[200px] border-none bg-muted" 
                 value={newRoomName} 
                 onChange={e => setNewRoomName(e.target.value)} 
               />
+              <Select value={newRoomType} onValueChange={(val: any) => setNewRoomType(val)}>
+                <SelectTrigger className="w-[160px] border-none bg-muted h-10">
+                  <SelectValue placeholder="Tipo de Sala" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="classroom">Sala de Aula</SelectItem>
+                  <SelectItem value="administrative">Administrativo</SelectItem>
+                  {userRole === 'admin' && <SelectItem value="direction">Diretoria</SelectItem>}
+                </SelectContent>
+              </Select>
               <Button onClick={handleCreateRoom} className="gradient-hero text-white">
                 <Plus className="h-4 w-4 mr-2" /> Criar Sala
               </Button>
