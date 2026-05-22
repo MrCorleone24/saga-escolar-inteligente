@@ -175,15 +175,10 @@ export default function AdminDashboard() {
               Atividade Recente
             </h2>
             <div className="space-y-3 text-sm">
-              {[
-                "Prof. Maria criou plano com IA",
-                "32 alunos completaram atividade",
-                "Relatório mensal gerado",
-                "Nova turma cadastrada",
-              ].map((a, i) => (
+              {recentActivity.map((a, i) => (
                 <div key={i} className="flex items-center gap-2 text-muted-foreground">
                   <div className="w-1.5 h-1.5 rounded-full bg-primary" />
-                  <span>{a}</span>
+                  <span className="truncate">{a}</span>
                 </div>
               ))}
             </div>
