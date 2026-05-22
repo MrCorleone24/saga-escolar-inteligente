@@ -427,17 +427,6 @@ export default function Usuarios() {
                           </div>
                         )}
 
-                          <div>
-                            <label className="text-xs font-medium mb-1 block">Tipo de Usuário</label>
-                            <select 
-                              value={newRole} 
-                              disabled
-                              className="w-full h-10 px-3 rounded-md border border-input bg-muted text-sm outline-none"
-                            >
-                              <option value="student">Aluno</option>
-                            </select>
-                          </div>
-                        )}
 
                         <div>
                           <label className="text-xs font-medium mb-1 block">Bio / Perfil Interno</label>
