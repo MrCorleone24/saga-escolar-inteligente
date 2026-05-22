@@ -112,12 +112,20 @@ export default function VideoSalas() {
   const { data: rooms = [], refetch: refetchRooms } = useQuery({
     queryKey: ['rooms'],
     queryFn: async () => {
-      // The RLS policy handles visibility, so we just select all active rooms
-      const { data, error } = await supabase
+      let query = supabase
         .from('rooms')
         .select('*')
-        .eq('is_active', true)
-        .order('created_at', { ascending: false });
+        .eq('is_active', true);
+      
+      // If student, filter rooms by their school or teacher
+      if (['aluno', 'student'].includes(userRole || '')) {
+        const { data: profile } = await supabase.from('profiles').select('school_id, teacher_id').eq('id', userId).single();
+        if (profile) {
+          query = query.or(`created_by.eq.${profile.school_id},created_by.eq.${profile.teacher_id}`);
+        }
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false });
       
       if (error) {
         console.error("Error fetching rooms:", error);
