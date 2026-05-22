@@ -186,14 +186,14 @@ export default function MeuCaderno() {
     <DashboardLayout role="aluno" userName="João Silva" xp={450} level={5}>
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <PenLine className="text-primary" size={24} /> Meu Caderno Digital
+          <h1 className="text-3xl font-bold flex items-center gap-2 font-serif text-primary">
+            <PenLine className="text-primary" size={28} /> Meu Caderno Real
           </h1>
-          <p className="text-sm text-muted-foreground">Registre suas descobertas e atividades do dia</p>
+          <p className="text-sm text-muted-foreground italic">Escreva e personalize suas matérias como um caderno real</p>
         </div>
-        <Button onClick={() => setIsWriting(!isWriting)} variant={isWriting ? "ghost" : "default"} className="rounded-full">
+        <Button onClick={() => setIsWriting(!isWriting)} variant={isWriting ? "ghost" : "default"} className="rounded-full shadow-lg">
           {isWriting ? <X className="mr-2 h-4 w-4" /> : <Plus className="mr-2 h-4 w-4" />}
-          {isWriting ? "Cancelar" : "Nova Atividade"}
+          {isWriting ? "Fechar Caderno" : "Nova Folha"}
         </Button>
       </motion.div>
 
@@ -223,25 +223,31 @@ export default function MeuCaderno() {
         {isWriting ? (
           <motion.div
             key="writing-panel"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="bg-card border-2 rounded-2xl p-6 shadow-xl"
-            style={{ borderColor: `hsl(${subject.color} / 0.2)` }}
+            initial={{ opacity: 0, rotateY: -90 }}
+            animate={{ opacity: 1, rotateY: 0 }}
+            exit={{ opacity: 0, rotateY: 90 }}
+            className="bg-white border-l-8 rounded-r-2xl p-8 shadow-2xl min-h-[600px] relative overflow-hidden"
+            style={{ 
+              borderColor: `hsl(${subject.color})`,
+              backgroundImage: 'linear-gradient(#e5e7eb 1px, transparent 1px)',
+              backgroundSize: '100% 1.5rem',
+              lineHeight: '1.5rem'
+            }}
           >
-            <div className="space-y-4">
+            <div className="absolute left-4 top-0 bottom-0 w-[1px] bg-red-200" />
+            <div className="space-y-6 relative z-10">
               <Input 
-                placeholder="Título da Atividade" 
+                placeholder="Título da Atividade..." 
                 value={newTitle} 
                 onChange={e => setNewTitle(e.target.value)}
-                className="text-xl font-bold border-none focus-visible:ring-0 px-0 h-auto"
+                className="text-2xl font-serif font-bold border-none focus-visible:ring-0 px-8 h-auto bg-transparent text-gray-800"
               />
-              <Separator />
               <Textarea 
-                placeholder="O que você aprendeu hoje? Descreva aqui sua atividade..." 
+                placeholder="Escreva aqui sua lição ou pensamento..." 
                 value={newContent}
                 onChange={e => setNewContent(e.target.value)}
-                className="min-h-[250px] border-none focus-visible:ring-0 px-0 text-lg resize-none"
+                className="min-h-[400px] border-none focus-visible:ring-0 px-8 text-lg font-serif resize-none bg-transparent text-gray-700 placeholder:italic"
+                style={{ lineHeight: '1.5rem', paddingTop: '0.25rem' }}
               />
               
               <div className="flex flex-wrap gap-2">

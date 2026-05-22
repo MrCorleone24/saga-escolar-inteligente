@@ -427,10 +427,13 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           city: string | null
+          class_schedule: Json | null
           contact_person: string | null
           created_at: string
           email: string | null
           full_name: string | null
+          grade_level: string | null
+          has_special_needs: boolean | null
           id: string
           interests: string[] | null
           learning_pace: string | null
@@ -449,6 +452,7 @@ export type Database = {
           social_linkedin: string | null
           social_twitter: string | null
           social_youtube: string | null
+          special_needs_expert: boolean | null
           state: string | null
           subject: string | null
           subscription_status: string | null
@@ -465,10 +469,13 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           city?: string | null
+          class_schedule?: Json | null
           contact_person?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
+          grade_level?: string | null
+          has_special_needs?: boolean | null
           id: string
           interests?: string[] | null
           learning_pace?: string | null
@@ -487,6 +494,7 @@ export type Database = {
           social_linkedin?: string | null
           social_twitter?: string | null
           social_youtube?: string | null
+          special_needs_expert?: boolean | null
           state?: string | null
           subject?: string | null
           subscription_status?: string | null
@@ -503,10 +511,13 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           city?: string | null
+          class_schedule?: Json | null
           contact_person?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
+          grade_level?: string | null
+          has_special_needs?: boolean | null
           id?: string
           interests?: string[] | null
           learning_pace?: string | null
@@ -525,6 +536,7 @@ export type Database = {
           social_linkedin?: string | null
           social_twitter?: string | null
           social_youtube?: string | null
+          special_needs_expert?: boolean | null
           state?: string | null
           subject?: string | null
           subscription_status?: string | null

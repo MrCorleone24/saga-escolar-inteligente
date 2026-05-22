@@ -21,7 +21,8 @@ interface Room {
   name: string;
   status: "online" | "offline";
   created_by: string;
-  room_type: "classroom" | "administrative";
+  room_type: "classroom" | "administrative" | "direction";
+  school_id?: string;
 }
 
 interface Participant {
@@ -45,7 +46,7 @@ export default function VideoSalas() {
   const [userId, setUserId] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
   const [newRoomName, setNewRoomName] = useState("");
-  const [newRoomType, setNewRoomType] = useState<"classroom" | "administrative">("classroom");
+  const [newRoomType, setNewRoomType] = useState<"classroom" | "administrative" | "direction">("classroom");
   const [showParticipants, setShowParticipants] = useState(false);
   const [isHandRaised, setIsHandRaised] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -111,12 +112,20 @@ export default function VideoSalas() {
   const { data: rooms = [], refetch: refetchRooms } = useQuery({
     queryKey: ['rooms'],
     queryFn: async () => {
-      // The RLS policy handles visibility, so we just select all active rooms
-      const { data, error } = await supabase
+      let query = supabase
         .from('rooms')
         .select('*')
-        .eq('is_active', true)
-        .order('created_at', { ascending: false });
+        .eq('is_active', true);
+      
+      // If student, filter rooms by their school or teacher
+      if (['aluno', 'student'].includes(userRole || '')) {
+        const { data: profile } = await supabase.from('profiles').select('school_id, teacher_id').eq('id', userId).single();
+        if (profile) {
+          query = query.or(`created_by.eq.${profile.school_id},created_by.eq.${profile.teacher_id}`);
+        }
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false });
       
       if (error) {
         console.error("Error fetching rooms:", error);
@@ -285,6 +294,7 @@ export default function VideoSalas() {
   const currentUserModeration = participants.find(p => p.user_id === userId);
   const normalizedRole = userRole?.toLowerCase();
   const isAdmin = currentUserModeration?.role === 'admin' || ['professor', 'teacher', 'admin', 'school'].includes(normalizedRole || '');
+  const isSchoolAdmin = normalizedRole === 'school' || normalizedRole === 'admin';
   const canCreate = ['professor', 'teacher', 'admin', 'school'].includes(normalizedRole || '');
 
   if (inCall && activeRoom) {
@@ -293,8 +303,8 @@ export default function VideoSalas() {
         <div className="flex items-center justify-between p-4 bg-[#1a1a1a] text-white border-b border-white/10">
           <div className="flex items-center gap-3">
             <h2 className="font-bold">{activeRoom.name}</h2>
-            <Badge variant="outline" className={`animate-pulse ${activeRoom.room_type === 'administrative' ? 'text-blue-400 border-blue-400' : 'text-red-500 border-red-500'}`}>
-              {activeRoom.room_type === 'administrative' ? 'DIREÇÃO' : 'AO VIVO'}
+            <Badge variant="outline" className={`animate-pulse ${activeRoom.room_type === 'direction' ? 'text-amber-400 border-amber-400' : activeRoom.room_type === 'administrative' ? 'text-blue-400 border-blue-400' : 'text-red-500 border-red-500'}`}>
+              {activeRoom.room_type === 'direction' ? 'DIREÇÃO' : activeRoom.room_type === 'administrative' ? 'ADM' : 'AO VIVO'}
             </Badge>
             {isAdmin && <Badge className="bg-blue-600">MODERADOR</Badge>}
           </div>
