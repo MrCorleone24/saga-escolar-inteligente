@@ -73,15 +73,18 @@ export default function VideoSalas() {
         if (payload.action === 'mute_all' && payload.targetId !== userId) {
           toast.info("O moderador silenciou todos.");
           // In a real WebRTC app, we would mute the local track here
+          // For Jitsi, we could try to use the IFrame API if we had it initialized
         }
         if (payload.action === 'kick' && payload.targetId === userId) {
           toast.error("Você foi removido da sala pelo moderador.");
           setInCall(false);
+          setActiveRoom(null);
         }
         if (payload.action === 'private_call' && payload.targetId === userId) {
           toast.info(`${payload.fromName} iniciou uma conversa reservada.`);
-          // Open private meeting URL
-          window.open(`https://meet.jit.si/EduBrasil-Private-${payload.roomId}-${userId}`, '_blank');
+          // Open private meeting URL in a new tab or overlay
+          const privateRoomUrl = `https://meet.jit.si/EduBrasil-Private-${payload.roomId}-${userId}`;
+          window.open(privateRoomUrl, '_blank', 'width=800,height=600');
         }
       })
       .subscribe();
@@ -318,6 +321,7 @@ export default function VideoSalas() {
                   ) : (
                     <AttendanceList 
                       lessonId={activeRoom.id} 
+                      lessonName={activeRoom.name}
                       students={participants.filter(p => p.role === 'participante').map(p => ({
                         id: p.user_id,
                         full_name: p.profiles?.full_name
