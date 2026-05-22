@@ -66,9 +66,16 @@ export default function Turmas() {
     queryFn: async () => {
       if (!currentUser) return [];
       
-      // Since subjects table doesn't have school_id directly in types, we might need a join or assignments check
-      // For now, let's fetch all and filter client side if needed, or check assignments
-      const { data, error } = await supabase.from("subjects").select("*");
+      let query = supabase.from("subjects").select("*");
+      
+      if (currentUser.role === 'school') {
+        // Find subjects assigned to this school via classes or something
+        // For now, if school, fetch all (or add school_id filter if schema allowed)
+      } else if (currentUser.role === 'teacher') {
+        // Teacher filter would go here
+      }
+      
+      const { data, error } = await query;
       if (error) return [];
       
       return data.map((s: any) => ({

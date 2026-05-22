@@ -329,8 +329,19 @@ export default function VideoSalas() {
   if (userLoading || roomsLoading) {
     return (
       <DashboardLayout role={(userRole as any) || "aluno"} userName="Carregando...">
-        <div className="flex items-center justify-center h-64">
-          <Loader2 className="animate-spin h-8 w-8 text-primary" />
+        <div className="max-w-7xl mx-auto space-y-8">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="space-y-2">
+              <div className="h-10 w-48 bg-muted animate-pulse rounded-lg" />
+              <div className="h-4 w-64 bg-muted animate-pulse rounded-lg" />
+            </div>
+            <div className="h-12 w-96 bg-muted animate-pulse rounded-xl" />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="h-64 bg-card border rounded-2xl animate-pulse" />
+            ))}
+          </div>
         </div>
       </DashboardLayout>
     );
@@ -405,8 +416,13 @@ export default function VideoSalas() {
           {rooms.length === 0 && (
             <div className="col-span-full py-20 flex flex-col items-center justify-center text-center bg-muted/30 rounded-3xl border-2 border-dashed border-border">
               <Video className="h-12 w-12 text-muted-foreground mb-4 opacity-20" />
-              <h3 className="text-lg font-medium text-muted-foreground">Nenhuma sala disponível no momento</h3>
-              <p className="text-sm text-muted-foreground/60">Contate o administrador ou crie uma nova sala.</p>
+              <h3 className="text-xl font-bold mb-2 text-muted-foreground">Nenhuma sala ativa no momento</h3>
+              <p className="text-muted-foreground max-w-xs mb-6">Comece agora criando uma sala virtual para sua aula ou reunião.</p>
+              {canCreate && (
+                <Button onClick={() => document.querySelector('input')?.focus()} className="gradient-hero text-white">
+                  <Plus className="h-4 w-4 mr-2" /> Criar Minha Primeira Sala
+                </Button>
+              )}
             </div>
           )}
         </div>
