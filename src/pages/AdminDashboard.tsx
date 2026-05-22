@@ -6,8 +6,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Users, GraduationCap, BookOpen, BarChart3, School, TrendingUp, AlertTriangle, ShieldCheck } from "lucide-react";
 
-// Schools will be fetched from the database
-
+interface DashboardStats {
+  schools?: number;
+  students?: number;
+  teachers?: number;
+  mrr?: number;
+}
 
 export default function AdminDashboard() {
   const [profile, setProfile] = useState<any>(null);
@@ -25,13 +29,14 @@ export default function AdminDashboard() {
 
         // Fetch counts via RPC
         const { data: statsData, error: statsError } = await supabase.rpc('get_dashboard_stats');
+        const typedStats = statsData as unknown as DashboardStats;
         
-        if (!statsError && statsData) {
+        if (!statsError && typedStats) {
           setStats({ 
-            schools: statsData.schools || 0, 
-            students: statsData.students || 0, 
-            teachers: statsData.teachers || 0,
-            mrr: statsData.mrr || 0
+            schools: typedStats.schools || 0, 
+            students: typedStats.students || 0, 
+            teachers: typedStats.teachers || 0,
+            mrr: typedStats.mrr || 0
           });
         }
 
