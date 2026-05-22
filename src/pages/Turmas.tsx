@@ -27,7 +27,7 @@ interface Student {
   full_name: string;
   attendance: number;
   avg_grade: number;
-  trend: 'up' | 'down' | 'stable' | string;
+  trend: string;
 }
 
 export default function Turmas() {
