@@ -4,7 +4,7 @@ import { Brain, Video, BookOpen, PenLine, Layers, Save, Eye, X } from "lucide-re
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-
+import { toast } from "sonner";
 import { SUBJECTS } from "@/lib/subjects";
 
 const TYPES = [
