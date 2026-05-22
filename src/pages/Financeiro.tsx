@@ -146,25 +146,6 @@ export default function Financeiro() {
             </Card>
           </div>
         )}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <DollarSign className="text-primary" size={20} />
-                <Badge variant="secondary" className="text-xs">+5.2%</Badge>
-              </div>
-              <p className="text-xs text-muted-foreground">MRR Projetado</p>
-              <p className="text-xl font-bold mt-1">R$ {stats.mrr.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-            </Card>
-            <Card className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <Users className="text-primary" size={20} />
-                <Badge variant="secondary" className="text-xs">Ativo</Badge>
-              </div>
-              <p className="text-xs text-muted-foreground">Assinaturas Ativas</p>
-              <p className="text-xl font-bold mt-1">{stats.activeSubs}</p>
-            </Card>
-          </div>
-        )}
 
         {!isAdmin && (
           <Card className="p-5 gradient-hero text-white border-0">
