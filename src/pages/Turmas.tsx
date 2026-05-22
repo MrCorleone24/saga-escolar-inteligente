@@ -8,6 +8,11 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { AnimatePresence } from "framer-motion";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface Turma {
   id: string;
@@ -27,14 +32,19 @@ interface Student {
 }
 
 export default function Turmas() {
-  const [loading, setLoading] = useState(true);
-  const [turmasList, setTurmasList] = useState<Turma[]>([]);
+  const queryClient = useQueryClient();
+  const { user: currentUser, loading: userLoading } = useCurrentUser();
   const [selectedTurma, setSelectedTurma] = useState<string | null>(null);
-  const [studentsList, setStudentsList] = useState<Student[]>([]);
-  const [currentUser, setCurrentUser] = useState<any>(null);
   const [showEntryModal, setShowEntryModal] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   
+  // Create class form
+  const [newClassName, setNewClassName] = useState("");
+  const [newClassSubject, setNewClassSubject] = useState("");
+  const [newClassPeriod, setNewClassPeriod] = useState("Diurno");
+  const [newClassSchoolId, setNewClassSchoolId] = useState("");
+
   // Performance form
   const [grade, setGrade] = useState("");
   const [attendance, setAttendance] = useState("");
@@ -42,59 +52,65 @@ export default function Turmas() {
   const [aiFeedback, setAiFeedback] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  const { data: schools = [] } = useQuery({
+    queryKey: ['schools-list'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('profiles').select('id, full_name, school_name').eq('role', 'school');
+      if (error) return [];
+      return data;
+    },
+    enabled: currentUser?.role === 'admin'
+  });
 
-  const fetchData = async () => {
-    setLoading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user) {
-      const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
-      setCurrentUser(profile);
-
-      // Fetch groups/subjects as "Turmas"
-      const { data: subjectsData } = await supabase
-        .from("subjects")
-        .select("*");
+  const { data: turmasList = [], isLoading: turmasLoading } = useQuery({
+    queryKey: ['turmas', currentUser?.id, currentUser?.role],
+    queryFn: async () => {
+      if (!currentUser) return [];
+      let query = supabase.from("subjects").select("*");
       
-      const filteredSubjects = subjectsData?.filter(s => 
-        profile.role === 'teacher' ? (s as any).teacher_id === user.id : (s as any).school_id === user.id
-      );
-      
-      if (filteredSubjects) {
-        setTurmasList(filteredSubjects.map(s => ({
-          id: s.id,
-          name: s.name,
-          subject: s.name,
-          period: "Diurno",
-          student_count: 0
-        })));
+      if (currentUser.role === 'teacher') {
+        query = query.eq('teacher_id', currentUser.id);
+      } else if (currentUser.role === 'school') {
+        query = query.eq('school_id', currentUser.id);
       }
-    }
-    setLoading(false);
-  };
+      
+      const { data, error } = await query;
+      if (error) return [];
+      
+      return data.map(s => ({
+        id: s.id,
+        name: s.name,
+        subject: s.name,
+        period: "Diurno",
+        student_count: 0
+      }));
+    },
+    enabled: !!currentUser
+  });
 
-  const fetchStudents = async (turmaId: string) => {
-    setSelectedTurma(turmaId);
-    setLoading(true);
-    
-    // Fetch students linked to this teacher/school
-    const { data: studentsData } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("role", "student")
-      .eq(currentUser.role === 'teacher' ? 'teacher_id' : 'school_id', currentUser.id);
-    
-    if (studentsData) {
-      // Fetch performance for these students
+  const { data: studentsList = [], isLoading: studentsLoading } = useQuery({
+    queryKey: ['students-turma', selectedTurma],
+    queryFn: async () => {
+      if (!selectedTurma || !currentUser) return [];
+      
+      let query = supabase.from("profiles").select("*").eq("role", "student");
+      
+      if (currentUser.role === 'teacher') {
+        query = query.eq('teacher_id', currentUser.id);
+      } else if (currentUser.role === 'school') {
+        query = query.eq('school_id', currentUser.id);
+      }
+      
+      const { data: studentsData, error } = await query;
+      if (error || !studentsData) return [];
+
       const studentIds = studentsData.map(s => s.id);
       const { data: perfData } = await supabase
         .from('performance_reports')
         .select('student_id, grade, attendance')
         .in('student_id', studentIds);
 
-      setStudentsList(studentsData.map(s => {
+      return studentsData.map(s => {
         const studentPerf = perfData?.filter(p => p.student_id === s.id) || [];
         const avgG = studentPerf.length > 0 
           ? studentPerf.reduce((acc, curr) => acc + Number(curr.grade), 0) / studentPerf.length 
@@ -110,9 +126,39 @@ export default function Turmas() {
           avg_grade: Number(avgG.toFixed(1)),
           trend: 'stable'
         };
-      }));
+      });
+    },
+    enabled: !!selectedTurma && !!currentUser
+  });
+
+  const handleCreateTurma = async () => {
+    if (!newClassName || !newClassSubject) {
+      toast.error("Preencha os campos obrigatórios");
+      return;
     }
-    setLoading(false);
+
+    setSubmitting(true);
+    const targetSchoolId = currentUser?.role === 'admin' ? newClassSchoolId : (currentUser?.school_id || currentUser?.id);
+
+    try {
+      const { error } = await supabase.from('subjects').insert({
+        name: newClassName,
+        school_id: targetSchoolId,
+        teacher_id: currentUser?.role === 'teacher' ? currentUser.id : null
+      });
+
+      if (error) throw error;
+      
+      toast.success("Turma criada com sucesso!");
+      setShowCreateModal(false);
+      setNewClassName("");
+      setNewClassSubject("");
+      queryClient.invalidateQueries({ queryKey: ['turmas'] });
+    } catch (error: any) {
+      toast.error("Erro ao criar turma: " + error.message);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleRecordPerformance = async (e: React.FormEvent) => {
@@ -153,15 +199,80 @@ export default function Turmas() {
   };
 
   return (
+  if (userLoading || turmasLoading) {
+    return (
+      <DashboardLayout role="professor" userName="Carregando...">
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="animate-spin h-8 w-8 text-primary" />
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  return (
     <DashboardLayout role={currentUser?.role || "professor"} userName={currentUser?.full_name || "Professor"}>
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold">Minhas Turmas</h1>
           <p className="text-muted-foreground text-sm">Gerencie suas turmas e alunos</p>
         </div>
-        <Button className="gradient-hero border-0 text-primary-foreground">
-          <UserPlus size={16} className="mr-1.5" /> Nova Turma
-        </Button>
+        
+        <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
+          <DialogTrigger asChild>
+            <Button className="gradient-hero border-0 text-primary-foreground">
+              <UserPlus size={16} className="mr-1.5" /> Nova Turma
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Criar Nova Turma</DialogTitle>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="className">Nome da Turma</Label>
+                <Input id="className" value={newClassName} onChange={e => setNewClassName(e.target.value)} placeholder="Ex: 9º Ano A" />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="subject">Disciplina</Label>
+                <Input id="subject" value={newClassSubject} onChange={e => setNewClassSubject(e.target.value)} placeholder="Ex: Matemática" />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="period">Período</Label>
+                <Select value={newClassPeriod} onValueChange={setNewClassPeriod}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Matutino">Matutino</SelectItem>
+                    <SelectItem value="Vespertino">Vespertino</SelectItem>
+                    <SelectItem value="Noturno">Noturno</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              {currentUser?.role === 'admin' && (
+                <div className="grid gap-2">
+                  <Label htmlFor="school">Vincular Escola</Label>
+                  <Select value={newClassSchoolId} onValueChange={setNewClassSchoolId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a Escola" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {schools.map(s => (
+                        <SelectItem key={s.id} value={s.id}>{s.school_name || s.full_name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowCreateModal(false)}>Cancelar</Button>
+              <Button onClick={handleCreateTurma} disabled={submitting} className="bg-primary text-white">
+                {submitting ? <Loader2 className="animate-spin h-4 w-4" /> : "Criar Turma"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </motion.div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
