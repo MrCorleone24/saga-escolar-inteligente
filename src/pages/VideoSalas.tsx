@@ -4,7 +4,7 @@ import {
   Video, Mic, MicOff, VideoOff, MessageSquare, Users, 
   Settings, PhoneOff, Plus, MoreVertical, Shield, 
   Hand, Share2, Maximize2, Send, X, Search,
-  Lock, Unlock, UserMinus, VolumeX
+  Lock, Unlock, UserMinus, VolumeX, ClipboardList, UserCheck
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import AttendanceList from "@/components/presenca/AttendanceList";
 
 interface Room {
   id: string;
@@ -47,11 +48,9 @@ export default function VideoSalas() {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [newRoomName, setNewRoomName] = useState("");
   const [newRoomType, setNewRoomType] = useState<"classroom" | "administrative" | "direction">("classroom");
-  const [showParticipants, setShowParticipants] = useState(false);
+  const [rightPanel, setRightPanel] = useState<'participants' | 'attendance' | null>(null);
   const [isHandRaised, setIsHandRaised] = useState(false);
-  const [showInviteModal, setShowInviteModal] = useState(false);
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [isInviting, setIsInviting] = useState(false);
+  const [privateCallTarget, setPrivateCallTarget] = useState<string | null>(null);
 
   useEffect(() => {
     const initAuth = async () => {
@@ -64,6 +63,33 @@ export default function VideoSalas() {
     };
     initAuth();
   }, []);
+
+  // Set up Realtime for moderation commands
+  useEffect(() => {
+    if (!activeRoom || !inCall || !userId) return;
+
+    const channel = supabase.channel(`room-management:${activeRoom.id}`)
+      .on('broadcast', { event: 'moderation' }, ({ payload }) => {
+        if (payload.action === 'mute_all' && payload.targetId !== userId) {
+          toast.info("O moderador silenciou todos.");
+          // In a real WebRTC app, we would mute the local track here
+        }
+        if (payload.action === 'kick' && payload.targetId === userId) {
+          toast.error("Você foi removido da sala pelo moderador.");
+          setInCall(false);
+        }
+        if (payload.action === 'private_call' && payload.targetId === userId) {
+          toast.info(`${payload.fromName} iniciou uma conversa reservada.`);
+          // Open private meeting URL
+          window.open(`https://meet.jit.si/EduBrasil-Private-${payload.roomId}-${userId}`, '_blank');
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [activeRoom, inCall, userId]);
 
   const { data: rooms = [] } = useQuery({
     queryKey: ['rooms', userId, userRole],
@@ -152,6 +178,22 @@ export default function VideoSalas() {
     queryClient.invalidateQueries({ queryKey: ['room_participants'] });
   };
 
+  const broadcastModeration = async (action: string, targetId?: string) => {
+    if (!activeRoom) return;
+    const channel = supabase.channel(`room-management:${activeRoom.id}`);
+    await channel.send({
+      type: 'broadcast',
+      event: 'moderation',
+      payload: { action, targetId, roomId: activeRoom.id, fromName: 'Moderador' }
+    });
+    toast.success(`Comando enviado: ${action}`);
+  };
+
+  const handlePrivateCall = async (participant: Participant) => {
+    if (!activeRoom) return;
+    broadcastModeration('private_call', participant.user_id);
+    window.open(`https://meet.jit.si/EduBrasil-Private-${activeRoom.id}-${participant.user_id}`, '_blank');
+  };
 
   const toggleHandRaise = async () => {
     if (!userId || !activeRoom) return;
@@ -163,52 +205,126 @@ export default function VideoSalas() {
   const currentUserModeration = participants.find(p => p.user_id === userId);
   const isAdmin = currentUserModeration?.role === 'admin' || ['professor', 'teacher', 'admin', 'school'].includes(userRole || '');
   const canCreate = ['professor', 'teacher', 'admin', 'school'].includes(userRole || '');
-  const isSchoolAdmin = userRole === 'school' || userRole === 'admin';
 
   if (inCall && activeRoom) {
     return (
       <div className="h-screen bg-black flex flex-col">
+        {/* Teams-like Header */}
         <div className="flex items-center justify-between p-4 bg-[#1a1a1a] text-white border-b border-white/10">
           <div className="flex items-center gap-3">
-            <h2 className="font-bold">{activeRoom.name}</h2>
-            {isAdmin && <Badge className="bg-blue-600">MODERADOR</Badge>}
+            <div className="w-8 h-8 rounded bg-primary flex items-center justify-center">
+              <Video className="h-5 w-5" />
+            </div>
+            <div>
+              <h2 className="font-bold text-sm">{activeRoom.name}</h2>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="text-[10px] h-4 border-green-500 text-green-500 uppercase">Ao Vivo</Badge>
+                {isAdmin && <Badge className="text-[10px] h-4 bg-primary uppercase">Moderador</Badge>}
+              </div>
+            </div>
           </div>
+          
           <div className="flex items-center gap-2">
+            {isAdmin && (
+              <div className="flex items-center gap-1 border-r border-white/10 pr-2 mr-2">
+                <Button variant="ghost" size="sm" className="h-8 text-xs hover:bg-white/10" onClick={() => broadcastModeration('mute_all')}>
+                  <VolumeX className="h-4 w-4 mr-2" /> Silenciar Tudo
+                </Button>
+                <Button variant="ghost" size="sm" className="h-8 text-xs hover:bg-white/10" onClick={() => setRightPanel(rightPanel === 'attendance' ? null : 'attendance')}>
+                  <UserCheck className="h-4 w-4 mr-2" /> Chamada
+                </Button>
+              </div>
+            )}
+            
             {!isAdmin && (
-              <Button variant={isHandRaised ? "secondary" : "ghost"} size="sm" onClick={toggleHandRaise}>
-                <Hand className="h-5 w-5" />
+              <Button variant={isHandRaised ? "secondary" : "ghost"} size="sm" className="h-8" onClick={toggleHandRaise}>
+                <Hand className={`h-5 w-5 ${isHandRaised ? 'text-yellow-500' : ''}`} />
               </Button>
             )}
-            <Button variant="ghost" size="icon" onClick={() => setShowParticipants(!showParticipants)}>
+            
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setRightPanel(rightPanel === 'participants' ? null : 'participants')}>
               <Users className="h-5 w-5" />
             </Button>
-            <Button variant="destructive" onClick={() => setInCall(false)}>
+            
+            <Button variant="destructive" size="sm" className="h-8 font-bold" onClick={() => setInCall(false)}>
               <PhoneOff className="mr-2 h-4 w-4" /> Sair
             </Button>
           </div>
         </div>
+
         <div className="flex-1 flex overflow-hidden">
-          <iframe
-            src={`https://meet.jit.si/${activeRoom.id.replace(/-/g, '')}#config.prejoinPageEnabled=false`}
-            allow="camera; microphone; display-capture; autoplay; clipboard-write"
-            style={{ width: '100%', height: '100%', border: '0' }}
-          />
+          {/* Main Video Area */}
+          <div className="flex-1 bg-zinc-900 relative">
+            <iframe
+              src={`https://meet.jit.si/${activeRoom.id.replace(/-/g, '')}#config.prejoinPageEnabled=false&interfaceConfig.TOOLBAR_BUTTONS=["microphone","camera","closedcaptions","desktop","fullscreen","fittowindow","chat","raisehand","videoquality","filmstrip","shortcuts","tileview","videobackgroundblur","download","help","mute-everyone","security"]`}
+              allow="camera; microphone; display-capture; autoplay; clipboard-write"
+              style={{ width: '100%', height: '100%', border: '0' }}
+            />
+          </div>
+
+          {/* Right Panels (Participants / Attendance) */}
           <AnimatePresence>
-            {showParticipants && (
-              <motion.div initial={{ x: 300 }} animate={{ x: 0 }} exit={{ x: 300 }} className="w-80 bg-[#1a1a1a] border-l border-white/10 text-white p-4">
-                <h3 className="font-bold mb-4">Participantes</h3>
-                <div className="space-y-3">
-                  {participants.map(p => (
-                    <div key={p.user_id} className="flex items-center justify-between p-2 bg-white/5 rounded">
-                      <span className="text-sm">{p.profiles?.full_name}</span>
-                      {isAdmin && p.user_id !== userId && (
-                        <Button size="icon" variant="ghost" className="h-6 w-6 text-red-400" onClick={() => updateModeration(p.user_id, { is_muted: !p.is_muted })}>
-                          <VolumeX size={14} />
-                        </Button>
-                      )}
-                    </div>
-                  ))}
+            {rightPanel && (
+              <motion.div 
+                initial={{ x: 300, opacity: 0 }} 
+                animate={{ x: 0, opacity: 1 }} 
+                exit={{ x: 300, opacity: 0 }} 
+                className="w-80 bg-[#1a1a1a] border-l border-white/10 text-white flex flex-col"
+              >
+                <div className="p-4 border-b border-white/10 flex items-center justify-between">
+                  <h3 className="font-bold flex items-center gap-2">
+                    {rightPanel === 'participants' ? <><Users size={18} /> Participantes</> : <><ClipboardList size={18} /> Lista de Chamada</>}
+                  </h3>
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setRightPanel(null)}>
+                    <X size={18} />
+                  </Button>
                 </div>
+
+                <ScrollArea className="flex-1 p-4">
+                  {rightPanel === 'participants' ? (
+                    <div className="space-y-3">
+                      {participants.map(p => (
+                        <div key={p.user_id} className="flex items-center justify-between p-2 bg-white/5 rounded-lg border border-white/5 group">
+                          <div className="flex items-center gap-3">
+                            <div className="relative">
+                              <div className="w-8 h-8 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-xs font-bold text-primary">
+                                {p.profiles?.full_name?.charAt(0)}
+                              </div>
+                              {p.hand_raised && (
+                                <div className="absolute -top-1 -right-1 bg-yellow-500 rounded-full p-0.5 animate-bounce">
+                                  <Hand size={10} className="text-black" />
+                                </div>
+                              )}
+                            </div>
+                            <div>
+                              <p className="text-xs font-medium">{p.profiles?.full_name}</p>
+                              <p className="text-[10px] text-white/40">{p.role}</p>
+                            </div>
+                          </div>
+                          
+                          {isAdmin && p.user_id !== userId && (
+                            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Button size="icon" variant="ghost" className="h-7 w-7 text-blue-400 hover:bg-blue-400/10" title="Chamada Reservada" onClick={() => handlePrivateCall(p)}>
+                                <MessageSquare size={14} />
+                              </Button>
+                              <Button size="icon" variant="ghost" className="h-7 w-7 text-red-400 hover:bg-red-400/10" title="Remover" onClick={() => broadcastModeration('kick', p.user_id)}>
+                                <UserMinus size={14} />
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <AttendanceList 
+                      lessonId={activeRoom.id} 
+                      students={participants.filter(p => p.role === 'participante').map(p => ({
+                        id: p.user_id,
+                        full_name: p.profiles?.full_name
+                      }))} 
+                    />
+                  )}
+                </ScrollArea>
               </motion.div>
             )}
           </AnimatePresence>
@@ -220,24 +336,66 @@ export default function VideoSalas() {
   return (
     <DashboardLayout role={(userRole as any) || "aluno"} userName="Usuário">
       <div className="max-w-7xl mx-auto space-y-8">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold flex items-center gap-3">
-            <Video className="text-primary h-8 w-8" /> Salas Virtuais
-          </h1>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <Video className="text-primary h-8 w-8" />
+              </div>
+              Salas Virtuais
+            </h1>
+            <p className="text-muted-foreground mt-1">Gerencie suas aulas e reuniões em tempo real.</p>
+          </div>
+          
           {canCreate && (
-            <div className="flex gap-2">
-              <Input placeholder="Nome da sala..." value={newRoomName} onChange={e => setNewRoomName(e.target.value)} />
-              <Button onClick={handleCreateRoom} className="gradient-hero text-white">Criar</Button>
+            <div className="flex gap-2 items-center bg-card p-2 rounded-xl border shadow-sm">
+              <Input 
+                placeholder="Nome da nova sala..." 
+                className="max-w-[200px] border-none bg-muted" 
+                value={newRoomName} 
+                onChange={e => setNewRoomName(e.target.value)} 
+              />
+              <Button onClick={handleCreateRoom} className="gradient-hero text-white">
+                <Plus className="h-4 w-4 mr-2" /> Criar Sala
+              </Button>
             </div>
           )}
         </div>
+
+        <Separator />
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {rooms.map(room => (
-            <div key={room.id} className="bg-card border border-border p-5 rounded-xl">
-              <h3 className="text-lg font-bold mb-4">{room.name}</h3>
-              <Button className="w-full gradient-hero text-white" onClick={() => handleJoinRoom(room)}>Entrar</Button>
-            </div>
+            <motion.div 
+              key={room.id} 
+              whileHover={{ y: -5 }}
+              className="bg-card border border-border p-6 rounded-2xl shadow-sm hover:shadow-md transition-all group"
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className="p-3 bg-primary/5 rounded-xl group-hover:bg-primary group-hover:text-white transition-colors">
+                  <Video className="h-6 w-6" />
+                </div>
+                <Badge variant="outline" className="border-green-500 text-green-500">ONLINE</Badge>
+              </div>
+              
+              <h3 className="text-xl font-bold mb-1">{room.name}</h3>
+              <p className="text-xs text-muted-foreground mb-6 uppercase tracking-wider">
+                {room.room_type === 'classroom' ? 'Sala de Aula' : 'Administrativo'}
+              </p>
+              
+              <Button className="w-full gradient-hero text-white font-bold h-11" onClick={() => handleJoinRoom(room)}>
+                Entrar na Sala
+              </Button>
+            </motion.div>
           ))}
+          
+          {rooms.length === 0 && (
+            <div className="col-span-full py-20 flex flex-col items-center justify-center text-center bg-muted/30 rounded-3xl border-2 border-dashed border-border">
+              <Video className="h-12 w-12 text-muted-foreground mb-4 opacity-20" />
+              <h3 className="text-lg font-medium text-muted-foreground">Nenhuma sala disponível no momento</h3>
+              <p className="text-sm text-muted-foreground/60">Contate o administrador ou crie uma nova sala.</p>
+            </div>
+          )}
         </div>
       </div>
     </DashboardLayout>
