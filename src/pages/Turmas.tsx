@@ -198,7 +198,6 @@ export default function Turmas() {
     }
   };
 
-  return (
   if (userLoading || turmasLoading) {
     return (
       <DashboardLayout role="professor" userName="Carregando...">
