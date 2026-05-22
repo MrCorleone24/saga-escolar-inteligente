@@ -66,7 +66,7 @@ export default function Planejamento() {
                 title: formData.title,
                 subject_id: (await supabase.from('subjects').select('id').eq('name', formData.subject).single()).data?.id,
                 teacher_id: userId,
-                grade_level: `${formData.grade}º Ano`,
+                grade_level: formData.grade, // Pass directly since it now includes EM/EF labels
                 day_of_week: 0, // Need to pass day from grid
                 bncc_code: formData.bncc,
                 start_time: "07:30",
