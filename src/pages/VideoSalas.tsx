@@ -102,11 +102,6 @@ export default function VideoSalas() {
     },
     enabled: !!userId
   });
-      if (error) return [];
-      return data as Room[];
-    },
-    enabled: !!userId
-  });
 
   const { data: participants = [] } = useQuery({
     queryKey: ['room_participants', activeRoom?.id],
