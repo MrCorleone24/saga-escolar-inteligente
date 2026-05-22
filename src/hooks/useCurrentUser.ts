@@ -7,6 +7,8 @@ export interface UserProfile {
   school_id: string | null;
   teacher_id: string | null;
   full_name: string | null;
+  xp?: number;
+  level?: number;
 }
 
 export function useCurrentUser() {
