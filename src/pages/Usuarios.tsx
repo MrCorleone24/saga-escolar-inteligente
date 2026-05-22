@@ -349,11 +349,15 @@ export default function Usuarios() {
                           onChange={e => setNewRole(e.target.value)}
                           className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm outline-none focus:ring-2 focus:ring-primary"
                         >
-                          <option value="school">Escola</option>
-                          <option value="teacher">Professor</option>
-                          <option value="student">Aluno</option>
+                          <option value="school">Escola (Instituição)</option>
+                          <option value="teacher">Professor Solo</option>
                           <option value="admin">Administrador Geral</option>
                         </select>
+                        <p className="text-[10px] text-muted-foreground mt-1">
+                          {newRole === 'school' ? 'Instituições podem gerenciar seus próprios professores e alunos.' : 
+                           newRole === 'teacher' ? 'Professores solo gerenciam seus próprios alunos diretamente.' : 
+                           'Administradores têm acesso total ao sistema.'}
+                        </p>
                       </div>
                     )}
 
@@ -365,8 +369,8 @@ export default function Usuarios() {
                           onChange={e => setNewRole(e.target.value)}
                           className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm outline-none focus:ring-2 focus:ring-primary"
                         >
-                          <option value="teacher">Professor</option>
-                          <option value="student">Aluno</option>
+                          <option value="teacher">Professor da Escola</option>
+                          <option value="student">Aluno da Escola</option>
                         </select>
                       </div>
                     )}
