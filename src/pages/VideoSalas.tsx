@@ -122,6 +122,18 @@ export default function VideoSalas() {
         const { data: profile } = await supabase.from('profiles').select('school_id, teacher_id').eq('id', userId).single();
         if (profile) {
           query = query.or(`created_by.eq.${profile.school_id},created_by.eq.${profile.teacher_id}`);
+          // Students cannot see 'direction' rooms unless specifically invited
+          query = query.neq('room_type', 'direction');
+        }
+      }
+      
+      // School teachers can see administrative but maybe not direction?
+      if (['professor', 'teacher'].includes(userRole || '')) {
+        const { data: profile } = await supabase.from('profiles').select('school_id').eq('id', userId).single();
+        if (profile?.school_id) {
+          // If they belong to a school, they see rooms created by that school
+          query = query.or(`created_by.eq.${profile.school_id},created_by.eq.${userId}`);
+          query = query.neq('room_type', 'direction'); // Only school admin/admin see direction
         }
       }
 
