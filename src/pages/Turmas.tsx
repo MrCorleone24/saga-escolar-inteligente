@@ -239,6 +239,21 @@ export default function Turmas() {
                   </SelectContent>
                 </Select>
               </div>
+              {currentUser?.role === 'admin' && (
+                <div className="grid gap-2">
+                  <Label htmlFor="school">Escola</Label>
+                  <Select value={newClassSchoolId} onValueChange={setNewClassSchoolId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a Escola" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {schools.map(s => (
+                        <SelectItem key={s.id} value={s.id}>{s.school_name || s.full_name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowCreateModal(false)}>Cancelar</Button>

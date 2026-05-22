@@ -15,7 +15,7 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 export default function IAPedagogica() {
   const queryClient = useQueryClient();
-  const { user: userProfile, loading: profileLoading } = useCurrentUser();
+  const { user: userProfile, loading: profileLoading, role: userRole } = useCurrentUser();
   const [userInput, setUserInput] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedContent, setGeneratedContent] = useState<string | null>(null);
