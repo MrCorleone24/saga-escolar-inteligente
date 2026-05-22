@@ -352,131 +352,157 @@ export default function Usuarios() {
                   <X size={20} />
                 </button>
               </div>
-              <form onSubmit={handleCreateUser} className="p-6 overflow-y-auto max-h-[80vh]">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <h4 className="font-bold text-sm text-primary uppercase tracking-wider">Acesso e Perfil</h4>
+              <form onSubmit={handleCreateUser} className="p-6 overflow-y-auto max-h-[85vh]">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-6">
                     <div>
-                      <label className="text-xs font-medium mb-1 block">Nome Completo</label>
-                      <Input value={newName} onChange={e => setNewName(e.target.value)} placeholder="Ex: João Silva" required />
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium mb-1 block">Email</label>
-                      <Input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="email@exemplo.com" required />
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium mb-1 block">Senha Temporária</label>
-                      <Input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="No mínimo 6 caracteres" required minLength={6} />
+                      <h4 className="font-bold text-sm text-primary uppercase tracking-wider mb-4 border-l-4 border-primary pl-2">Informações de Acesso</h4>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="text-xs font-medium mb-1 block">Nome Completo</label>
+                          <Input value={newName} onChange={e => setNewName(e.target.value)} placeholder="Ex: João Silva" required />
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium mb-1 block">Email</label>
+                          <Input type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)} placeholder="email@exemplo.com" required />
+                        </div>
+                        <div>
+                          <label className="text-xs font-medium mb-1 block">Senha Temporária</label>
+                          <Input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} placeholder="No mínimo 6 caracteres" required minLength={6} />
+                        </div>
+                      </div>
                     </div>
                     
-                    {currentUser?.role === 'admin' && (
-                      <div>
-                        <label className="text-xs font-medium mb-1 block">Tipo de Usuário (Hierarquia)</label>
-                        <select 
-                          value={newRole} 
-                          onChange={e => setNewRole(e.target.value)}
-                          className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm outline-none focus:ring-2 focus:ring-primary"
-                        >
-                          <option value="school">Escola (Instituição)</option>
-                          <option value="teacher">Professor Solo</option>
-                          <option value="admin">Administrador Geral</option>
-                        </select>
-                        <p className="text-[10px] text-muted-foreground mt-1">
-                          {newRole === 'school' ? 'Instituições podem gerenciar seus próprios professores e alunos.' : 
-                           newRole === 'teacher' ? 'Professores solo gerenciam seus próprios alunos diretamente.' : 
-                           'Administradores têm acesso total ao sistema.'}
-                        </p>
-                      </div>
-                    )}
-
-                    {currentUser?.role === 'school' && (
-                      <div>
-                        <label className="text-xs font-medium mb-1 block">Tipo de Usuário</label>
-                        <select 
-                          value={newRole} 
-                          onChange={e => setNewRole(e.target.value)}
-                          className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm outline-none focus:ring-2 focus:ring-primary"
-                        >
-                          <option value="teacher">Professor da Escola</option>
-                          <option value="student">Aluno da Escola</option>
-                        </select>
-                      </div>
-                    )}
-
-                    {(currentUser?.role === 'teacher' || currentUser?.role === 'professor') && (
-                      <div>
-                        <label className="text-xs font-medium mb-1 block">Tipo de Usuário</label>
-                        <select 
-                          value={newRole} 
-                          disabled
-                          className="w-full h-10 px-3 rounded-md border border-input bg-muted text-sm outline-none"
-                        >
-                          <option value="student">Aluno</option>
-                        </select>
-                      </div>
-                    )}
-
                     <div>
-                      <label className="text-xs font-medium mb-1 block">Bio / Perfil Interno</label>
-                      <textarea 
-                        value={newBio} 
-                        onChange={e => setNewBio(e.target.value)} 
-                        placeholder="Breve descrição do perfil..."
-                        className="w-full h-24 px-3 py-2 rounded-md border border-input bg-background text-sm outline-none focus:ring-2 focus:ring-primary resize-none"
-                      />
-                    </div>
+                      <h4 className="font-bold text-sm text-secondary uppercase tracking-wider mb-4 border-l-4 border-secondary pl-2">Perfil e Papel</h4>
+                      <div className="space-y-4">
+                        {currentUser?.role === 'admin' && (
+                          <div>
+                            <label className="text-xs font-medium mb-1 block">Tipo de Usuário (Hierarquia)</label>
+                            <select 
+                              value={newRole} 
+                              onChange={e => setNewRole(e.target.value)}
+                              className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm outline-none focus:ring-2 focus:ring-primary"
+                            >
+                              <option value="school">Escola (Instituição)</option>
+                              <option value="teacher">Professor Solo (Assinante)</option>
+                              <option value="admin">Administrador Geral</option>
+                            </select>
+                            <p className="text-[10px] text-muted-foreground mt-1">
+                              {newRole === 'school' ? 'Instituições gerenciam seus próprios professores e alunos.' : 
+                               newRole === 'teacher' ? 'Professores solo gerenciam seus próprios alunos e assinaturas.' : 
+                               'Administradores têm acesso total ao sistema.'}
+                            </p>
+                          </div>
+                        )}
 
+                        {currentUser?.role === 'school' && (
+                          <div>
+                            <label className="text-xs font-medium mb-1 block">Tipo de Usuário</label>
+                            <select 
+                              value={newRole} 
+                              onChange={e => setNewRole(e.target.value)}
+                              className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm outline-none focus:ring-2 focus:ring-primary"
+                            >
+                              <option value="school_admin">Segundo Admin da Escola</option>
+                              <option value="teacher">Professor da Escola</option>
+                              <option value="student">Aluno da Escola</option>
+                            </select>
+                          </div>
+                        )}
+
+                        {(currentUser?.role === 'teacher' || currentUser?.role === 'professor') && (
+                          <div>
+                            <label className="text-xs font-medium mb-1 block">Tipo de Usuário</label>
+                            <select 
+                              value={newRole} 
+                              disabled
+                              className="w-full h-10 px-3 rounded-md border border-input bg-muted text-sm outline-none"
+                            >
+                              <option value="student">Aluno</option>
+                            </select>
+                          </div>
+                        )}
+
+                        <div>
+                          <label className="text-xs font-medium mb-1 block">Bio / Perfil Interno</label>
+                          <textarea 
+                            value={newBio} 
+                            onChange={e => setNewBio(e.target.value)} 
+                            placeholder="Breve descrição do perfil (biografia interna)..."
+                            className="w-full h-24 px-3 py-2 rounded-md border border-input bg-background text-sm outline-none focus:ring-2 focus:ring-primary resize-none"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-6">
+                    {/* Role Specific Fields */}
                     {newRole === 'teacher' && (
-                      <div>
-                        <label className="text-xs font-medium mb-1 block">Matéria</label>
-                        <Input value={newSubject} onChange={e => setNewSubject(e.target.value)} placeholder="Ex: Matemática" required />
+                      <div className="p-4 bg-primary/5 rounded-xl border border-primary/10">
+                        <h4 className="font-bold text-sm text-primary uppercase tracking-wider mb-4">Dados do Professor</h4>
+                        <div className="space-y-4">
+                          <div>
+                            <label className="text-xs font-medium mb-1 block">Matéria / Disciplina Principal</label>
+                            <Input value={newSubject} onChange={e => setNewSubject(e.target.value)} placeholder="Ex: Matemática, Português..." required />
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <input 
+                              type="checkbox" 
+                              id="specialNeeds" 
+                              checked={specialNeedsExpert} 
+                              onChange={e => setSpecialNeedsExpert(e.target.checked)}
+                              className="w-4 h-4 text-primary"
+                            />
+                            <label htmlFor="specialNeeds" className="text-xs font-medium">Especialista em Alunos Especiais?</label>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {newRole === 'student' && (
+                      <div className="p-4 bg-secondary/5 rounded-xl border border-secondary/10">
+                        <h4 className="font-bold text-sm text-secondary uppercase tracking-wider mb-4">Dados do Aluno</h4>
+                        <div className="space-y-4">
+                          <div>
+                            <label className="text-xs font-medium mb-1 block">Série / Ano</label>
+                            <Input value={gradeLevel} onChange={e => setGradeLevel(e.target.value)} placeholder="Ex: 3º Ano A, 9º Ano B" required />
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <input 
+                              type="checkbox" 
+                              id="hasSpecialNeeds" 
+                              checked={hasSpecialNeeds} 
+                              onChange={e => setHasSpecialNeeds(e.target.checked)}
+                              className="w-4 h-4 text-secondary"
+                            />
+                            <label htmlFor="hasSpecialNeeds" className="text-xs font-medium">Aluno com Condições Especiais?</label>
+                          </div>
+                        </div>
                       </div>
                     )}
 
                     {newRole === 'school' && (
-                      <div>
-                        <label className="text-xs font-medium mb-1 block">Nome da Instituição</label>
-                        <Input value={newSchool} onChange={e => setNewSchool(e.target.value)} placeholder="Nome da instituição" required />
+                      <div className="p-4 bg-orange-500/5 rounded-xl border border-orange-500/10">
+                        <h4 className="font-bold text-sm text-orange-600 uppercase tracking-wider mb-4">Dados da Instituição</h4>
+                        <div className="space-y-3">
+                          <Input value={newSchool} onChange={e => setNewSchool(e.target.value)} placeholder="Nome da Escola" required />
+                          <Input value={taxId} onChange={e => setTaxId(e.target.value)} placeholder="CNPJ" />
+                          <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="Telefone de Contato" />
+                          <Input value={address} onChange={e => setAddress(e.target.value)} placeholder="Endereço Completo" />
+                        </div>
                       </div>
                     )}
                   </div>
-
-                  {newRole === 'school' && (
-                    <div className="space-y-4">
-                      <h4 className="font-bold text-sm text-primary uppercase tracking-wider">Dados Institucionais</h4>
-                      <div>
-                        <label className="text-xs font-medium mb-1 block">CNPJ / Identificação</label>
-                        <Input value={taxId} onChange={e => setTaxId(e.target.value)} placeholder="00.000.000/0001-00" />
-                      </div>
-                      <div>
-                        <label className="text-xs font-medium mb-1 block">Telefone</label>
-                        <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="(00) 0000-0000" />
-                      </div>
-                      <div>
-                        <label className="text-xs font-medium mb-1 block">Pessoa de Contato / Diretor</label>
-                        <Input value={contactPerson} onChange={e => setContactPerson(e.target.value)} placeholder="Nome do responsável" />
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <label className="text-xs font-medium mb-1 block">CEP</label>
-                          <Input value={zipCode} onChange={e => setZipCode(e.target.value)} placeholder="00000-000" />
-                        </div>
-                        <div>
-                          <label className="text-xs font-medium mb-1 block">Cidade</label>
-                          <Input value={city} onChange={e => setCity(e.target.value)} placeholder="Cidade" />
-                        </div>
-                      </div>
-                      <div>
-                        <label className="text-xs font-medium mb-1 block">Endereço</label>
-                        <Input value={address} onChange={e => setAddress(e.target.value)} placeholder="Rua, número, complemento" />
-                      </div>
-                    </div>
-                  )}
                 </div>
 
-                <div className="mt-8">
-                  <Button type="submit" className="w-full gradient-hero py-6 font-bold" disabled={submitting}>
-                    {submitting ? <Loader2 className="animate-spin mr-2" /> : "Criar Usuário / Escola"}
+                <div className="mt-8 flex gap-3">
+                  <Button type="submit" className="flex-1 gradient-hero py-6 font-bold text-lg shadow-lg" disabled={submitting}>
+                    {submitting ? <Loader2 className="animate-spin mr-2" /> : "Criar Usuário Completo"}
+                  </Button>
+                  <Button type="button" variant="outline" onClick={() => setShowAddModal(false)} className="py-6 px-8">
+                    Cancelar
                   </Button>
                 </div>
               </form>
