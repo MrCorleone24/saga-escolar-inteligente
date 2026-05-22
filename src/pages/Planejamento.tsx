@@ -7,26 +7,25 @@ import WeeklyPlanGrid from "@/components/planejamento/WeeklyPlanGrid";
 import LessonPlanForm from "@/components/planejamento/LessonPlanForm";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 export default function Planejamento() {
   const [grade, setGrade] = useState(3);
   const [view, setView] = useState<"grid" | "create">("grid");
-  const [userRole, setUserRole] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
+  const { user, loading } = useCurrentUser();
 
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      setUserId(data.user?.id || null);
-      if (data.user?.id) {
-        supabase.from('profiles').select('role').eq('id', data.user.id).single().then(({ data: profile }) => {
-          setUserRole(profile?.role || null);
-        });
-      }
-    });
-  }, []);
+  if (loading) {
+    return (
+      <DashboardLayout role="professor" userName="Carregando...">
+        <div className="flex justify-center py-20">
+          <Loader2 className="animate-spin text-primary" />
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
-    <DashboardLayout role={(userRole as any) || "professor"} userName={user?.full_name || "Professor"}>
+    <DashboardLayout role={(user?.role as any) || "professor"} userName={user?.full_name || "Professor"}>
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
