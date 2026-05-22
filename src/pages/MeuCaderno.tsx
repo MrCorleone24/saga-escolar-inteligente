@@ -226,16 +226,16 @@ export default function MeuCaderno() {
             initial={{ opacity: 0, rotateY: -90 }}
             animate={{ opacity: 1, rotateY: 0 }}
             exit={{ opacity: 0, rotateY: 90 }}
-            className="bg-[#fffdfa] border-l-[30px] rounded-r-2xl p-8 shadow-2xl min-h-[700px] relative overflow-hidden"
+            className="bg-[#fffdfa] border-l-[40px] rounded-r-2xl p-8 shadow-2xl min-h-[700px] relative overflow-hidden"
             style={{ 
               borderColor: `hsl(${subject.color})`,
               backgroundImage: `
                 linear-gradient(90deg, rgba(255,0,0,0.1) 0px, rgba(255,0,0,0.1) 1px, transparent 1px),
-                linear-gradient(#e5e7eb 1px, transparent 1px)
+                linear-gradient(#ced4da 1px, transparent 1px)
               `,
-              backgroundSize: '100% 100%, 100% 1.6rem',
-              backgroundPosition: '40px 0, 0 1.2rem',
-              lineHeight: '1.6rem'
+              backgroundSize: '100% 100%, 100% 1.8rem',
+              backgroundPosition: '40px 0, 0 1.4rem',
+              lineHeight: '1.8rem'
             }}
           >
             {/* Spiral binding simulation */}

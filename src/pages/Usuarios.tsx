@@ -41,6 +41,7 @@ export default function Usuarios() {
   const [newPassword, setNewPassword] = useState("");
   const [newName, setNewName] = useState("");
   const [newRole, setNewRole] = useState("student");
+  const [teacherCategory, setTeacherCategory] = useState<"solo" | "institutional">("solo");
   const [newSchool, setNewSchool] = useState("");
   const [newSubject, setNewSubject] = useState("");
   const [newBio, setNewBio] = useState("");
@@ -134,7 +135,8 @@ export default function Usuarios() {
           hasSpecialNeeds,
           specialNeedsExpert,
           teacherId: teacherId || (currentUser?.role === 'teacher' ? currentUser.id : null),
-          schoolId: schoolId || (currentUser?.role === 'school' ? currentUser.id : null)
+          schoolId: schoolId || (currentUser?.role === 'school' ? currentUser.id : null),
+          teacherCategory: teacherCategory
         }
       });
 

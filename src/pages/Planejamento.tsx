@@ -36,13 +36,13 @@ export default function Planejamento() {
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1 bg-muted rounded-lg p-1">
-            {[1,2,3,4,5,6,7].map(g => (
+            {["1º","2º","3º","4º","5º","6º","7º","8º","9º","1º EM","2º EM","3º EM"].map(g => (
               <button
                 key={g}
-                onClick={() => setGrade(g)}
-                className={`px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${grade === g ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
+                onClick={() => setGrade(parseInt(g) || 1)}
+                className={`px-3 py-1.5 rounded-md text-xs font-bold transition-colors ${grade === (parseInt(g) || 1) ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}
               >
-                {g}º
+                {g}
               </button>
             ))}
           </div>
@@ -66,7 +66,7 @@ export default function Planejamento() {
                 title: formData.title,
                 subject_id: (await supabase.from('subjects').select('id').eq('name', formData.subject).single()).data?.id,
                 teacher_id: userId,
-                grade_level: `${formData.grade}º Ano`,
+                grade_level: formData.grade, // Pass directly since it now includes EM/EF labels
                 day_of_week: 0, // Need to pass day from grid
                 bncc_code: formData.bncc,
                 start_time: "07:30",

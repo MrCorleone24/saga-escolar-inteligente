@@ -22,7 +22,7 @@ serve(async (req) => {
       email, password, fullName, role, schoolName, subject,
       phone, address, city, state, zipCode, taxId, website, 
       contactPerson, bio, gradeLevel, hasSpecialNeeds, specialNeedsExpert,
-      teacherId, schoolId
+      teacherId, schoolId, teacherCategory
     } = userData
 
     // 1. Create Auth User
@@ -59,6 +59,7 @@ serve(async (req) => {
         special_needs_expert: specialNeedsExpert,
         teacher_id: teacherId,
         school_id: schoolId,
+        teacher_category: teacherCategory,
         subscription_status: 'active'
       })
 

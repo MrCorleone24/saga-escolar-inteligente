@@ -47,6 +47,7 @@ export default function VideoSalas() {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [newRoomName, setNewRoomName] = useState("");
   const [newRoomType, setNewRoomType] = useState<"classroom" | "administrative" | "direction">("classroom");
+  const [showMeetingControls, setShowMeetingControls] = useState(false);
   const [showParticipants, setShowParticipants] = useState(false);
   const [isHandRaised, setIsHandRaised] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -493,8 +494,9 @@ export default function VideoSalas() {
                 >
                   <option value="classroom">Aula</option>
                   {(userRole === 'admin' || userRole === 'school') && (
-                    <option value="administrative">Direção</option>
+                    <option value="direction">Direção</option>
                   )}
+                  <option value="administrative">Administrativa</option>
                 </select>
                 <Button className="bg-indigo-600 hover:bg-indigo-700" onClick={handleCreateRoom}>
                   <Plus className="h-4 w-4" />
@@ -529,15 +531,15 @@ export default function VideoSalas() {
             <motion.div
               key={room.id}
               whileHover={{ y: -4 }}
-              className={`bg-card border rounded-xl overflow-hidden shadow-sm flex flex-col ${room.room_type === 'administrative' ? 'border-blue-200 shadow-blue-50' : ''}`}
+              className={`bg-card border rounded-xl overflow-hidden shadow-sm flex flex-col ${room.room_type === 'direction' ? 'border-amber-200 shadow-amber-50' : room.room_type === 'administrative' ? 'border-blue-200 shadow-blue-50' : ''}`}
             >
               <div className="p-5 flex-1">
                 <div className="flex justify-between items-start mb-4">
-                  <div className={`p-2 rounded-lg ${room.room_type === 'administrative' ? 'bg-blue-100' : 'bg-indigo-100'}`}>
-                    {room.room_type === 'administrative' ? <Shield className="h-5 w-5 text-blue-600" /> : <Video className="h-5 w-5 text-indigo-600" />}
+                  <div className={`p-2 rounded-lg ${room.room_type === 'direction' ? 'bg-amber-100' : room.room_type === 'administrative' ? 'bg-blue-100' : 'bg-indigo-100'}`}>
+                    {room.room_type === 'direction' ? <Shield className="h-5 w-5 text-amber-600" /> : room.room_type === 'administrative' ? <Users className="h-5 w-5 text-blue-600" /> : <Video className="h-5 w-5 text-indigo-600" />}
                   </div>
-                  <Badge className={room.room_type === 'administrative' ? 'bg-blue-500/10 text-blue-600 border-blue-200' : 'bg-green-500/10 text-green-600 border-green-200'}>
-                    {room.room_type === 'administrative' ? 'Sala da Direção' : 'Online'}
+                  <Badge className={room.room_type === 'direction' ? 'bg-amber-500/10 text-amber-600 border-amber-200' : room.room_type === 'administrative' ? 'bg-blue-500/10 text-blue-600 border-blue-200' : 'bg-green-500/10 text-green-600 border-green-200'}>
+                    {room.room_type === 'direction' ? 'Sala da Direção' : room.room_type === 'administrative' ? 'Administrativa' : 'Aula Ao Vivo'}
                   </Badge>
                 </div>
                 <h3 className="font-bold text-lg mb-1">{room.name}</h3>
@@ -545,7 +547,7 @@ export default function VideoSalas() {
               </div>
               <div className="p-4 bg-muted/30 border-t">
                 <Button 
-                  className={`w-full ${room.room_type === 'administrative' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-indigo-600 hover:bg-indigo-700'}`} 
+                  className={`w-full ${room.room_type === 'direction' ? 'bg-amber-600 hover:bg-amber-700' : room.room_type === 'administrative' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-indigo-600 hover:bg-indigo-700'}`} 
                   onClick={() => handleJoinRoom(room)}
                 >
                   Entrar na Sala
