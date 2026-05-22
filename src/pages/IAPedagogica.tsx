@@ -128,7 +128,7 @@ export default function IAPedagogica() {
   };
 
   return (
-    <DashboardLayout role="professor" userName="Prof. Maria Santos">
+    <DashboardLayout role={(userProfile?.role as any) || "professor"} userName={userProfile?.full_name || "Professor"}>
       <div className="flex flex-col gap-6">
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
           <h1 className="text-3xl font-bold flex items-center gap-3">

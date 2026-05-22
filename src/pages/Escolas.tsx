@@ -93,7 +93,7 @@ export default function Escolas() {
   };
 
   return (
-    <DashboardLayout role="admin" userName="Administrador">
+    <DashboardLayout role={(userProfile?.role as any) || "admin"} userName={userProfile?.full_name || "Administrador"}>
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold">Escolas</h1>

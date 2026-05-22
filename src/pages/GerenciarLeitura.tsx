@@ -32,7 +32,7 @@ export default function GerenciarLeitura() {
   const [expanded, setExpanded] = useState<number | null>(null);
 
   return (
-    <DashboardLayout role="professor" userName="Prof. Maria Santos">
+    <DashboardLayout role={(userProfile?.role as any) || "professor"} userName={userProfile?.full_name || "Professor"}>
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold flex items-center gap-2">
