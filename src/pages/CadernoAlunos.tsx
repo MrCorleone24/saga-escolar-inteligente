@@ -34,7 +34,7 @@ export default function CadernoAlunos() {
 
   const filteredStudents = students.filter(s => s.full_name?.toLowerCase().includes(search.toLowerCase()));
 
-  if (profileLoading) return <div className="p-8"><Loader2 className="animate-spin" /></div>;
+  if (profileLoading) return <DashboardLayout role={(userProfile?.role as any) || "professor"} userName="Carregando..."><div className="p-8"><Loader2 className="animate-spin" /></div></DashboardLayout>;
 
   return (
     <DashboardLayout role={(userProfile?.role as any) || "professor"} userName={userProfile?.full_name || "Professor"}>

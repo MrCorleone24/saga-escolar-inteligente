@@ -9,7 +9,7 @@ export default function GerenciarLeitura() {
   const { user: userProfile, loading } = useCurrentUser();
   const [showCreate, setShowCreate] = useState(false);
 
-  if (loading) return <div className="p-8"><Loader2 className="animate-spin" /></div>;
+  if (loading) return <DashboardLayout role={(userProfile?.role as any) || "professor"} userName="Carregando..."><div className="p-8"><Loader2 className="animate-spin" /></div></DashboardLayout>;
 
   return (
     <DashboardLayout role={(userProfile?.role as any) || "professor"} userName={userProfile?.full_name || "Professor"}>

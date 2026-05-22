@@ -243,13 +243,13 @@ export default function Usuarios() {
 
   return (
     <DashboardLayout role={(currentUser?.role as any) || "admin"} userName={currentUser?.full_name || "Admin"}>
-      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between mb-6">
+      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold">Usuários</h1>
           <p className="text-muted-foreground text-sm">Gerencie {currentUser?.role === 'admin' ? 'todos os' : 'seus'} usuários</p>
         </div>
-        <Button onClick={() => setShowAddModal(true)} className="gradient-hero border-0 text-primary-foreground">
-          <UserPlus size={16} className="mr-1.5" /> Novo Usuário
+        <Button onClick={() => setShowAddModal(true)} className="gradient-hero border-0 text-primary-foreground h-11 px-6 font-bold shadow-lg">
+          <UserPlus size={18} className="mr-2" /> Novo Usuário
         </Button>
       </motion.div>
 
