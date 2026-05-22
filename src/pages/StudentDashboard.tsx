@@ -49,10 +49,10 @@ export default function StudentDashboard() {
       </motion.div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard title="XP Total" value={profile?.xp?.toString() || "0"} icon={<Star size={20} />} gradient="gamification" delay={0} subtitle="+45 hoje" />
-        <StatCard title="Aulas" value={lessonsCount.toString()} icon={<BookOpen size={20} />} gradient="badge" delay={0.05} subtitle="Disponíveis" />
-        <StatCard title="Medalhas" value="8" icon={<Trophy size={20} />} gradient="success" delay={0.1} subtitle="3 esta semana" />
-        <StatCard title="Nível" value={profile?.level?.toString() || "1"} icon={<TrendingUp size={20} />} gradient="hero" delay={0.15} subtitle="Subindo!" />
+        <StatCard title="XP Total" value={profile?.xp?.toString() || "0"} icon={<Star size={20} />} gradient="gamification" delay={0} subtitle="Progresso acumulado" />
+        <StatCard title="Aulas" value={lessonsCount.toString()} icon={<BookOpen size={20} />} gradient="badge" delay={0.05} subtitle="Conteúdo disponível" />
+        <StatCard title="Medalhas" value="0" icon={<Trophy size={20} />} gradient="success" delay={0.1} subtitle="Conquistas" />
+        <StatCard title="Nível" value={profile?.level?.toString() || "1"} icon={<TrendingUp size={20} />} gradient="hero" delay={0.15} subtitle="Evolução" />
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">

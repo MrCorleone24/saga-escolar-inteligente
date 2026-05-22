@@ -17,6 +17,7 @@ export default function AdminDashboard() {
   const [profile, setProfile] = useState<any>(null);
   const [stats, setStats] = useState({ schools: 0, students: 0, teachers: 0, mrr: 0 });
   const [schools, setSchools] = useState<any[]>([]);
+  const [recentActivity, setRecentActivity] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -27,18 +28,17 @@ export default function AdminDashboard() {
         const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).single();
         setProfile(p);
 
-        // Fetch counts via RPC
-        const { data: statsData, error: statsError } = await supabase.rpc('get_dashboard_stats');
-        const typedStats = statsData as unknown as DashboardStats;
+        // Fetch counts
+        const { count: sCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'school');
+        const { count: tCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'teacher');
+        const { count: stCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'student');
         
-        if (!statsError && typedStats) {
-          setStats({ 
-            schools: typedStats.schools || 0, 
-            students: typedStats.students || 0, 
-            teachers: typedStats.teachers || 0,
-            mrr: typedStats.mrr || 0
-          });
-        }
+        setStats({ 
+          schools: sCount || 0, 
+          students: stCount || 0, 
+          teachers: tCount || 0,
+          mrr: (sCount || 0) * 499 // Simplified MRR calculation
+        });
 
         // Fetch real schools list
         const { data: schoolsList } = await supabase
@@ -55,11 +55,19 @@ export default function AdminDashboard() {
               name: school.school_name || school.full_name || "Escola sem nome",
               students: st || 0,
               teachers: tc || 0,
-              avg: "8.5" // This could be fetched from a performance table later
+              avg: "8.5"
             };
           }));
           setSchools(schoolsWithCounts);
         }
+
+        // Fetch recent activities
+        const { data: recentEvents } = await supabase.from('school_calendar_events').select('title, created_at').order('created_at', { ascending: false }).limit(4);
+        const activities = (recentEvents || []).map(e => `Evento criado: ${e.title}`);
+        if (activities.length === 0) {
+          activities.push("Sistema iniciado", "Aguardando atividades...");
+        }
+        setRecentActivity(activities);
       }
       setLoading(false);
     };

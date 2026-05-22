@@ -167,8 +167,8 @@ export default function Turmas() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard title="Turmas" value={turmasList.length.toString()} icon={<Users size={20} />} gradient="hero" subtitle="Ativas" />
         <StatCard title="Total Alunos" value={studentsList.length.toString()} icon={<Users size={20} />} gradient="success" />
-        <StatCard title="Média Geral" value="--" icon={<TrendingUp size={20} />} gradient="gamification" />
-        <StatCard title="Presença" value="--" icon={<BarChart3 size={20} />} gradient="badge" />
+        <StatCard title="Média Geral" value={studentsList.length > 0 ? (studentsList.reduce((acc, s) => acc + s.avg_grade, 0) / studentsList.length).toFixed(1) : "--"} icon={<TrendingUp size={20} />} gradient="gamification" />
+        <StatCard title="Presença" value={studentsList.length > 0 ? `${Math.round(studentsList.reduce((acc, s) => acc + s.attendance, 0) / studentsList.length)}%` : "--"} icon={<BarChart3 size={20} />} gradient="badge" />
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
