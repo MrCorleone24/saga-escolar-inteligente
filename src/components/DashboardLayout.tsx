@@ -22,7 +22,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard", roles: ["aluno", "teacher_solo", "teacher_institutional", "admin", "school"] },
   { label: "Minhas Aulas", icon: BookOpen, path: "/aulas", roles: ["aluno"] },
-  { label: "Salas Virtuais", icon: Video, path: "/salas", roles: ["aluno", "teacher_solo", "teacher_institutional"] },
+  { label: "Salas Virtuais", icon: Video, path: "/salas", roles: ["aluno", "teacher_solo", "teacher_institutional", "admin", "school"] },
   { label: "Meu Caderno", icon: PenLine, path: "/meu-caderno", roles: ["aluno"] },
   { label: "Calendário", icon: Calendar, path: "/calendario", roles: ["aluno"] },
   { label: "Leitura", icon: BookMarked, path: "/leitura", roles: ["aluno"] },
