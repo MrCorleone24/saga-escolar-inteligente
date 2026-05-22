@@ -129,7 +129,7 @@ export default function CalendarioEscolar() {
           </div>
           <div className="text-right">
             <p className="text-xs text-muted-foreground">Presença</p>
-            <p className="font-bold text-sm text-secondary">{totalPresent}/{totalDays} ({Math.round(totalPresent/totalDays*100)}%)</p>
+            <p className="font-bold text-sm text-secondary">{totalPresent}/{workDays} ({attendanceRate}%)</p>
           </div>
         </div>
       </motion.div>
@@ -177,29 +177,45 @@ export default function CalendarioEscolar() {
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: i * 0.01 }}
-              className={`rounded-lg border p-2 min-h-[70px] transition-colors cursor-pointer hover:shadow-sm ${d.day === 0 ? "invisible" : statusStyles[d.status]}`}
+              className={`rounded-lg border p-2 min-h-[70px] transition-colors cursor-pointer hover:shadow-sm ${
+                d.day === 0 ? "invisible" : 
+                d.status === "present" ? "bg-secondary/10 border-secondary/30" :
+                d.status === "absent" ? "bg-destructive/10 border-destructive/30" :
+                d.status === "pending" ? "bg-gamification-gold/10 border-gamification-gold/30 animate-pulse-glow" :
+                d.status === "weekend" ? "bg-muted/50 text-muted-foreground" :
+                d.status === "holiday" ? "bg-accent/10 border-accent/30" :
+                "bg-background text-muted-foreground/40"
+              }`}
             >
               {d.day > 0 && (
                 <>
                   <div className="flex items-center justify-between mb-1">
                     <span className="text-xs font-bold">{d.day}</span>
-                    {statusIcon[d.status]}
+                    {d.status === "present" && <CheckCircle2 size={10} className="text-secondary" />}
+                    {d.status === "absent" && <XCircle size={10} className="text-destructive" />}
+                    {d.status === "pending" && <Clock size={10} className="text-gamification-gold" />}
                   </div>
-                  {d.lessons && (
+                  {d.events && d.events.length > 0 && (
                     <div className="space-y-0.5">
-                      {d.lessons.slice(0, 2).map((l, j) => (
-                        <p key={j} className="text-[8px] truncate">{l}</p>
+                      {d.events.slice(0, 2).map((e, j) => (
+                        <p key={j} className="text-[8px] truncate font-bold text-primary">{e.title}</p>
                       ))}
-                      {d.lessons.length > 2 && <p className="text-[8px] text-muted-foreground">+{d.lessons.length - 2}</p>}
                     </div>
                   )}
-                  {d.xp && d.xp > 0 && <p className="text-[8px] text-gamification-xp font-bold mt-0.5">+{d.xp} XP</p>}
+                  {d.lessons && (
+                    <div className="space-y-0.5">
+                      {d.lessons.slice(0, 1).map((l, j) => (
+                        <p key={j} className="text-[8px] truncate">{l}</p>
+                      ))}
+                    </div>
+                  )}
                 </>
               )}
             </motion.div>
           ))}
         </div>
       </motion.div>
+
 
       {/* Legend */}
       <div className="flex items-center gap-4 mt-4 justify-center">

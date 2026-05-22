@@ -146,10 +146,12 @@ export default function VideoSalas() {
     setInCall(true);
   };
 
-  const updateModeration = async (participantId: string, updates: Partial<Participant>) => {
-    await supabase.from('classroom_moderation').update(updates).eq('room_id', activeRoom?.id).eq('user_id', participantId);
+  const updateModeration = async (participantId: string, updates: any) => {
+    const { profiles, ...cleanUpdates } = updates;
+    await supabase.from('classroom_moderation').update(cleanUpdates).eq('room_id', activeRoom?.id).eq('user_id', participantId);
     queryClient.invalidateQueries({ queryKey: ['room_participants'] });
   };
+
 
   const toggleHandRaise = async () => {
     if (!userId || !activeRoom) return;
