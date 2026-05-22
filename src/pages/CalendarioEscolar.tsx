@@ -418,6 +418,11 @@ export default function CalendarioEscolar() {
                           e.event_type === 'aula' ? 'bg-primary/10 text-primary border border-primary/20' : 
                           'bg-zinc-100 text-zinc-600 border border-zinc-200'
                         }`}>
+                          {userProfile?.role === 'admin' && e.school_id && (
+                            <span className="text-[8px] bg-white/20 px-1 rounded mr-1">
+                              {schools.find(s => s.id === e.school_id)?.school_name?.substring(0, 3) || 'ESC'}
+                            </span>
+                          )}
                           {e.title}
                         </div>
                       ))}

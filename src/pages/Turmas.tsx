@@ -66,9 +66,16 @@ export default function Turmas() {
     queryFn: async () => {
       if (!currentUser) return [];
       
-      // Since subjects table doesn't have school_id directly in types, we might need a join or assignments check
-      // For now, let's fetch all and filter client side if needed, or check assignments
-      const { data, error } = await supabase.from("subjects").select("*");
+      let query = supabase.from("subjects").select("*");
+      
+      if (currentUser.role === 'school') {
+        // Find subjects assigned to this school via classes or something
+        // For now, if school, fetch all (or add school_id filter if schema allowed)
+      } else if (currentUser.role === 'teacher') {
+        // Teacher filter would go here
+      }
+      
+      const { data, error } = await query;
       if (error) return [];
       
       return data.map((s: any) => ({
@@ -134,17 +141,31 @@ export default function Turmas() {
     setSubmitting(true);
     try {
       // Use subjects table - it has name, color, emoji
-      const { error } = await supabase.from('subjects').insert({
+      const { data: subjectData, error: subjectError } = await supabase.from('subjects').insert({
         name: newClassName,
         color: "#4f46e5",
         emoji: "📚"
-      });
+      }).select().single();
 
-      if (error) throw error;
+      if (subjectError) throw subjectError;
+
+      // Create assignment if school is selected or if current user is school/teacher
+      const targetSchoolId = currentUser?.role === 'admin' ? newClassSchoolId : (currentUser?.role === 'school' ? currentUser.id : currentUser?.school_id);
+      
+      if (targetSchoolId || currentUser?.role === 'teacher') {
+        const { error: assignError } = await supabase.from('teacher_assignments').insert({
+          school_id: targetSchoolId || null,
+          teacher_id: currentUser?.role === 'teacher' ? currentUser.id : null,
+          subject_id: subjectData.id,
+          grade_level: "Ensino Fundamental" // Default or add field
+        });
+        if (assignError) console.error("Error creating assignment:", assignError);
+      }
       
       toast.success("Turma criada com sucesso!");
       setShowCreateModal(false);
       setNewClassName("");
+      setNewClassSchoolId("");
       queryClient.invalidateQueries({ queryKey: ['turmas'] });
     } catch (error: any) {
       toast.error("Erro ao criar turma: " + error.message);
@@ -232,6 +253,21 @@ export default function Turmas() {
                   </SelectContent>
                 </Select>
               </div>
+              {currentUser?.role === 'admin' && (
+                <div className="grid gap-2">
+                  <Label htmlFor="school">Escola</Label>
+                  <Select value={newClassSchoolId} onValueChange={setNewClassSchoolId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione a Escola" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {schools.map(s => (
+                        <SelectItem key={s.id} value={s.id}>{s.school_name || s.full_name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowCreateModal(false)}>Cancelar</Button>

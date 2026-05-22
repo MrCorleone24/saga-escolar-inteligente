@@ -36,6 +36,17 @@ export default function Usuarios() {
   const [showPerformance, setShowPerformance] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [performanceData, setPerformanceData] = useState<PerformanceData>({ grade: 0, attendance: 0, engagement: 0 });
+  const [schools, setSchools] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (currentUser?.role === 'admin') {
+      const fetchSchools = async () => {
+        const { data } = await supabase.from('profiles').select('id, full_name, school_name').eq('role', 'school');
+        if (data) setSchools(data);
+      };
+      fetchSchools();
+    }
+  }, [currentUser]);
 
   // Form states
   const [newEmail, setNewEmail] = useState("");
@@ -243,13 +254,13 @@ export default function Usuarios() {
 
   return (
     <DashboardLayout role={(currentUser?.role as any) || "admin"} userName={currentUser?.full_name || "Admin"}>
-      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between mb-6">
+      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold">Usuários</h1>
           <p className="text-muted-foreground text-sm">Gerencie {currentUser?.role === 'admin' ? 'todos os' : 'seus'} usuários</p>
         </div>
-        <Button onClick={() => setShowAddModal(true)} className="gradient-hero border-0 text-primary-foreground">
-          <UserPlus size={16} className="mr-1.5" /> Novo Usuário
+        <Button onClick={() => setShowAddModal(true)} className="gradient-hero border-0 text-primary-foreground h-11 px-6 font-bold shadow-lg">
+          <UserPlus size={18} className="mr-2" /> Novo Usuário
         </Button>
       </motion.div>
 
@@ -396,6 +407,34 @@ export default function Usuarios() {
                                newRole === 'teacher' ? 'Professores solo gerenciam seus próprios alunos e assinaturas.' : 
                                'Administradores têm acesso total ao sistema.'}
                             </p>
+                          </div>
+                        )}
+
+                        {currentUser?.role === 'admin' && (newRole === 'teacher' || newRole === 'student' || newRole === 'aluno' || newRole === 'school') && (
+                          <div className="grid gap-4">
+                            <div>
+                              <label className="text-xs font-medium mb-1 block">Vincular à Escola (Opcional)</label>
+                              <select 
+                                value={schoolId} 
+                                onChange={e => setSchoolId(e.target.value)}
+                                className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm outline-none focus:ring-2 focus:ring-primary"
+                              >
+                                <option value="">Sem vínculo (Solo)</option>
+                                {schools.map(s => (
+                                  <option key={s.id} value={s.id}>{s.school_name || s.full_name}</option>
+                                ))}
+                              </select>
+                            </div>
+                            {(newRole === 'student' || newRole === 'aluno') && (
+                              <div>
+                                <label className="text-xs font-medium mb-1 block">Vincular ao Professor (Opcional)</label>
+                                <Input 
+                                  value={teacherId} 
+                                  onChange={e => setTeacherId(e.target.value)} 
+                                  placeholder="ID do Professor" 
+                                />
+                              </div>
+                            )}
                           </div>
                         )}
 

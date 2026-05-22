@@ -15,7 +15,7 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 export default function IAPedagogica() {
   const queryClient = useQueryClient();
-  const { user: userProfile, loading: profileLoading } = useCurrentUser();
+  const { user: userProfile, loading: profileLoading, role: userRole } = useCurrentUser();
   const [userInput, setUserInput] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedContent, setGeneratedContent] = useState<string | null>(null);
@@ -80,7 +80,7 @@ export default function IAPedagogica() {
     }
   };
 
-  if (profileLoading) return <div className="p-8"><Loader2 className="animate-spin" /></div>;
+  if (profileLoading) return <DashboardLayout role={(userProfile?.role as any) || "professor"} userName="Carregando..."><div className="p-8"><Loader2 className="animate-spin" /></div></DashboardLayout>;
 
   return (
     <DashboardLayout role={(userProfile?.role as any) || "professor"} userName={userProfile?.full_name || "Professor"}>

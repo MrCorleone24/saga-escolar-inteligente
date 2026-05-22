@@ -89,7 +89,7 @@ export default function Relatorios() {
   };
   if (loading) {
     return (
-      <DashboardLayout role="professor" userName="Carregando...">
+      <DashboardLayout role={(userProfile?.role as any) || "professor"} userName="Carregando...">
         <div className="flex items-center justify-center py-20">
           <Loader2 className="animate-spin text-primary" />
         </div>

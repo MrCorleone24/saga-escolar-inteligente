@@ -57,5 +57,13 @@ export function useCurrentUser() {
     };
   }, []);
 
-  return { user, loading, isAdmin: user?.role === 'admin' };
+  return { 
+    user, 
+    loading, 
+    isAdmin: user?.role === 'admin',
+    role: user?.role,
+    school_id: user?.school_id,
+    full_name: user?.full_name,
+    id: user?.id
+  };
 }
