@@ -33,16 +33,24 @@ export default function WeeklyPlanGrid({ grade, onCreateLesson, onGenerateAI }: 
   useEffect(() => {
     const fetchLessons = async () => {
       setLoading(true);
+      
+      // Fetch subjects to map IDs to names
+      const { data: subjectsData } = await supabase.from('subjects').select('id, name');
+      const subjectMap = (subjectsData || []).reduce((acc: any, s: any) => {
+        acc[s.id] = s.name;
+        return acc;
+      }, {});
+
       const { data, error } = await supabase
         .from('lessons')
         .select('*')
-        .eq('grade_level', `${grade}º Ano`); // Assuming grade_level is stored this way
+        .eq('grade_level', `${grade}º Ano`); 
       
       if (!error && data) {
         setLessons(data.map(l => ({
           id: l.id,
           title: l.title,
-          subject: l.subject,
+          subject: subjectMap[l.subject_id] || 'Geral',
           type: l.content_type || 'mista',
           time: l.start_time || '07:30',
           day: l.day_of_week || 0,
@@ -53,6 +61,7 @@ export default function WeeklyPlanGrid({ grade, onCreateLesson, onGenerateAI }: 
     };
     fetchLessons();
   }, [grade]);
+
 
 
   return (
