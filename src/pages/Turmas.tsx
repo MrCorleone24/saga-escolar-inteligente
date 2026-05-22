@@ -141,17 +141,31 @@ export default function Turmas() {
     setSubmitting(true);
     try {
       // Use subjects table - it has name, color, emoji
-      const { error } = await supabase.from('subjects').insert({
+      const { data: subjectData, error: subjectError } = await supabase.from('subjects').insert({
         name: newClassName,
         color: "#4f46e5",
         emoji: "📚"
-      });
+      }).select().single();
 
-      if (error) throw error;
+      if (subjectError) throw subjectError;
+
+      // Create assignment if school is selected or if current user is school/teacher
+      const targetSchoolId = currentUser?.role === 'admin' ? newClassSchoolId : (currentUser?.role === 'school' ? currentUser.id : currentUser?.school_id);
+      
+      if (targetSchoolId || currentUser?.role === 'teacher') {
+        const { error: assignError } = await supabase.from('teacher_assignments').insert({
+          school_id: targetSchoolId || null,
+          teacher_id: currentUser?.role === 'teacher' ? currentUser.id : null,
+          subject_id: subjectData.id,
+          grade_level: "Ensino Fundamental" // Default or add field
+        });
+        if (assignError) console.error("Error creating assignment:", assignError);
+      }
       
       toast.success("Turma criada com sucesso!");
       setShowCreateModal(false);
       setNewClassName("");
+      setNewClassSchoolId("");
       queryClient.invalidateQueries({ queryKey: ['turmas'] });
     } catch (error: any) {
       toast.error("Erro ao criar turma: " + error.message);
