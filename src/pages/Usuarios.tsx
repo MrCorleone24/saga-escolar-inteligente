@@ -45,7 +45,7 @@ export default function Usuarios() {
   const [newSubject, setNewSubject] = useState("");
   const [newBio, setNewBio] = useState("");
   
-  // School detailed fields
+  // Detailed fields
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [city, setCity] = useState("");
@@ -54,6 +54,13 @@ export default function Usuarios() {
   const [taxId, setTaxId] = useState("");
   const [website, setWebsite] = useState("");
   const [contactPerson, setContactPerson] = useState("");
+  
+  // Student specific
+  const [gradeLevel, setGradeLevel] = useState("");
+  const [hasSpecialNeeds, setHasSpecialNeeds] = useState(false);
+  const [specialNeedsExpert, setSpecialNeedsExpert] = useState(false);
+  const [teacherId, setTeacherId] = useState("");
+  const [schoolId, setSchoolId] = useState("");
   
   const [submitting, setSubmitting] = useState(false);
 
@@ -113,7 +120,12 @@ export default function Usuarios() {
           taxId,
           website,
           contactPerson,
-          bio: newBio
+          bio: newBio,
+          gradeLevel,
+          hasSpecialNeeds,
+          specialNeedsExpert,
+          teacherId: teacherId || (currentUser?.role === 'teacher' ? currentUser.id : null),
+          schoolId: schoolId || (currentUser?.role === 'school' ? currentUser.id : null)
         }
       });
 
@@ -139,6 +151,11 @@ export default function Usuarios() {
       setWebsite("");
       setContactPerson("");
       setNewBio("");
+      setGradeLevel("");
+      setHasSpecialNeeds(false);
+      setSpecialNeedsExpert(false);
+      setTeacherId("");
+      setSchoolId("");
     } catch (error: any) {
       toast.error(error.message || "Erro ao criar usuário");
     } finally {
@@ -219,7 +236,9 @@ export default function Usuarios() {
 
   const roleColors: Record<string, string> = {
     teacher: "bg-primary/10 text-primary",
+    professor: "bg-primary/10 text-primary",
     student: "bg-secondary/10 text-secondary",
+    aluno: "bg-secondary/10 text-secondary",
     admin: "bg-gamification-badge/10 text-gamification-badge",
     school: "bg-orange-500/10 text-orange-600",
   };
