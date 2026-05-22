@@ -399,6 +399,29 @@ export default function Usuarios() {
                           </div>
                         )}
 
+                        {currentUser?.role === 'admin' && (newRole === 'teacher' || newRole === 'student' || newRole === 'aluno') && (
+                          <div className="grid gap-4">
+                            <div>
+                              <label className="text-xs font-medium mb-1 block">Vincular à Escola (Opcional)</label>
+                              <Input 
+                                value={schoolId} 
+                                onChange={e => setSchoolId(e.target.value)} 
+                                placeholder="ID da Escola (ou deixe vazio para Solo)" 
+                              />
+                            </div>
+                            {newRole === 'student' && (
+                              <div>
+                                <label className="text-xs font-medium mb-1 block">Vincular ao Professor (Opcional)</label>
+                                <Input 
+                                  value={teacherId} 
+                                  onChange={e => setTeacherId(e.target.value)} 
+                                  placeholder="ID do Professor" 
+                                />
+                              </div>
+                            )}
+                          </div>
+                        )}
+
                         {currentUser?.role === 'school' && (
                           <div>
                             <label className="text-xs font-medium mb-1 block">Tipo de Usuário</label>
