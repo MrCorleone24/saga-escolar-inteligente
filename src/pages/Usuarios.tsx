@@ -301,7 +301,12 @@ export default function Usuarios() {
                       </div>
                       <div>
                         <p className="text-sm font-medium">{u.full_name || 'Usuário Sem Nome'}</p>
-                        <p className="text-xs text-muted-foreground">{u.email} {u.school_name && `· ${u.school_name}`} {u.subject && `· ${u.subject}`}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {u.email} {u.school_name && `· ${u.school_name}`} {u.subject && `· ${u.subject}`} 
+                          {u.role === 'teacher' && !u.school_id && <span className="text-[10px] ml-2 text-primary font-bold uppercase">(Solo)</span>}
+                          {u.role === 'teacher' && u.school_id && <span className="text-[10px] ml-2 text-secondary font-bold uppercase">(Institucional)</span>}
+                        </p>
+
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
