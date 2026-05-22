@@ -128,16 +128,28 @@ export default function Financeiro() {
               <div>
                 <p className="text-xs opacity-80">Plano ativo</p>
                 <h2 className="text-xl font-bold">
-                  {isSchool ? "Plano Escola (Institucional)" : isProfessor ? "Plano Professor (Profissional)" : "Plano Aluno (Básico)"}
+                  {isSchool ? "Plano Escola (Institucional)" : isProfessor ? "Plano Professor Solo (Upgrade)" : "Plano Aluno (Básico)"}
                 </h2>
                 <p className="text-sm opacity-90 mt-1">
-                  {isSchool ? "Gestão total de alunos e professores ilimitados" : isProfessor ? "Gestão de até 50 alunos inclusa" : "Acesso completo às aulas e materiais"}
+                  {isSchool ? "Gestão total de alunos e professores ilimitados" : isProfessor ? "Gestão de alunos e turmas ilimitadas (Modo Solo)" : "Acesso completo às aulas e materiais"}
                 </p>
                 <p className="text-xs font-semibold mt-2">Próximo vencimento: 01/06/2026 — R$ {isSchool ? "499,90" : isProfessor ? "149,90" : "49,90"}</p>
               </div>
-              <Button variant="secondary" onClick={handleTestPayment} className="font-bold">
-                <CreditCard className="mr-2" size={16} /> Renovação via Woovi
-              </Button>
+              {isProfessor && (
+                <div className="flex flex-col gap-2">
+                   <Button variant="secondary" onClick={handleTestPayment} className="font-bold">
+                    <TrendingUp className="mr-2" size={16} /> Fazer Upgrade para Premium
+                  </Button>
+                  <Button variant="ghost" onClick={handleTestPayment} className="text-white hover:bg-white/10">
+                    <CreditCard className="mr-2" size={16} /> Renovar Assinatura
+                  </Button>
+                </div>
+              )}
+              {!isProfessor && (
+                <Button variant="secondary" onClick={handleTestPayment} className="font-bold">
+                  <CreditCard className="mr-2" size={16} /> Renovação via Woovi
+                </Button>
+              )}
             </div>
           </Card>
         )}
