@@ -37,13 +37,13 @@ interface SchoolEvent {
   start_time: string;
   end_time: string;
   school_id: string;
-  created_by: string;
+  created_by?: string;
 }
 
 interface AttendanceRecord {
   id: string;
   student_id: string;
-  lesson_id: string;
+  lesson_id?: string;
   status: string;
   date: string;
 }
@@ -188,9 +188,9 @@ export default function CalendarioEscolar() {
     return days;
   };
 
-  const days = generateMonthData();
-  const totalPresent = attendanceData.filter(a => a.status === 'presente').length;
-  const totalAbsent = attendanceData.filter(a => a.status === 'falta').length;
+  const days: DayData[] = generateMonthData();
+  const totalPresent = attendanceData.filter((a: AttendanceRecord) => a.status === 'presente').length;
+  const totalAbsent = attendanceData.filter((a: AttendanceRecord) => a.status === 'falta').length;
   const attendanceRate = (totalPresent + totalAbsent) > 0 
     ? Math.round((totalPresent / (totalPresent + totalAbsent)) * 100) 
     : 0;
