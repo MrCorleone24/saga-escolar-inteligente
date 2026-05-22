@@ -167,11 +167,16 @@ export type Database = {
       }
       lessons: {
         Row: {
+          bncc_code: string | null
           content: string | null
+          content_type: string | null
           created_at: string
           date: string
+          day_of_week: number | null
           duration: string | null
+          grade_level: string | null
           id: string
+          start_time: string | null
           status: string | null
           subject_id: string | null
           teacher_id: string | null
@@ -179,11 +184,16 @@ export type Database = {
           type: string
         }
         Insert: {
+          bncc_code?: string | null
           content?: string | null
+          content_type?: string | null
           created_at?: string
           date: string
+          day_of_week?: number | null
           duration?: string | null
+          grade_level?: string | null
           id?: string
+          start_time?: string | null
           status?: string | null
           subject_id?: string | null
           teacher_id?: string | null
@@ -191,11 +201,16 @@ export type Database = {
           type: string
         }
         Update: {
+          bncc_code?: string | null
           content?: string | null
+          content_type?: string | null
           created_at?: string
           date?: string
+          day_of_week?: number | null
           duration?: string | null
+          grade_level?: string | null
           id?: string
+          start_time?: string | null
           status?: string | null
           subject_id?: string | null
           teacher_id?: string | null

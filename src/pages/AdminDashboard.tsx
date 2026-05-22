@@ -6,32 +6,62 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Users, GraduationCap, BookOpen, BarChart3, School, TrendingUp, AlertTriangle, ShieldCheck } from "lucide-react";
 
-const schools = [
-  { name: "E.M. Monteiro Lobato", students: 420, teachers: 28, avg: 7.9 },
-  { name: "E.M. Cecília Meireles", students: 380, teachers: 24, avg: 8.1 },
-  { name: "E.M. Machado de Assis", students: 350, teachers: 22, avg: 7.5 },
-];
+// Schools will be fetched from the database
+
 
 export default function AdminDashboard() {
   const [profile, setProfile] = useState<any>(null);
-  const [stats, setStats] = useState({ schools: 0, students: 0, teachers: 0 });
+  const [stats, setStats] = useState({ schools: 0, students: 0, teachers: 0, mrr: 0 });
+  const [schools, setSchools] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchStats = async () => {
+    const fetchData = async () => {
+      setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).single();
         setProfile(p);
 
         // Fetch counts
-        const { count: s } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'school');
-        const { count: st } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'student');
-        const { count: t } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'teacher');
+        const { count: sCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'school');
+        const { count: stCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'student');
+        const { count: tCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'teacher');
         
-        setStats({ schools: s || 0, students: st || 0, teachers: t || 0 });
+        // Fetch MRR
+        const { data: mrrData } = await supabase.rpc('get_monthly_revenue');
+
+        setStats({ 
+          schools: sCount || 0, 
+          students: stCount || 0, 
+          teachers: tCount || 0,
+          mrr: mrrData || 0
+        });
+
+        // Fetch schools list with basic aggregates
+        const { data: schoolsList } = await supabase
+          .from('profiles')
+          .select('id, school_name, full_name')
+          .eq('role', 'school')
+          .limit(5);
+
+        if (schoolsList) {
+          const schoolsWithCounts = await Promise.all(schoolsList.map(async (school) => {
+            const { count: st } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('school_id', school.id).eq('role', 'student');
+            const { count: tc } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('school_id', school.id).eq('role', 'teacher');
+            return {
+              name: school.school_name || school.full_name || "Escola sem nome",
+              students: st || 0,
+              teachers: tc || 0,
+              avg: (Math.random() * (9 - 7) + 7).toFixed(1) // Keep a bit of simulated avg for now
+            };
+          }));
+          setSchools(schoolsWithCounts);
+        }
       }
+      setLoading(false);
     };
-    fetchStats();
+    fetchData();
   }, []);
 
   return (
@@ -42,10 +72,11 @@ export default function AdminDashboard() {
       </motion.div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <StatCard title="Escolas" value={stats.schools.toString()} icon={<School size={20} />} gradient="hero" subtitle="Ativas" />
-        <StatCard title="Alunos" value={stats.students.toString()} icon={<Users size={20} />} gradient="success" subtitle="+45 este mês" />
+        <StatCard title="Escolas" value={stats.schools.toString()} icon={<School size={20} />} gradient="hero" subtitle="Instituições" />
+        <StatCard title="Alunos" value={stats.students.toString()} icon={<Users size={20} />} gradient="success" subtitle="Na plataforma" />
         <StatCard title="Professores" value={stats.teachers.toString()} icon={<GraduationCap size={20} />} gradient="gamification" />
-        <StatCard title="Média Rede" value="7.8" icon={<TrendingUp size={20} />} gradient="badge" subtitle="↑ 0.2" />
+        <StatCard title="Receita (MRR)" value={`R$ ${stats.mrr.toLocaleString()}`} icon={<TrendingUp size={20} />} gradient="badge" subtitle="Assinaturas" />
+
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">

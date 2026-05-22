@@ -226,15 +226,26 @@ export default function MeuCaderno() {
             initial={{ opacity: 0, rotateY: -90 }}
             animate={{ opacity: 1, rotateY: 0 }}
             exit={{ opacity: 0, rotateY: 90 }}
-            className="bg-white border-l-8 rounded-r-2xl p-8 shadow-2xl min-h-[600px] relative overflow-hidden"
+            className="bg-[#fffdfa] border-l-[30px] rounded-r-2xl p-8 shadow-2xl min-h-[700px] relative overflow-hidden"
             style={{ 
               borderColor: `hsl(${subject.color})`,
-              backgroundImage: 'linear-gradient(#e5e7eb 1px, transparent 1px)',
-              backgroundSize: '100% 1.5rem',
-              lineHeight: '1.5rem'
+              backgroundImage: `
+                linear-gradient(90deg, rgba(255,0,0,0.1) 0px, rgba(255,0,0,0.1) 1px, transparent 1px),
+                linear-gradient(#e5e7eb 1px, transparent 1px)
+              `,
+              backgroundSize: '100% 100%, 100% 1.6rem',
+              backgroundPosition: '40px 0, 0 1.2rem',
+              lineHeight: '1.6rem'
             }}
           >
-            <div className="absolute left-4 top-0 bottom-0 w-[1px] bg-red-200" />
+            {/* Spiral binding simulation */}
+            <div className="absolute left-0 top-0 bottom-0 w-[30px] flex flex-col items-center justify-around py-4 z-20">
+              {[...Array(20)].map((_, i) => (
+                <div key={i} className="w-4 h-4 rounded-full bg-gradient-to-br from-gray-300 to-gray-500 shadow-inner" />
+              ))}
+            </div>
+            <div className="absolute left-10 top-0 bottom-0 w-[2px] bg-red-200/50" />
+
             <div className="space-y-6 relative z-10">
               <Input 
                 placeholder="Título da Atividade..." 

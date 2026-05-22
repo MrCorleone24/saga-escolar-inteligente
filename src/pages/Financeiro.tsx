@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card } from "@/components/ui/card";
@@ -25,6 +27,7 @@ const statusMap = {
 };
 
 export default function Financeiro() {
+  const navigate = useNavigate();
   const [role, setRole] = useState<Role>("aluno");
   const [userName, setUserName] = useState("Usuário");
   const [loading, setLoading] = useState(true);
@@ -40,8 +43,14 @@ export default function Financeiro() {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
         
-        const { data: profile } = await supabase.from("profiles").select("role, full_name").eq("id", user.id).single();
+        const { data: profile } = await supabase.from("profiles").select("role, full_name, school_id").eq("id", user.id).single();
         if (profile) {
+          if (profile.role === 'professor' && profile.school_id) {
+            // School teacher shouldn't be here
+            toast.error("Acesso restrito ao financeiro institucional");
+            navigate("/dashboard");
+            return;
+          }
           setRole((profile.role as Role) ?? "aluno");
           setUserName(profile.full_name ?? user.email ?? "Usuário");
         }
