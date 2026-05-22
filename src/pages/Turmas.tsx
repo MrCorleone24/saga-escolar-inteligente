@@ -27,7 +27,7 @@ interface Student {
   full_name: string;
   attendance: number;
   avg_grade: number;
-  trend: 'up' | 'down' | 'stable';
+  trend: 'up' | 'down' | 'stable' | string;
 }
 
 export default function Turmas() {
@@ -274,7 +274,7 @@ export default function Turmas() {
                   </div>
                   <div className="flex gap-4 text-sm">
                     <div className="text-center">
-                      <p className="font-bold">{t.avg_grade || '--'}</p>
+                      <p className="font-bold">{(t as any).avg_grade || '--'}</p>
                       <p className="text-[10px] text-muted-foreground">Média</p>
                     </div>
                   </div>
