@@ -165,6 +165,54 @@ export type Database = {
         }
         Relationships: []
       }
+      financial_transactions: {
+        Row: {
+          amount: number
+          created_at: string | null
+          description: string | null
+          id: string
+          profile_id: string | null
+          school_id: string | null
+          status: string
+          type: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          profile_id?: string | null
+          school_id?: string | null
+          status: string
+          type: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          profile_id?: string | null
+          school_id?: string | null
+          status?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_transactions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "financial_transactions_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lessons: {
         Row: {
           bncc_code: string | null
@@ -446,6 +494,7 @@ export type Database = {
           contact_person: string | null
           created_at: string
           email: string | null
+          enrollment_id: string | null
           full_name: string | null
           grade_level: string | null
           has_special_needs: boolean | null
@@ -472,6 +521,7 @@ export type Database = {
           subject: string | null
           subscription_status: string | null
           tax_id: string | null
+          teacher_category: string | null
           teacher_id: string | null
           updated_at: string
           website: string | null
@@ -488,6 +538,7 @@ export type Database = {
           contact_person?: string | null
           created_at?: string
           email?: string | null
+          enrollment_id?: string | null
           full_name?: string | null
           grade_level?: string | null
           has_special_needs?: boolean | null
@@ -514,6 +565,7 @@ export type Database = {
           subject?: string | null
           subscription_status?: string | null
           tax_id?: string | null
+          teacher_category?: string | null
           teacher_id?: string | null
           updated_at?: string
           website?: string | null
@@ -530,6 +582,7 @@ export type Database = {
           contact_person?: string | null
           created_at?: string
           email?: string | null
+          enrollment_id?: string | null
           full_name?: string | null
           grade_level?: string | null
           has_special_needs?: boolean | null
@@ -556,6 +609,7 @@ export type Database = {
           subject?: string | null
           subscription_status?: string | null
           tax_id?: string | null
+          teacher_category?: string | null
           teacher_id?: string | null
           updated_at?: string
           website?: string | null
@@ -693,6 +747,57 @@ export type Database = {
           {
             foreignKeyName: "rooms_created_by_fkey"
             columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_notebooks: {
+        Row: {
+          content: Json | null
+          created_at: string | null
+          grade: number | null
+          id: string
+          student_id: string | null
+          subject: string
+          teacher_feedback: string | null
+          teacher_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          content?: Json | null
+          created_at?: string | null
+          grade?: number | null
+          id?: string
+          student_id?: string | null
+          subject: string
+          teacher_feedback?: string | null
+          teacher_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          content?: Json | null
+          created_at?: string | null
+          grade?: number | null
+          id?: string
+          student_id?: string | null
+          subject?: string
+          teacher_feedback?: string | null
+          teacher_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_notebooks_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_notebooks_teacher_id_fkey"
+            columns: ["teacher_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
