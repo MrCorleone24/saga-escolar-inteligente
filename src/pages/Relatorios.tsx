@@ -98,7 +98,7 @@ export default function Relatorios() {
   }
 
   return (
-    <DashboardLayout role={userProfile?.role || "professor"} userName={userProfile?.full_name || "Professor"}>
+    <DashboardLayout role={(userProfile?.role as any) || "professor"} userName={userProfile?.full_name || "Professor"}>
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold">Relatórios</h1>
