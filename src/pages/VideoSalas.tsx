@@ -106,11 +106,20 @@ export default function VideoSalas() {
   }, [activeRoom?.id, inCall, queryClient]);
 
 
-  const { data: rooms = [] } = useQuery({
+  const { data: rooms = [], refetch: refetchRooms } = useQuery({
     queryKey: ['rooms'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('rooms').select('*').eq('is_active', true).order('created_at', { ascending: false });
-      if (error) throw error;
+      // The RLS policy handles visibility, so we just select all active rooms
+      const { data, error } = await supabase
+        .from('rooms')
+        .select('*')
+        .eq('is_active', true)
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        console.error("Error fetching rooms:", error);
+        return [];
+      }
       return data as Room[];
     }
   });
