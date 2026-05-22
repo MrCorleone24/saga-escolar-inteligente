@@ -197,7 +197,7 @@ export default function CalendarioEscolar() {
     ? Math.round((totalPresent / (totalPresent + totalAbsent)) * 100) 
     : 0;
 
-  const isAdmin = ['school', 'admin', 'professor', 'teacher'].includes(userProfile?.role);
+  const isAdmin = ['school', 'admin', 'professor', 'teacher', 'teacher_solo', 'teacher_institutional'].includes(userProfile?.role);
 
   const handleExportPDF = async () => {
     const element = document.getElementById('calendar-content');
