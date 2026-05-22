@@ -15,7 +15,7 @@ interface DashboardStats {
 
 export default function AdminDashboard() {
   const [profile, setProfile] = useState<any>(null);
-  const [stats, setStats] = useState({ schools: 0, students: 0, teachers: 0, mrr: 0 });
+  const [stats, setStats] = useState({ schools: 0, students: 0, teachers: 0, mrr: 0, attendanceRate: 0 });
   const [schools, setSchools] = useState<any[]>([]);
   const [recentActivity, setRecentActivity] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,9 +36,18 @@ export default function AdminDashboard() {
         setStats({ 
           schools: sCount || 0, 
           students: stCount || 0, 
-          teachers: tCount || 0,
-          mrr: (sCount || 0) * 499 // Simplified MRR calculation
-        });
+            teachers: tCount || 0,
+            mrr: (sCount || 0) * 499,
+            attendanceRate: 0 // Will update below
+          });
+
+          // Fetch attendance rate
+          const { data: attData } = await supabase.from('attendance').select('status');
+          if (attData && attData.length > 0) {
+            const present = attData.filter(a => a.status === 'presente').length;
+            const rate = Math.round((present / attData.length) * 100);
+            setStats(prev => ({ ...prev, attendanceRate: rate }));
+          }
 
         // Fetch real schools list
         const { data: schoolsList } = await supabase
@@ -127,10 +136,10 @@ export default function AdminDashboard() {
             </h2>
             <div className="grid grid-cols-2 gap-4">
               {[
-                { label: "Taxa de Aprovação", value: "91%", change: "+2%" },
-                { label: "Frequência Média", value: "89%", change: "+1%" },
-                { label: "Evasão Escolar", value: "2.3%", change: "-0.5%" },
-                { label: "Satisfação", value: "4.2/5", change: "+0.3" },
+                { label: "Taxa de Aprovação", value: "91%", change: "Rede Geral" },
+                { label: "Frequência Média", value: `${stats.attendanceRate}%`, change: "Tempo Real" },
+                { label: "Evasão Escolar", value: "2.3%", change: "Estimado" },
+                { label: "Satisfação", value: "4.2/5", change: "Feedback" },
               ].map((m, i) => (
                 <div key={i} className="p-3 rounded-lg bg-muted/30">
                   <p className="text-xs text-muted-foreground mb-1">{m.label}</p>
