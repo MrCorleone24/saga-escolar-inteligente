@@ -89,17 +89,16 @@ export default function DashboardLayout({ children, role: initialRole, userName,
 
   const handleRoleSwitch = (newRole: Role) => {
     setCurrentRole(newRole);
-    // Persist the admin's chosen mode so it doesn't reset on navigation
     localStorage.setItem('admin_view_role', newRole);
-    const dashboardPaths: Record<string, string> = {
-      aluno: "/dashboard",
-      professor: "/professor",
-      teacher_solo: "/professor",
-      teacher_institutional: "/professor",
-      school: "/admin",
-      admin: "/admin",
-    };
-    navigate(dashboardPaths[newRole]);
+    
+    // Redirect logic to the correct home page for each role
+    if (newRole === "aluno") {
+      navigate("/dashboard");
+    } else if (newRole === "teacher_solo" || newRole === "teacher_institutional" || newRole === "professor") {
+      navigate("/professor");
+    } else if (newRole === "school" || newRole === "admin") {
+      navigate("/admin");
+    }
   };
 
   const roleLabels: Record<string, string> = {
