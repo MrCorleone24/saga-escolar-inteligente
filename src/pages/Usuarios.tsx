@@ -478,27 +478,6 @@ export default function Usuarios() {
                           </div>
                         )}
 
-                        {currentUser?.role === 'school' && (
-                          <div>
-                            <label className="text-xs font-medium mb-1 block">Tipo de Usuário</label>
-                            <select 
-                              value={newRole} 
-                              onChange={e => setNewRole(e.target.value)}
-                              className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm outline-none focus:ring-2 focus:ring-primary"
-                            >
-                              <option value="teacher">Professor da Escola</option>
-                              <option value="student">Aluno da Escola</option>
-                            </select>
-                          </div>
-                        )}
-
-                        {(currentUser?.role === 'teacher' || currentUser?.role === 'professor') && !currentUser?.school_id && (
-                          <div>
-                            <label className="text-xs font-medium mb-1 block">Cadastrar Aluno</label>
-                            <Input value="student" disabled className="bg-muted" />
-                            <p className="text-[10px] text-muted-foreground mt-1">Como professor solo, você pode cadastrar seus próprios alunos.</p>
-                          </div>
-                        )}
 
 
                         <div>
