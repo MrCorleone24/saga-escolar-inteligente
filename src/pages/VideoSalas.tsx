@@ -203,7 +203,7 @@ export default function VideoSalas() {
   };
 
   const currentUserModeration = participants.find(p => (p as any).user_id === userId);
-  const isAdminRoom = (currentUserModeration as any)?.role === 'admin' || ['professor', 'teacher', 'admin', 'school', 'teacher_solo', 'teacher_institutional'].includes(userRole || '');
+  const isAdmin = (currentUserModeration as any)?.role === 'admin' || ['professor', 'teacher', 'admin', 'school', 'teacher_solo', 'teacher_institutional'].includes(userRole || '');
   const canCreate = ['professor', 'teacher', 'admin', 'school', 'teacher_solo', 'teacher_institutional'].includes(userRole || '');
 
   if (inCall && activeRoom) {
