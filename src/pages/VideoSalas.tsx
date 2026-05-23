@@ -203,7 +203,7 @@ export default function VideoSalas() {
   };
 
   const currentUserModeration = participants.find(p => (p as any).user_id === userId);
-  const isAdmin = (currentUserModeration as any)?.role === 'admin' || ['professor', 'teacher', 'admin', 'school', 'teacher_solo', 'teacher_institutional'].includes(userRole || '');
+  const isModerator = (currentUserModeration as any)?.role === 'admin' || ['professor', 'teacher', 'admin', 'school', 'teacher_solo', 'teacher_institutional'].includes(userRole || '');
   const canCreate = ['professor', 'teacher', 'admin', 'school', 'teacher_solo', 'teacher_institutional'].includes(userRole || '');
 
   if (inCall && activeRoom) {
@@ -219,13 +219,13 @@ export default function VideoSalas() {
               <h2 className="font-bold text-sm">{activeRoom.name}</h2>
               <div className="flex items-center gap-2">
                 <Badge variant="outline" className="text-[10px] h-4 border-green-500 text-green-500 uppercase">Ao Vivo</Badge>
-                {isAdmin && <Badge className="text-[10px] h-4 bg-primary uppercase">Moderador</Badge>}
+                {isModerator && <Badge className="text-[10px] h-4 bg-primary uppercase">Moderador</Badge>}
               </div>
             </div>
           </div>
           
           <div className="flex items-center gap-2">
-            {isAdmin && (
+            {isModerator && (
               <div className="flex items-center gap-1 border-r border-white/10 pr-2 mr-2">
                 <Button variant="ghost" size="sm" className="h-8 text-xs hover:bg-white/10" onClick={() => broadcastModeration('mute_all')}>
                   <VolumeX className="h-4 w-4 mr-2" /> Silenciar Tudo
@@ -236,7 +236,7 @@ export default function VideoSalas() {
               </div>
             )}
             
-            {!isAdmin && (
+            {!isModerator && (
               <Button variant={isHandRaised ? "secondary" : "ghost"} size="sm" className="h-8" onClick={toggleHandRaise}>
                 <Hand className={`h-5 w-5 ${isHandRaised ? 'text-yellow-500' : ''}`} />
               </Button>
@@ -302,7 +302,7 @@ export default function VideoSalas() {
                             </div>
                           </div>
                           
-                          {isAdmin && (p as any).user_id !== userId && (
+                          {isModerator && (p as any).user_id !== userId && (
                             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                               <Button size="icon" variant="ghost" className="h-7 w-7 text-blue-400 hover:bg-blue-400/10" title="Chamada Reservada" onClick={() => handlePrivateCall(p as any)}>
                                 <MessageSquare size={14} />
