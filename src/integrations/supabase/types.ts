@@ -775,6 +775,7 @@ export type Database = {
           is_active: boolean | null
           name: string
           room_type: string | null
+          school_id: string | null
           status: string | null
         }
         Insert: {
@@ -784,6 +785,7 @@ export type Database = {
           is_active?: boolean | null
           name: string
           room_type?: string | null
+          school_id?: string | null
           status?: string | null
         }
         Update: {
@@ -793,12 +795,20 @@ export type Database = {
           is_active?: boolean | null
           name?: string
           room_type?: string | null
+          school_id?: string | null
           status?: string | null
         }
         Relationships: [
           {
             foreignKeyName: "rooms_created_by_fkey"
             columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rooms_school_id_fkey"
+            columns: ["school_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]

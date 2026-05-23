@@ -38,43 +38,33 @@ export default function Login() {
 
     try {
       if (isLogin) {
-        // Hardcoded admin access for the requested user
-        if (email === "jrseguim@gmail.com" && password === "2511") {
-          // Chamada para garantir que o admin existe no Auth e no Banco
-          try {
-            await supabase.functions.invoke("bootstrap-admin");
-          } catch (e) {
-            console.error("Bootstrap error:", e);
-          }
+        // Standard login via Supabase Auth
+        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ 
+          email, 
+          password 
+        });
+        
+        if (signInError) throw signInError;
 
-          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-            email: "jrseguim@gmail.com",
-            password: "jrseguim_secret_2511", // Senha interna definida no bootstrap
-          });
-          
-          if (signInError) throw signInError;
+        // Fetch profile to redirect to the correct dashboard
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', signInData.user.id)
+          .single();
 
-          // Garante que o perfil tenha a role correta de admin
-          await supabase
-            .from('profiles')
-            .upsert({
-              id: signInData.user.id,
-              role: 'admin',
-              email: 'jrseguim@gmail.com',
-              full_name: 'Super Admin'
-            });
-
-          toast.success("Login Administrativo realizado!");
-          navigate("/admin");
-          return;
-        }
-
-
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
         toast.success("Login realizado com sucesso!");
-        navigate(dashboardPaths[selectedRole]);
-
+        
+        if (profile?.role === 'admin') {
+          navigate("/admin");
+        } else if (profile?.role === 'school') {
+          navigate("/admin");
+        } else if (profile?.role === 'teacher' || profile?.role === 'professor') {
+          navigate("/professor");
+        } else {
+          navigate("/dashboard");
+        }
+        return;
       } else {
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email,

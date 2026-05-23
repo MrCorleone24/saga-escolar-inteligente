@@ -134,7 +134,7 @@ export default function Usuarios() {
           specialNeedsExpert,
           teacherId: teacherId || (currentUser?.role === 'teacher' ? currentUser.id : null),
           schoolId: schoolId || (currentUser?.role === 'school' ? currentUser.id : null),
-          teacherCategory: teacherCategory
+          teacherCategory: (currentUser?.role === 'school' && newRole === 'teacher') ? 'institutional' : teacherCategory
         }
       });
 
@@ -259,9 +259,11 @@ export default function Usuarios() {
           <h1 className="text-2xl font-bold">Usuários</h1>
           <p className="text-muted-foreground text-sm">Gerencie {currentUser?.role === 'admin' ? 'todos os' : 'seus'} usuários</p>
         </div>
-        <Button onClick={() => setShowAddModal(true)} className="gradient-hero border-0 text-primary-foreground h-11 px-6 font-bold shadow-lg">
-          <UserPlus size={18} className="mr-2" /> Novo Usuário
-        </Button>
+        {(currentUser?.role === 'admin' || currentUser?.role === 'school' || (currentUser?.role === 'teacher' && !currentUser.school_id)) && (
+          <Button onClick={() => setShowAddModal(true)} className="gradient-hero border-0 text-primary-foreground h-11 px-6 font-bold shadow-lg">
+            <UserPlus size={18} className="mr-2" /> Novo Usuário
+          </Button>
+        )}
       </motion.div>
 
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-card rounded-xl border border-border p-3 mb-6 flex items-center gap-3">
@@ -395,17 +397,55 @@ export default function Usuarios() {
                             <label className="text-xs font-medium mb-1 block">Tipo de Usuário (Hierarquia)</label>
                             <select 
                               value={newRole} 
-                              onChange={e => setNewRole(e.target.value)}
+                              onChange={e => {
+                                setNewRole(e.target.value);
+                                if (e.target.value === 'admin') {
+                                  setNewSchool("");
+                                  setSchoolId("");
+                                }
+                              }}
                               className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm outline-none focus:ring-2 focus:ring-primary"
                             >
                               <option value="school">Escola (Instituição)</option>
                               <option value="teacher">Professor Solo (Assinante)</option>
+                              <option value="student">Aluno</option>
                               <option value="admin">Administrador Geral</option>
                             </select>
                             <p className="text-[10px] text-muted-foreground mt-1">
                               {newRole === 'school' ? 'Instituições gerenciam seus próprios professores e alunos.' : 
                                newRole === 'teacher' ? 'Professores solo gerenciam seus próprios alunos e assinaturas.' : 
-                               'Administradores têm acesso total ao sistema.'}
+                               newRole === 'admin' ? 'Administradores têm acesso total ao sistema.' :
+                               'Alunos são vinculados a uma escola ou professor.'}
+                            </p>
+                          </div>
+                        )}
+
+                        {currentUser?.role === 'school' && (
+                          <div>
+                            <label className="text-xs font-medium mb-1 block">Tipo de Usuário</label>
+                            <select 
+                              value={newRole} 
+                              onChange={e => setNewRole(e.target.value)}
+                              className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm outline-none focus:ring-2 focus:ring-primary"
+                            >
+                              <option value="teacher">Professor da Escola</option>
+                              <option value="student">Aluno da Escola</option>
+                            </select>
+                          </div>
+                        )}
+
+                        {currentUser?.role === 'teacher' && !currentUser.school_id && (
+                          <div>
+                            <label className="text-xs font-medium mb-1 block">Tipo de Usuário</label>
+                            <select 
+                              value={newRole} 
+                              className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm outline-none"
+                              disabled
+                            >
+                              <option value="student">Aluno Solo</option>
+                            </select>
+                            <p className="text-[10px] text-muted-foreground mt-1">
+                              Como professor solo, você só pode cadastrar alunos.
                             </p>
                           </div>
                         )}
@@ -438,27 +478,6 @@ export default function Usuarios() {
                           </div>
                         )}
 
-                        {currentUser?.role === 'school' && (
-                          <div>
-                            <label className="text-xs font-medium mb-1 block">Tipo de Usuário</label>
-                            <select 
-                              value={newRole} 
-                              onChange={e => setNewRole(e.target.value)}
-                              className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm outline-none focus:ring-2 focus:ring-primary"
-                            >
-                              <option value="teacher">Professor da Escola</option>
-                              <option value="student">Aluno da Escola</option>
-                            </select>
-                          </div>
-                        )}
-
-                        {(currentUser?.role === 'teacher' || currentUser?.role === 'professor') && !currentUser?.school_id && (
-                          <div>
-                            <label className="text-xs font-medium mb-1 block">Cadastrar Aluno</label>
-                            <Input value="student" disabled className="bg-muted" />
-                            <p className="text-[10px] text-muted-foreground mt-1">Como professor solo, você pode cadastrar seus próprios alunos.</p>
-                          </div>
-                        )}
 
 
                         <div>

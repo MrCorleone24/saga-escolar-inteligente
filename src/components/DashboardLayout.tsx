@@ -53,38 +53,36 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ children, role: initialRole, userName, xp = 0, level = 1 }: DashboardLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [currentRole, setCurrentRole] = useState<Role>(() => {
-    // Restore admin's chosen view mode from localStorage
-    const saved = typeof window !== 'undefined' ? localStorage.getItem('admin_view_role') : null;
-    return (saved as Role) || initialRole;
-  });
+  const [userProfile, setUserProfile] = useState<any>(null);
+  const [currentRole, setCurrentRole] = useState<Role>(initialRole);
   const location = useLocation();
   const navigate = useNavigate();
 
-  const isSuperUser = userEmail === "jrseguim@gmail.com";
+  const isSuperUser = userProfile?.role === "admin";
 
   useEffect(() => {
     const fetchUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        setUserEmail(user.email || null);
-        const { data: profile } = await supabase.from('profiles').select('role, teacher_category').eq('id', user.id).single();
+        const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
         if (profile) {
+          setUserProfile(profile);
           let roleToSet = profile.role as Role;
           if (roleToSet === 'professor') {
             roleToSet = profile.teacher_category === 'solo' ? 'teacher_solo' : 'teacher_institutional';
           }
           
-          if (user.email !== "jrseguim@gmail.com") {
+          const savedViewRole = localStorage.getItem('admin_view_role');
+          if (profile.role === "admin" && savedViewRole) {
+            setCurrentRole(savedViewRole as Role);
+          } else {
             setCurrentRole(roleToSet);
-            localStorage.removeItem('admin_view_role');
           }
         }
       }
     };
     fetchUser();
-  }, []);
+  }, [initialRole]);
 
   const filteredItems = navItems.filter(item => item.roles.includes(currentRole));
 

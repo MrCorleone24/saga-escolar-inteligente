@@ -86,14 +86,20 @@ export default function VideoSalas() {
     queryKey: ['rooms', userId, userRole],
     queryFn: async () => {
       if (!userId) return [];
-      let query = supabase.from('rooms').select('*').eq('is_active', true);
+      let query = (supabase.from('rooms') as any).select('*').eq('is_active', true);
       
-      if (['aluno', 'student'].includes(userRole || '')) {
+      if (userRole === 'admin') {
+        // Admin vê tudo
+      } else if (userRole === 'school') {
+        query = query.eq('school_id', userId);
+      } else if (['aluno', 'student'].includes(userRole || '')) {
         const { data: profile } = await supabase.from('profiles').select('school_id, teacher_id').eq('id', userId).single();
         if (profile) {
-          query = query.or(`created_by.eq.${profile.school_id},created_by.eq.${profile.teacher_id}`);
+          query = query.or(`created_by.eq.${profile.school_id},created_by.eq.${profile.teacher_id},school_id.eq.${profile.school_id}`);
           query = query.neq('room_type', 'direction');
         }
+      } else {
+        query = query.or(`created_by.eq.${userId},school_id.eq.${user?.school_id}`);
       }
       
       const { data, error } = await query.order('created_at', { ascending: false });
@@ -119,13 +125,15 @@ export default function VideoSalas() {
 
   const handleCreateRoom = async () => {
     if (!newRoomName.trim()) return;
-    const { data: roomData, error } = await supabase
-      .from('rooms')
+    const { data: roomData, error } = await (supabase
+      .from('rooms') as any)
       .insert({
         name: newRoomName,
         created_by: userId,
+        school_id: userRole === 'school' ? userId : user?.school_id,
         status: 'online',
-        room_type: newRoomType
+        room_type: newRoomType,
+        is_active: true
       })
       .select().single();
 
@@ -184,7 +192,7 @@ export default function VideoSalas() {
   const handlePrivateCall = async (participant: Participant) => {
     if (!activeRoom) return;
     broadcastModeration('private_call', participant.user_id);
-    window.open(`https://meet.jit.si/EduBrasil-Private-${activeRoom.id}-${participant.user_id}`, '_blank');
+    window.open(`https://meet.jit.si/EduBrasil-Private-${activeRoom.id}-${(participant as any).user_id}`, '_blank');
   };
 
   const toggleHandRaise = async () => {
@@ -194,8 +202,8 @@ export default function VideoSalas() {
     await updateModeration(userId, { hand_raised: newState });
   };
 
-  const currentUserModeration = participants.find(p => p.user_id === userId);
-  const isAdmin = currentUserModeration?.role === 'admin' || ['professor', 'teacher', 'admin', 'school', 'teacher_solo', 'teacher_institutional'].includes(userRole || '');
+  const currentUserModeration = participants.find(p => (p as any).user_id === userId);
+  const isModerator = (currentUserModeration as any)?.role === 'admin' || ['professor', 'teacher', 'admin', 'school', 'teacher_solo', 'teacher_institutional'].includes(userRole || '');
   const canCreate = ['professor', 'teacher', 'admin', 'school', 'teacher_solo', 'teacher_institutional'].includes(userRole || '');
 
   if (inCall && activeRoom) {
@@ -211,13 +219,13 @@ export default function VideoSalas() {
               <h2 className="font-bold text-sm">{activeRoom.name}</h2>
               <div className="flex items-center gap-2">
                 <Badge variant="outline" className="text-[10px] h-4 border-green-500 text-green-500 uppercase">Ao Vivo</Badge>
-                {isAdmin && <Badge className="text-[10px] h-4 bg-primary uppercase">Moderador</Badge>}
+                {isModerator && <Badge className="text-[10px] h-4 bg-primary uppercase">Moderador</Badge>}
               </div>
             </div>
           </div>
           
           <div className="flex items-center gap-2">
-            {isAdmin && (
+            {isModerator && (
               <div className="flex items-center gap-1 border-r border-white/10 pr-2 mr-2">
                 <Button variant="ghost" size="sm" className="h-8 text-xs hover:bg-white/10" onClick={() => broadcastModeration('mute_all')}>
                   <VolumeX className="h-4 w-4 mr-2" /> Silenciar Tudo
@@ -228,7 +236,7 @@ export default function VideoSalas() {
               </div>
             )}
             
-            {!isAdmin && (
+            {!isModerator && (
               <Button variant={isHandRaised ? "secondary" : "ghost"} size="sm" className="h-8" onClick={toggleHandRaise}>
                 <Hand className={`h-5 w-5 ${isHandRaised ? 'text-yellow-500' : ''}`} />
               </Button>
@@ -276,30 +284,30 @@ export default function VideoSalas() {
                   {rightPanel === 'participants' ? (
                     <div className="space-y-3">
                       {participants.map(p => (
-                        <div key={p.user_id} className="flex items-center justify-between p-2 bg-white/5 rounded-lg border border-white/5 group">
+                        <div key={(p as any).user_id} className="flex items-center justify-between p-2 bg-white/5 rounded-lg border border-white/5 group">
                           <div className="flex items-center gap-3">
                             <div className="relative">
                               <div className="w-8 h-8 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-xs font-bold text-primary">
-                                {p.profiles?.full_name?.charAt(0)}
+                                {(p as any).profiles?.full_name?.charAt(0)}
                               </div>
-                              {p.hand_raised && (
+                              {(p as any).hand_raised && (
                                 <div className="absolute -top-1 -right-1 bg-yellow-500 rounded-full p-0.5 animate-bounce">
                                   <Hand size={10} className="text-black" />
                                 </div>
                               )}
                             </div>
                             <div>
-                              <p className="text-xs font-medium">{p.profiles?.full_name}</p>
-                              <p className="text-[10px] text-white/40">{p.role}</p>
+                              <p className="text-xs font-medium">{(p as any).profiles?.full_name}</p>
+                              <p className="text-[10px] text-white/40">{(p as any).role}</p>
                             </div>
                           </div>
                           
-                          {isAdmin && p.user_id !== userId && (
+                          {isModerator && (p as any).user_id !== userId && (
                             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Button size="icon" variant="ghost" className="h-7 w-7 text-blue-400 hover:bg-blue-400/10" title="Chamada Reservada" onClick={() => handlePrivateCall(p)}>
+                              <Button size="icon" variant="ghost" className="h-7 w-7 text-blue-400 hover:bg-blue-400/10" title="Chamada Reservada" onClick={() => handlePrivateCall(p as any)}>
                                 <MessageSquare size={14} />
                               </Button>
-                              <Button size="icon" variant="ghost" className="h-7 w-7 text-red-400 hover:bg-red-400/10" title="Remover" onClick={() => broadcastModeration('kick', p.user_id)}>
+                              <Button size="icon" variant="ghost" className="h-7 w-7 text-red-400 hover:bg-red-400/10" title="Remover" onClick={() => broadcastModeration('kick', (p as any).user_id)}>
                                 <UserMinus size={14} />
                               </Button>
                             </div>
@@ -311,10 +319,11 @@ export default function VideoSalas() {
                     <AttendanceList 
                       lessonId={activeRoom.id} 
                       lessonName={activeRoom.name}
-                      students={participants.filter(p => p.role === 'participante').map(p => ({
-                        id: p.user_id,
-                        full_name: p.profiles?.full_name
+                      students={participants.filter(p => (p as any).role === 'participante').map(p => ({
+                        id: (p as any).user_id,
+                        full_name: (p as any).profiles?.full_name
                       }))} 
+
                     />
                   )}
                 </ScrollArea>
@@ -390,7 +399,7 @@ export default function VideoSalas() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {rooms.map(room => (
+            {(rooms as any[]).map(room => (
               <motion.div 
                 key={room.id} 
                 whileHover={{ y: -5 }}

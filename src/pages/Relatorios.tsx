@@ -29,11 +29,24 @@ export default function Relatorios() {
       const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
       setUserProfile(profile);
 
-      // Fetch real performance reports
-      const { data: reports } = await supabase
-        .from("performance_reports")
-        .select("*")
-        .order("created_at", { ascending: true });
+      // Fetch real performance reports filtered by role scope
+      let reportsQuery = supabase.from("performance_reports").select("*");
+      
+      if (profile.role === 'school') {
+        // Find students of this school
+        const { data: students } = await supabase.from('profiles').select('id').eq('school_id', profile.id);
+        if (students && students.length > 0) {
+          reportsQuery = reportsQuery.in('student_id', students.map(s => s.id));
+        } else {
+          reportsQuery = reportsQuery.eq('student_id', 'none'); // Force empty
+        }
+      } else if (profile.role === 'teacher' || profile.role === 'professor') {
+        reportsQuery = reportsQuery.eq('teacher_id', profile.id);
+      } else if (profile.role === 'student' || profile.role === 'aluno') {
+        reportsQuery = reportsQuery.eq('student_id', profile.id);
+      }
+
+      const { data: reports } = await reportsQuery.order("created_at", { ascending: true });
 
       if (reports && reports.length > 0) {
         // Group by month for evolution

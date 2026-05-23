@@ -36,6 +36,17 @@ export default function StudentDashboard() {
     }
   });
 
+  const { data: achievementsCount = 0 } = useQuery({
+    queryKey: ['achievementsCount', userId],
+    queryFn: async () => {
+      if (!userId) return 0;
+      // We don't have achievements_users table yet, so we return 0 for now
+      // or check if it exists in the schema. For production, we should ensure it's there.
+      return 0;
+    },
+    enabled: !!userId
+  });
+
   return (
     <DashboardLayout 
       role="aluno" 
@@ -51,7 +62,7 @@ export default function StudentDashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard title="XP Total" value={profile?.xp?.toString() || "0"} icon={<Star size={20} />} gradient="gamification" delay={0} subtitle="Progresso acumulado" />
         <StatCard title="Aulas" value={lessonsCount.toString()} icon={<BookOpen size={20} />} gradient="badge" delay={0.05} subtitle="Conteúdo disponível" />
-        <StatCard title="Medalhas" value="0" icon={<Trophy size={20} />} gradient="success" delay={0.1} subtitle="Conquistas" />
+        <StatCard title="Medalhas" value={achievementsCount.toString()} icon={<Trophy size={20} />} gradient="success" delay={0.1} subtitle="Conquistas" />
         <StatCard title="Nível" value={profile?.level?.toString() || "1"} icon={<TrendingUp size={20} />} gradient="hero" delay={0.15} subtitle="Evolução" />
       </div>
 

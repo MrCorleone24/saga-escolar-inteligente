@@ -28,18 +28,32 @@ export default function AdminDashboard() {
         const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).single();
         setProfile(p);
 
-        // Fetch counts
-        const { count: sCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'school');
-        const { count: tCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'teacher');
-        const { count: stCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'student');
+        // Fetch counts based on role scope
+        const isGlobalAdmin = p.role === 'admin';
+        const schoolId = p.id;
+
+        const { count: sCount } = isGlobalAdmin 
+          ? await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'school')
+          : { count: 1 }; // Current school
+        
+        const studentQuery = supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'student');
+        const teacherQuery = supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'teacher');
+        
+        if (!isGlobalAdmin) {
+          studentQuery.eq('school_id', schoolId);
+          teacherQuery.eq('school_id', schoolId);
+        }
+
+        const { count: stCount } = await studentQuery;
+        const { count: tCount } = await teacherQuery;
         
         setStats({ 
           schools: sCount || 0, 
           students: stCount || 0, 
-            teachers: tCount || 0,
-            mrr: (sCount || 0) * 499,
-            attendanceRate: 0 // Will update below
-          });
+          teachers: tCount || 0,
+          mrr: isGlobalAdmin ? (sCount || 0) * 499 : (stCount || 0) * 15, // Simplified MRR logic
+          attendanceRate: 0 
+        });
 
           // Fetch attendance rate
           const { data: attData } = await supabase.from('attendance').select('status');
@@ -49,25 +63,42 @@ export default function AdminDashboard() {
             setStats(prev => ({ ...prev, attendanceRate: rate }));
           }
 
-        // Fetch real schools list
-        const { data: schoolsList } = await supabase
+        // Fetch real schools list or teachers if school admin
+        const listQuery = supabase
           .from('profiles')
           .select('id, school_name, full_name, role')
-          .eq('role', 'school')
           .limit(10);
+        
+        if (isGlobalAdmin) {
+          listQuery.eq('role', 'school');
+        } else {
+          listQuery.eq('role', 'teacher').eq('school_id', schoolId);
+        }
 
-        if (schoolsList) {
-          const schoolsWithCounts = await Promise.all(schoolsList.map(async (school) => {
-            const { count: st } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('school_id', school.id).eq('role', 'student');
-            const { count: tc } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('school_id', school.id).eq('role', 'teacher');
-            return {
-              name: school.school_name || school.full_name || "Escola sem nome",
-              students: st || 0,
-              teachers: tc || 0,
-              avg: "8.5"
-            };
+        const { data: listData } = await listQuery;
+
+        if (listData) {
+          const itemsWithCounts = await Promise.all(listData.map(async (item) => {
+            if (isGlobalAdmin) {
+              const { count: st } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('school_id', item.id).eq('role', 'student');
+              const { count: tc } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('school_id', item.id).eq('role', 'teacher');
+              return {
+                name: item.school_name || item.full_name || "Escola sem nome",
+                students: st || 0,
+                teachers: tc || 0,
+                avg: "8.5"
+              };
+            } else {
+              const { count: st } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('teacher_id', item.id).eq('role', 'student');
+              return {
+                name: item.full_name || "Professor sem nome",
+                students: st || 0,
+                teachers: 1,
+                avg: "7.8"
+              };
+            }
           }));
-          setSchools(schoolsWithCounts);
+          setSchools(itemsWithCounts);
         }
 
         // Fetch recent activities
@@ -104,7 +135,7 @@ export default function AdminDashboard() {
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="bg-card rounded-xl border border-border p-5">
             <h2 className="font-bold text-base mb-4 flex items-center gap-2">
               <School size={18} className="text-primary" />
-              Escolas da Rede
+              {profile?.role === 'admin' ? "Escolas da Rede" : "Professores da Escola"}
             </h2>
             <div className="space-y-3">
               {schools.map((s, i) => (
