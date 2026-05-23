@@ -2,21 +2,19 @@ import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
+import { useCurrentUser, UserRole } from "@/hooks/useCurrentUser";
 import {
   LayoutDashboard, BookOpen, Users, Trophy, BarChart3,
   GraduationCap, Dumbbell, Settings, LogOut, ChevronLeft,
   ChevronRight, Presentation, ClipboardList, Brain, Menu,
-  PenLine, Calendar, BookMarked, Video, DollarSign
+  PenLine, Calendar, BookMarked, Video, DollarSign, Loader2
 } from "lucide-react";
-
-
-type Role = "aluno" | "professor" | "admin" | "school" | "teacher_solo" | "teacher_institutional";
 
 interface NavItem {
   label: string;
   icon: React.ElementType;
   path: string;
-  roles: Role[];
+  roles: UserRole[];
 }
 
 const navItems: NavItem[] = [
@@ -43,58 +41,38 @@ const navItems: NavItem[] = [
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
-  role: Role;
-  userName: string;
+  role?: UserRole; // Optional because we use the hook
+  userName?: string;
   userAvatar?: string;
   xp?: number;
   level?: number;
 }
 
-export default function DashboardLayout({ children, role: initialRole, userName, xp = 0, level = 1 }: DashboardLayoutProps) {
+export default function DashboardLayout({ children, xp, level }: DashboardLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [userProfile, setUserProfile] = useState<any>(null);
-  const [currentRole, setCurrentRole] = useState<Role>(initialRole);
+  const { user, loading, role: currentRole, isAdmin, switchViewRole, full_name } = useCurrentUser();
   const location = useLocation();
   const navigate = useNavigate();
 
-  const isSuperUser = userProfile?.role === "admin";
+  // If we are loading the profile, show a simple loader
+  if (loading && !user) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-        if (profile) {
-          setUserProfile(profile);
-          let roleToSet = profile.role as Role;
-          if (roleToSet === 'professor') {
-            roleToSet = profile.teacher_category === 'solo' ? 'teacher_solo' : 'teacher_institutional';
-          }
-          
-          const savedViewRole = localStorage.getItem('admin_view_role');
-          if (profile.role === "admin" && savedViewRole) {
-            setCurrentRole(savedViewRole as Role);
-          } else {
-            setCurrentRole(roleToSet);
-          }
-        }
-      }
-    };
-    fetchUser();
-  }, [initialRole]);
+  const filteredItems = navItems.filter(item => item.roles.includes(currentRole as UserRole));
 
-  const filteredItems = navItems.filter(item => item.roles.includes(currentRole));
-
-
-  const handleRoleSwitch = (newRole: Role) => {
-    setCurrentRole(newRole);
-    localStorage.setItem('admin_view_role', newRole);
+  const handleRoleSwitch = (newRole: UserRole) => {
+    switchViewRole(newRole);
     
     // Redirect logic to the correct home page for each role
     if (newRole === "aluno") {
       navigate("/dashboard");
-    } else if (newRole === "teacher_solo" || newRole === "teacher_institutional" || newRole === "professor") {
+    } else if (newRole === "teacher_solo" || newRole === "teacher_institutional" || newRole === "professor" || newRole === "teacher") {
       navigate("/professor");
     } else if (newRole === "school" || newRole === "admin") {
       navigate("/admin");
@@ -108,6 +86,8 @@ export default function DashboardLayout({ children, role: initialRole, userName,
     teacher_institutional: "Professor",
     admin: "Administrador",
     school: "Escola",
+    teacher: "Professor",
+    student: "Aluno"
   };
 
   const SidebarContent = () => (
@@ -129,20 +109,20 @@ export default function DashboardLayout({ children, role: initialRole, userName,
       <div className="px-4 py-4 border-b border-sidebar-border">
         <div className="flex items-center gap-3">
           <div className="w-9 h-9 rounded-full gradient-gamification flex items-center justify-center shrink-0 text-accent-foreground font-bold text-sm">
-            {userName.charAt(0)}
+            {(full_name || user?.full_name || "U").charAt(0)}
           </div>
           {!collapsed && (
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="overflow-hidden min-w-0">
-              <p className="text-sm font-semibold text-sidebar-foreground truncate">{userName}</p>
-              <p className="text-[10px] text-sidebar-foreground/50">{roleLabels[currentRole]}</p>
+              <p className="text-sm font-semibold text-sidebar-foreground truncate">{full_name || user?.full_name || "Usuário"}</p>
+              <p className="text-[10px] text-sidebar-foreground/50">{roleLabels[currentRole as string] || currentRole}</p>
             </motion.div>
           )}
         </div>
-        {isSuperUser && !collapsed && (
+        {isAdmin && !collapsed && (
           <div className="mt-4 px-2">
             <p className="text-[10px] uppercase font-bold text-sidebar-foreground/40 mb-2">Alternar Perfil</p>
             <div className="flex flex-col gap-1">
-              {(["admin", "school", "teacher_institutional", "teacher_solo", "aluno"] as Role[]).map((r) => (
+              {(["admin", "school", "teacher_institutional", "teacher_solo", "aluno"] as UserRole[]).map((r) => (
                 <button
                   key={r}
                   onClick={() => handleRoleSwitch(r)}
@@ -162,14 +142,14 @@ export default function DashboardLayout({ children, role: initialRole, userName,
         {currentRole === "aluno" && !collapsed && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-3">
             <div className="flex items-center justify-between text-[10px] text-sidebar-foreground/60 mb-1">
-              <span>Nível {level}</span>
-              <span>{xp} XP</span>
+              <span>Nível {level || user?.level || 1}</span>
+              <span>{xp || user?.xp || 0} XP</span>
             </div>
             <div className="h-1.5 bg-sidebar-accent rounded-full overflow-hidden">
               <motion.div
                 className="h-full rounded-full bg-gamification-xp"
                 initial={{ width: 0 }}
-                animate={{ width: `${(xp % 100)}%` }}
+                animate={{ width: `${((xp || user?.xp || 0) % 100)}%` }}
                 transition={{ duration: 1, ease: "easeOut" }}
               />
             </div>
@@ -204,6 +184,10 @@ export default function DashboardLayout({ children, role: initialRole, userName,
       <div className="px-2 py-3 border-t border-sidebar-border">
         <Link
           to="/"
+          onClick={async () => {
+             await supabase.auth.signOut();
+             localStorage.removeItem('admin_view_role');
+          }}
           className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
         >
           <LogOut size={18} />
@@ -245,7 +229,7 @@ export default function DashboardLayout({ children, role: initialRole, userName,
 
       {/* Sidebar desktop */}
       <aside
-        className={`hidden lg:flex flex-col bg-sidebar transition-all duration-300 shrink-0 ${
+        className={`hidden lg:flex flex-col bg-sidebar transition-all duration-300 shrink-0 relative ${
           collapsed ? "w-[68px]" : "w-[250px]"
         }`}
       >
@@ -253,7 +237,6 @@ export default function DashboardLayout({ children, role: initialRole, userName,
         <button
           onClick={() => setCollapsed(c => !c)}
           className="absolute top-6 -right-3 w-6 h-6 bg-card border border-border rounded-full flex items-center justify-center shadow-sm hover:bg-muted transition-colors z-10"
-          style={{ left: collapsed ? 56 : 238 }}
         >
           {collapsed ? <ChevronRight size={12} /> : <ChevronLeft size={12} />}
         </button>
