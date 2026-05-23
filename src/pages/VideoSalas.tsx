@@ -319,10 +319,11 @@ export default function VideoSalas() {
                     <AttendanceList 
                       lessonId={activeRoom.id} 
                       lessonName={activeRoom.name}
-                      students={participants.filter(p => p.role === 'participante').map(p => ({
-                        id: p.user_id,
-                        full_name: p.profiles?.full_name
+                      students={participants.filter(p => (p as any).role === 'participante').map(p => ({
+                        id: (p as any).user_id,
+                        full_name: (p as any).profiles?.full_name
                       }))} 
+
                     />
                   )}
                 </ScrollArea>
