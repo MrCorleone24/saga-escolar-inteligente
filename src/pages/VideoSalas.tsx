@@ -88,12 +88,19 @@ export default function VideoSalas() {
       if (!userId) return [];
       let query = supabase.from('rooms').select('*').eq('is_active', true);
       
-      if (['aluno', 'student'].includes(userRole || '')) {
+      if (userRole === 'admin') {
+        // Admin sees everything
+      } else if (userRole === 'school') {
+        query = query.eq('school_id', userId);
+      } else if (['aluno', 'student'].includes(userRole || '')) {
         const { data: profile } = await supabase.from('profiles').select('school_id, teacher_id').eq('id', userId).single();
         if (profile) {
-          query = query.or(`created_by.eq.${profile.school_id},created_by.eq.${profile.teacher_id}`);
+          query = query.or(`created_by.eq.${profile.school_id},created_by.eq.${profile.teacher_id},school_id.eq.${profile.school_id}`);
           query = query.neq('room_type', 'direction');
         }
+      } else {
+        // Teachers
+        query = query.or(`created_by.eq.${userId},school_id.eq.${user?.school_id}`);
       }
       
       const { data, error } = await query.order('created_at', { ascending: false });
@@ -124,6 +131,7 @@ export default function VideoSalas() {
       .insert({
         name: newRoomName,
         created_by: userId,
+        school_id: userRole === 'school' ? userId : user?.school_id,
         status: 'online',
         room_type: newRoomType
       })

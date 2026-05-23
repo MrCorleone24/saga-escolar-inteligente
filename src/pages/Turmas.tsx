@@ -68,11 +68,22 @@ export default function Turmas() {
       
       let query = supabase.from("subjects").select("*");
       
-      if (currentUser.role === 'school') {
-        // Find subjects assigned to this school via classes or something
-        // For now, if school, fetch all (or add school_id filter if schema allowed)
+      if (currentUser.role === 'admin') {
+        // Admin sees all
+      } else if (currentUser.role === 'school') {
+        // In a real system, we'd have a subjects_schools junction or similar
+        // For now, let's assume we can filter assignments
+        const { data: assignments } = await supabase.from('teacher_assignments').select('subject_id').eq('school_id', currentUser.id);
+        if (assignments && assignments.length > 0) {
+          query = query.in('id', assignments.map(a => a.subject_id));
+        }
       } else if (currentUser.role === 'teacher') {
-        // Teacher filter would go here
+        const { data: assignments } = await supabase.from('teacher_assignments').select('subject_id').eq('teacher_id', currentUser.id);
+        if (assignments && assignments.length > 0) {
+          query = query.in('id', assignments.map(a => a.subject_id));
+        } else {
+          return [];
+        }
       }
       
       const { data, error } = await query;
