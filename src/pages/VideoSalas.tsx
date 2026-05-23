@@ -326,17 +326,11 @@ export default function VideoSalas() {
     );
   }
 
-  if (userLoading || roomsLoading) {
+  if (userLoading && !user) {
     return (
-      <DashboardLayout role={(userRole as any) || "aluno"} userName="Carregando...">
+      <DashboardLayout role="admin" userName="Carregando...">
         <div className="max-w-7xl mx-auto space-y-8">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="space-y-2">
-              <div className="h-10 w-48 bg-muted animate-pulse rounded-lg" />
-              <div className="h-4 w-64 bg-muted animate-pulse rounded-lg" />
-            </div>
-            <div className="h-12 w-96 bg-muted animate-pulse rounded-xl" />
-          </div>
+          <div className="h-12 w-full bg-muted animate-pulse rounded-xl" />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3].map(i => (
               <div key={i} className="h-64 bg-card border rounded-2xl animate-pulse" />
@@ -388,44 +382,49 @@ export default function VideoSalas() {
 
         <Separator />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {rooms.map(room => (
-            <motion.div 
-              key={room.id} 
-              whileHover={{ y: -5 }}
-              className="bg-card border border-border p-6 rounded-2xl shadow-sm hover:shadow-md transition-all group"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="p-3 bg-primary/5 rounded-xl group-hover:bg-primary group-hover:text-white transition-colors">
-                  <Video className="h-6 w-6" />
+        {roomsLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3, 4, 5, 6].map(i => (
+              <div key={i} className="h-64 bg-card border rounded-2xl animate-pulse" />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {rooms.map(room => (
+              <motion.div 
+                key={room.id} 
+                whileHover={{ y: -5 }}
+                className="bg-card border border-border p-6 rounded-2xl shadow-sm hover:shadow-md transition-all group"
+              >
+                <div className="flex items-start justify-between mb-4">
+                  <div className="p-3 bg-primary/5 rounded-xl group-hover:bg-primary group-hover:text-white transition-colors">
+                    <Video className="h-6 w-6" />
+                  </div>
+                  <Badge variant="outline" className="border-green-500 text-green-500">ONLINE</Badge>
                 </div>
-                <Badge variant="outline" className="border-green-500 text-green-500">ONLINE</Badge>
-              </div>
-              
-              <h3 className="text-xl font-bold mb-1">{room.name}</h3>
-              <p className="text-xs text-muted-foreground mb-6 uppercase tracking-wider">
-                {room.room_type === 'classroom' ? 'Sala de Aula' : 'Administrativo'}
-              </p>
-              
-              <Button className="w-full gradient-hero text-white font-bold h-11" onClick={() => handleJoinRoom(room)}>
-                Entrar na Sala
-              </Button>
-            </motion.div>
-          ))}
-          
-          {rooms.length === 0 && (
-            <div className="col-span-full py-20 flex flex-col items-center justify-center text-center bg-muted/30 rounded-3xl border-2 border-dashed border-border">
-              <Video className="h-12 w-12 text-muted-foreground mb-4 opacity-20" />
-              <h3 className="text-xl font-bold mb-2 text-muted-foreground">Nenhuma sala ativa no momento</h3>
-              <p className="text-muted-foreground max-w-xs mb-6">Comece agora criando uma sala virtual para sua aula ou reunião.</p>
-              {canCreate && (
-                <Button onClick={() => document.querySelector('input')?.focus()} className="gradient-hero text-white">
-                  <Plus className="h-4 w-4 mr-2" /> Criar Minha Primeira Sala
+                
+                <h3 className="text-xl font-bold mb-1">{room.name}</h3>
+                <p className="text-xs text-muted-foreground mb-6 uppercase tracking-wider">
+                  {room.room_type === 'classroom' ? 'Sala de Aula' : room.room_type === 'administrative' ? 'Administrativo' : 'Diretoria'}
+                </p>
+
+                <Button 
+                  className="w-full font-bold bg-primary hover:bg-primary/90 text-white" 
+                  onClick={() => handleJoinRoom(room)}
+                >
+                  Entrar na Sala
                 </Button>
-              )}
-            </div>
-          )}
-        </div>
+              </motion.div>
+            ))}
+            {rooms.length === 0 && (
+              <div className="col-span-full py-20 text-center bg-muted/20 rounded-3xl border-2 border-dashed border-border">
+                <Video className="h-12 w-12 text-muted-foreground mx-auto mb-4 opacity-20" />
+                <h3 className="text-xl font-bold text-muted-foreground">Nenhuma sala ativa</h3>
+                <p className="text-muted-foreground">Crie uma nova sala para começar.</p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

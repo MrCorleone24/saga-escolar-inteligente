@@ -257,39 +257,26 @@ export default function CalendarioEscolar() {
       level={userProfile?.level || 1}
     >
       <div id="calendar-content" className="print:p-8">
-        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-          <div>
-            <h1 className="text-3xl font-bold flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <CalendarIcon className="text-primary h-6 w-6" />
-              </div>
-              Calendário Escolar
-            </h1>
-            <p className="text-muted-foreground mt-1">Acompanhe aulas, presença e eventos institucionais.</p>
+        <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4 bg-card p-4 rounded-2xl border shadow-sm">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-primary/10 rounded-xl">
+              <CalendarIcon className="text-primary h-6 w-6" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold">Calendário Escolar</h1>
+              <p className="text-sm text-muted-foreground">Acompanhe aulas, presença e eventos.</p>
+            </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <Button variant="outline" size="sm" className="h-10 border-primary/20 hover:bg-primary/5 text-primary" onClick={handleExportPDF}>
-              <Download className="mr-2 h-4 w-4" /> Exportar Relatório
+              <Download className="mr-2 h-4 w-4" /> Exportar PDF
             </Button>
-            
-            {userProfile?.role === 'aluno' && (
-              <div className="flex gap-8">
-                <div className="text-center">
-                  <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Presença</p>
-                  <p className="text-xl font-bold text-secondary">{attendanceRate}%</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-[10px] uppercase font-bold text-muted-foreground mb-1">Faltas</p>
-                  <p className="text-xl font-bold text-destructive">{totalAbsent}</p>
-                </div>
-              </div>
-            )}
             
             {isAdmin && (
               <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
                 <DialogTrigger asChild>
-                  <Button className="gradient-hero text-white font-bold px-6">
+                  <Button className="gradient-hero text-white font-bold h-10 px-6">
                     <Plus className="mr-2 h-4 w-4" /> Novo Evento
                   </Button>
                 </DialogTrigger>
