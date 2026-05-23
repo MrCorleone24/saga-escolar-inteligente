@@ -2,12 +2,13 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import DashboardLayout from "@/components/DashboardLayout";
 import StatCard from "@/components/StatCard";
-import { School, Users, GraduationCap, TrendingUp, Plus, MapPin, Loader2, Edit2, X, Save } from "lucide-react";
+import { School, Users, GraduationCap, Plus, Loader2, Edit2, X, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useNavigate } from "react-router-dom";
 
 interface SchoolProfile {
   id: string;
@@ -19,6 +20,7 @@ interface SchoolProfile {
 }
 
 export default function Escolas() {
+  const navigate = useNavigate();
   const [schools, setSchools] = useState<SchoolProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingSchool, setEditingSchool] = useState<SchoolProfile | null>(null);
@@ -93,16 +95,16 @@ export default function Escolas() {
     });
   };
 
-  if (profileLoading) return <DashboardLayout role={(userProfile?.role as any) || "admin"} userName="Carregando..."><div className="p-8"><Loader2 className="animate-spin" /></div></DashboardLayout>;
+  if (profileLoading) return <DashboardLayout><div className="p-8"><Loader2 className="animate-spin" /></div></DashboardLayout>;
 
   return (
-    <DashboardLayout role={(userProfile?.role as any) || "admin"} userName={userProfile?.full_name || "Administrador"}>
+    <DashboardLayout>
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Escolas</h1>
-          <p className="text-muted-foreground text-sm">Gerencie as escolas da rede</p>
+          <h1 className="text-2xl font-bold">Gerenciamento de Escolas</h1>
+          <p className="text-muted-foreground text-sm">Controle de limites e assinaturas das instituições</p>
         </div>
-        <Button className="gradient-hero border-0 text-primary-foreground" onClick={() => toast.info("Use a aba Usuários para cadastrar novas Escolas")}>
+        <Button className="gradient-hero border-0 text-primary-foreground font-bold" onClick={() => navigate("/usuarios?role=school")}>
           <Plus size={16} className="mr-1.5" /> Nova Escola
         </Button>
       </motion.div>
@@ -113,13 +115,13 @@ export default function Escolas() {
         <StatCard title="Total Professores" value={stats.teachersCount.toString()} icon={<GraduationCap size={20} />} gradient="gamification" />
       </div>
 
-      <div className="bg-card rounded-xl border border-border overflow-hidden">
+      <div className="bg-card rounded-xl border border-border overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-muted/50 border-b border-border">
-                <th className="p-4 font-bold text-sm">Nome da Escola</th>
-                <th className="p-4 font-bold text-sm">Email</th>
+                <th className="p-4 font-bold text-sm">Instituição</th>
+                <th className="p-4 font-bold text-sm">E-mail</th>
                 <th className="p-4 font-bold text-sm text-center">Alunos (Limite)</th>
                 <th className="p-4 font-bold text-sm text-center">Profs (Limite)</th>
                 <th className="p-4 font-bold text-sm text-center">Assinatura</th>
@@ -129,34 +131,34 @@ export default function Escolas() {
             <tbody className="divide-y divide-border">
               {loading ? (
                 <tr>
-                  <td colSpan={6} className="p-10 text-center"><Loader2 className="animate-spin mx-auto" /></td>
+                  <td colSpan={6} className="p-10 text-center"><Loader2 className="animate-spin mx-auto text-primary" /></td>
                 </tr>
               ) : schools.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="p-10 text-center text-muted-foreground">Nenhuma escola cadastrada.</td>
+                  <td colSpan={6} className="p-10 text-center text-muted-foreground">Nenhuma escola cadastrada no sistema.</td>
                 </tr>
               ) : schools.map((school) => (
                 <tr key={school.id} className="hover:bg-muted/30 transition-colors">
                   <td className="p-4">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary font-bold">
                         {school.school_name?.charAt(0)}
                       </div>
-                      <span className="font-medium">{school.school_name}</span>
+                      <span className="font-bold text-sm">{school.school_name}</span>
                     </div>
                   </td>
                   <td className="p-4 text-sm text-muted-foreground">{school.email}</td>
                   <td className="p-4 text-center font-bold text-secondary">{school.max_students || 0}</td>
                   <td className="p-4 text-center font-bold text-primary">{school.max_teachers || 0}</td>
                   <td className="p-4 text-center">
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
-                      school.subscription_status === 'active' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                    <span className={`text-[10px] px-2.5 py-1 rounded-full font-bold uppercase ${
+                      school.subscription_status === 'active' ? 'bg-green-500/10 text-green-600' : 'bg-amber-500/10 text-amber-600'
                     }`}>
                       {school.subscription_status === 'active' ? 'Ativo' : 'Pendente'}
                     </span>
                   </td>
                   <td className="p-4 text-right">
-                    <Button variant="ghost" size="sm" onClick={() => startEdit(school)}>
+                    <Button variant="ghost" size="sm" onClick={() => startEdit(school)} className="hover:text-primary">
                       <Edit2 size={16} />
                     </Button>
                   </td>
@@ -171,21 +173,21 @@ export default function Escolas() {
         {editingSchool && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="w-full max-w-md bg-card border border-border rounded-2xl shadow-xl overflow-hidden">
-              <div className="p-6 border-b border-border flex justify-between items-center">
+              <div className="p-6 border-b border-border flex justify-between items-center bg-muted/30">
                 <h3 className="text-lg font-bold">Editar Limites: {editingSchool.school_name}</h3>
-                <button onClick={() => setEditingSchool(null)}><X size={20} /></button>
+                <button onClick={() => setEditingSchool(null)} className="text-muted-foreground hover:text-foreground"><X size={20} /></button>
               </div>
-              <form onSubmit={handleUpdateLimits} className="p-6 space-y-4">
+              <form onSubmit={handleUpdateLimits} className="p-6 space-y-6">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Limite de Alunos</label>
-                  <Input type="number" value={formLimits.max_students} onChange={e => setFormLimits({...formLimits, max_students: parseInt(e.target.value)})} />
+                  <label className="text-sm font-bold">Limite Máximo de Alunos</label>
+                  <Input type="number" value={formLimits.max_students} onChange={e => setFormLimits({...formLimits, max_students: parseInt(e.target.value)})} className="h-11" />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Limite de Professores</label>
-                  <Input type="number" value={formLimits.max_teachers} onChange={e => setFormLimits({...formLimits, max_teachers: parseInt(e.target.value)})} />
+                  <label className="text-sm font-bold">Limite Máximo de Professores</label>
+                  <Input type="number" value={formLimits.max_teachers} onChange={e => setFormLimits({...formLimits, max_teachers: parseInt(e.target.value)})} className="h-11" />
                 </div>
-                <Button type="submit" className="w-full gradient-hero" disabled={submitting}>
-                  {submitting ? <Loader2 className="animate-spin mr-2" /> : <Save size={16} className="mr-2" />} Salvar Alterações
+                <Button type="submit" className="w-full gradient-hero h-12 font-bold shadow-lg" disabled={submitting}>
+                  {submitting ? <Loader2 className="animate-spin mr-2" /> : <Save size={18} className="mr-2" />} Salvar Configurações
                 </Button>
               </form>
             </motion.div>
