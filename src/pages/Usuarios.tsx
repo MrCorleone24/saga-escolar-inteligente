@@ -8,6 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useLocation } from "react-router-dom";
+import { validateEmail, validatePassword } from "@/lib/error-handling";
+
 
 interface UserProfile {
   id: string;
