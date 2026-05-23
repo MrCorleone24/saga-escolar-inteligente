@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
+import { translateAuthError, validateEmail, validatePassword } from "@/lib/error-handling";
+
 
 export default function Login() {
   const navigate = useNavigate();
