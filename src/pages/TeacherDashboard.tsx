@@ -73,8 +73,19 @@ export default function TeacherDashboard() {
               Minhas Turmas
             </h2>
             <div className="space-y-3">
-              {/* To be implemented: Fetch real rooms and student counts */}
-              <p className="text-xs text-muted-foreground py-4 text-center italic">Gerencie suas turmas na seção de Turmas.</p>
+              {stats?.classesCount && stats.classesCount > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {/* Real rooms would go here, linked to Turmas page */}
+                  <Button variant="outline" className="justify-start h-16" onClick={() => navigate('/turmas')}>
+                    <div className="text-left">
+                      <p className="font-bold text-sm">Ver todas as turmas</p>
+                      <p className="text-xs text-muted-foreground">{stats.classesCount} turmas ativas</p>
+                    </div>
+                  </Button>
+                </div>
+              ) : (
+                <p className="text-xs text-muted-foreground py-4 text-center italic">Gerencie suas turmas na seção de Turmas.</p>
+              )}
             </div>
           </motion.div>
 
