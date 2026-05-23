@@ -284,30 +284,30 @@ export default function VideoSalas() {
                   {rightPanel === 'participants' ? (
                     <div className="space-y-3">
                       {participants.map(p => (
-                        <div key={p.user_id} className="flex items-center justify-between p-2 bg-white/5 rounded-lg border border-white/5 group">
+                        <div key={(p as any).user_id} className="flex items-center justify-between p-2 bg-white/5 rounded-lg border border-white/5 group">
                           <div className="flex items-center gap-3">
                             <div className="relative">
                               <div className="w-8 h-8 rounded-full bg-primary/20 border border-primary/30 flex items-center justify-center text-xs font-bold text-primary">
-                                {p.profiles?.full_name?.charAt(0)}
+                                {(p as any).profiles?.full_name?.charAt(0)}
                               </div>
-                              {p.hand_raised && (
+                              {(p as any).hand_raised && (
                                 <div className="absolute -top-1 -right-1 bg-yellow-500 rounded-full p-0.5 animate-bounce">
                                   <Hand size={10} className="text-black" />
                                 </div>
                               )}
                             </div>
                             <div>
-                              <p className="text-xs font-medium">{p.profiles?.full_name}</p>
-                              <p className="text-[10px] text-white/40">{p.role}</p>
+                              <p className="text-xs font-medium">{(p as any).profiles?.full_name}</p>
+                              <p className="text-[10px] text-white/40">{(p as any).role}</p>
                             </div>
                           </div>
                           
-                          {isAdmin && p.user_id !== userId && (
+                          {isAdmin && (p as any).user_id !== userId && (
                             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <Button size="icon" variant="ghost" className="h-7 w-7 text-blue-400 hover:bg-blue-400/10" title="Chamada Reservada" onClick={() => handlePrivateCall(p)}>
+                              <Button size="icon" variant="ghost" className="h-7 w-7 text-blue-400 hover:bg-blue-400/10" title="Chamada Reservada" onClick={() => handlePrivateCall(p as any)}>
                                 <MessageSquare size={14} />
                               </Button>
-                              <Button size="icon" variant="ghost" className="h-7 w-7 text-red-400 hover:bg-red-400/10" title="Remover" onClick={() => broadcastModeration('kick', p.user_id)}>
+                              <Button size="icon" variant="ghost" className="h-7 w-7 text-red-400 hover:bg-red-400/10" title="Remover" onClick={() => broadcastModeration('kick', (p as any).user_id)}>
                                 <UserMinus size={14} />
                               </Button>
                             </div>
