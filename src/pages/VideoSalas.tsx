@@ -326,9 +326,9 @@ export default function VideoSalas() {
     );
   }
 
-  if (userLoading || roomsLoading) {
+  if ((userLoading || roomsLoading) && !user) {
     return (
-      <DashboardLayout role={(userRole as any) || "aluno"} userName="Carregando...">
+      <DashboardLayout role="admin" userName="Carregando...">
         <div className="max-w-7xl mx-auto space-y-8">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="space-y-2">

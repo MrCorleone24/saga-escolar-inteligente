@@ -37,7 +37,7 @@ const navItems: NavItem[] = [
   { label: "Relatórios", icon: BarChart3, path: "/relatorios", roles: ["teacher_solo", "teacher_institutional", "admin", "school"] },
   { label: "Gestão Escolar", icon: GraduationCap, path: "/escolas", roles: ["admin", "school"] },
   { label: "Usuários", icon: Users, path: "/usuarios", roles: ["admin", "school"] },
-  { label: "Financeiro", icon: DollarSign, path: "/financeiro", roles: ["admin", "school", "teacher_solo"] },
+  { label: "Financeiro", icon: DollarSign, path: "/financeiro", roles: ["admin", "school", "teacher_solo", "teacher_institutional"] },
   { label: "Configurações", icon: Settings, path: "/configuracoes", roles: ["admin", "school", "teacher_solo", "teacher_institutional"] },
 ];
 

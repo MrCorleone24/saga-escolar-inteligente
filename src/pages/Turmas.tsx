@@ -152,12 +152,12 @@ export default function Turmas() {
       // Create assignment if school is selected or if current user is school/teacher
       const targetSchoolId = currentUser?.role === 'admin' ? newClassSchoolId : (currentUser?.role === 'school' ? currentUser.id : currentUser?.school_id);
       
-      if (targetSchoolId || currentUser?.role === 'teacher') {
+      if (targetSchoolId || currentUser?.role === 'teacher' || currentUser?.role === 'admin') {
         const { error: assignError } = await supabase.from('teacher_assignments').insert({
           school_id: targetSchoolId || null,
-          teacher_id: currentUser?.role === 'teacher' ? currentUser.id : null,
+          teacher_id: currentUser?.role === 'teacher' ? currentUser.id : (currentUser?.role === 'admin' ? null : null),
           subject_id: subjectData.id,
-          grade_level: "Ensino Fundamental" // Default or add field
+          grade_level: "Ensino Fundamental"
         });
         if (assignError) console.error("Error creating assignment:", assignError);
       }
