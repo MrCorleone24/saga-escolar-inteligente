@@ -192,7 +192,7 @@ export default function VideoSalas() {
   const handlePrivateCall = async (participant: Participant) => {
     if (!activeRoom) return;
     broadcastModeration('private_call', participant.user_id);
-    window.open(`https://meet.jit.si/EduBrasil-Private-${activeRoom.id}-${participant.user_id}`, '_blank');
+    window.open(`https://meet.jit.si/EduBrasil-Private-${activeRoom.id}-${(participant as any).user_id}`, '_blank');
   };
 
   const toggleHandRaise = async () => {
