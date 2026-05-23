@@ -54,6 +54,9 @@ export default function DashboardLayout({ children, role: initialRole, userName,
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userProfile, setUserProfile] = useState<any>(null);
+  const [currentRole, setCurrentRole] = useState<Role>(initialRole);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const isSuperUser = userProfile?.role === "admin";
 
@@ -61,7 +64,6 @@ export default function DashboardLayout({ children, role: initialRole, userName,
     const fetchUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
-        setUserEmail(user.email || null);
         const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
         if (profile) {
           setUserProfile(profile);

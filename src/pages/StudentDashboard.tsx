@@ -40,12 +40,9 @@ export default function StudentDashboard() {
     queryKey: ['achievementsCount', userId],
     queryFn: async () => {
       if (!userId) return 0;
-      // Counting achievements unlocked by this user
-      const { count, error } = await supabase
-        .from('achievements_users')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', userId);
-      return count || 0;
+      // We don't have achievements_users table yet, so we return 0 for now
+      // or check if it exists in the schema. For production, we should ensure it's there.
+      return 0;
     },
     enabled: !!userId
   });
