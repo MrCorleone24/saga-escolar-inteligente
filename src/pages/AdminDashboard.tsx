@@ -63,25 +63,42 @@ export default function AdminDashboard() {
             setStats(prev => ({ ...prev, attendanceRate: rate }));
           }
 
-        // Fetch real schools list
-        const { data: schoolsList } = await supabase
+        // Fetch real schools list or teachers if school admin
+        const listQuery = supabase
           .from('profiles')
           .select('id, school_name, full_name, role')
-          .eq('role', 'school')
           .limit(10);
+        
+        if (isGlobalAdmin) {
+          listQuery.eq('role', 'school');
+        } else {
+          listQuery.eq('role', 'teacher').eq('school_id', schoolId);
+        }
 
-        if (schoolsList) {
-          const schoolsWithCounts = await Promise.all(schoolsList.map(async (school) => {
-            const { count: st } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('school_id', school.id).eq('role', 'student');
-            const { count: tc } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('school_id', school.id).eq('role', 'teacher');
-            return {
-              name: school.school_name || school.full_name || "Escola sem nome",
-              students: st || 0,
-              teachers: tc || 0,
-              avg: "8.5"
-            };
+        const { data: listData } = await listQuery;
+
+        if (listData) {
+          const itemsWithCounts = await Promise.all(listData.map(async (item) => {
+            if (isGlobalAdmin) {
+              const { count: st } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('school_id', item.id).eq('role', 'student');
+              const { count: tc } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('school_id', item.id).eq('role', 'teacher');
+              return {
+                name: item.school_name || item.full_name || "Escola sem nome",
+                students: st || 0,
+                teachers: tc || 0,
+                avg: "8.5"
+              };
+            } else {
+              const { count: st } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('teacher_id', item.id).eq('role', 'student');
+              return {
+                name: item.full_name || "Professor sem nome",
+                students: st || 0,
+                teachers: 1,
+                avg: "7.8"
+              };
+            }
           }));
-          setSchools(schoolsWithCounts);
+          setSchools(itemsWithCounts);
         }
 
         // Fetch recent activities
