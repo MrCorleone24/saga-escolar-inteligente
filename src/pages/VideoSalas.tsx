@@ -326,17 +326,11 @@ export default function VideoSalas() {
     );
   }
 
-  if ((userLoading || roomsLoading) && !user) {
+  if (userLoading && !user) {
     return (
       <DashboardLayout role="admin" userName="Carregando...">
         <div className="max-w-7xl mx-auto space-y-8">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="space-y-2">
-              <div className="h-10 w-48 bg-muted animate-pulse rounded-lg" />
-              <div className="h-4 w-64 bg-muted animate-pulse rounded-lg" />
-            </div>
-            <div className="h-12 w-96 bg-muted animate-pulse rounded-xl" />
-          </div>
+          <div className="h-12 w-full bg-muted animate-pulse rounded-xl" />
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3].map(i => (
               <div key={i} className="h-64 bg-card border rounded-2xl animate-pulse" />
