@@ -134,7 +134,7 @@ export default function Usuarios() {
           specialNeedsExpert,
           teacherId: teacherId || (currentUser?.role === 'teacher' ? currentUser.id : null),
           schoolId: schoolId || (currentUser?.role === 'school' ? currentUser.id : null),
-          teacherCategory: teacherCategory
+          teacherCategory: (currentUser?.role === 'school' && newRole === 'teacher') ? 'institutional' : teacherCategory
         }
       });
 
