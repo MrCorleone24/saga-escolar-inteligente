@@ -2,7 +2,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthWrapper } from "./components/AuthWrapper";
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
 import StudentDashboard from "./pages/StudentDashboard";
@@ -32,7 +33,14 @@ import Financeiro from "./pages/Financeiro";
 import NotFound from "./pages/NotFound";
 
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: 1,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -43,30 +51,32 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/dashboard" element={<StudentDashboard />} />
-          <Route path="/aulas" element={<MinhasAulas />} />
-          <Route path="/conquistas" element={<Conquistas />} />
-          <Route path="/esportes" element={<Esportes />} />
-          <Route path="/meu-caderno" element={<MeuCaderno />} />
-          <Route path="/calendario" element={<CalendarioEscolar />} />
-          <Route path="/leitura" element={<Leitura />} />
-          <Route path="/aula/:id" element={<AulaView />} />
-          <Route path="/salas" element={<VideoSalas />} />
-          <Route path="/professor" element={<TeacherDashboard />} />
-          <Route path="/turmas" element={<Turmas />} />
-          <Route path="/planejamento" element={<Planejamento />} />
-          <Route path="/criar-aula" element={<CriarAula />} />
-          <Route path="/caderno-alunos" element={<CadernoAlunos />} />
-          <Route path="/gerenciar-leitura" element={<GerenciarLeitura />} />
-          <Route path="/ia-pedagogica" element={<IAPedagogica />} />
-          <Route path="/lousa" element={<Lousa />} />
-          <Route path="/relatorios" element={<Relatorios />} />
-          <Route path="/admin" element={<AdminDashboard />} />
-          <Route path="/escolas" element={<Escolas />} />
-          <Route path="/usuarios" element={<Usuarios />} />
-          <Route path="/planos" element={<Planos />} />
-          <Route path="/configuracoes" element={<Configuracoes />} />
-          <Route path="/financeiro" element={<Financeiro />} />
+          
+          {/* Protected Routes */}
+          <Route path="/dashboard" element={<AuthWrapper><StudentDashboard /></AuthWrapper>} />
+          <Route path="/aulas" element={<AuthWrapper><MinhasAulas /></AuthWrapper>} />
+          <Route path="/conquistas" element={<AuthWrapper><Conquistas /></AuthWrapper>} />
+          <Route path="/esportes" element={<AuthWrapper><Esportes /></AuthWrapper>} />
+          <Route path="/meu-caderno" element={<AuthWrapper><MeuCaderno /></AuthWrapper>} />
+          <Route path="/calendario" element={<AuthWrapper><CalendarioEscolar /></AuthWrapper>} />
+          <Route path="/leitura" element={<AuthWrapper><Leitura /></AuthWrapper>} />
+          <Route path="/aula/:id" element={<AuthWrapper><AulaView /></AuthWrapper>} />
+          <Route path="/salas" element={<AuthWrapper><VideoSalas /></AuthWrapper>} />
+          <Route path="/professor" element={<AuthWrapper><TeacherDashboard /></AuthWrapper>} />
+          <Route path="/turmas" element={<AuthWrapper><Turmas /></AuthWrapper>} />
+          <Route path="/planejamento" element={<AuthWrapper><Planejamento /></AuthWrapper>} />
+          <Route path="/criar-aula" element={<AuthWrapper><CriarAula /></AuthWrapper>} />
+          <Route path="/caderno-alunos" element={<AuthWrapper><CadernoAlunos /></AuthWrapper>} />
+          <Route path="/gerenciar-leitura" element={<AuthWrapper><GerenciarLeitura /></AuthWrapper>} />
+          <Route path="/ia-pedagogica" element={<AuthWrapper><IAPedagogica /></AuthWrapper>} />
+          <Route path="/lousa" element={<AuthWrapper><Lousa /></AuthWrapper>} />
+          <Route path="/relatorios" element={<AuthWrapper><Relatorios /></AuthWrapper>} />
+          <Route path="/admin" element={<AuthWrapper><AdminDashboard /></AuthWrapper>} />
+          <Route path="/escolas" element={<AuthWrapper><Escolas /></AuthWrapper>} />
+          <Route path="/usuarios" element={<AuthWrapper><Usuarios /></AuthWrapper>} />
+          <Route path="/planos" element={<AuthWrapper><Planos /></AuthWrapper>} />
+          <Route path="/configuracoes" element={<AuthWrapper><Configuracoes /></AuthWrapper>} />
+          <Route path="/financeiro" element={<AuthWrapper><Financeiro /></AuthWrapper>} />
 
           <Route path="*" element={<NotFound />} />
         </Routes>
