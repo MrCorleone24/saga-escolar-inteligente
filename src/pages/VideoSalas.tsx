@@ -202,8 +202,8 @@ export default function VideoSalas() {
     await updateModeration(userId, { hand_raised: newState });
   };
 
-  const currentUserModeration = participants.find(p => p.user_id === userId);
-  const isAdmin = currentUserModeration?.role === 'admin' || ['professor', 'teacher', 'admin', 'school', 'teacher_solo', 'teacher_institutional'].includes(userRole || '');
+  const currentUserModeration = participants.find(p => (p as any).user_id === userId);
+  const isAdminRoom = (currentUserModeration as any)?.role === 'admin' || ['professor', 'teacher', 'admin', 'school', 'teacher_solo', 'teacher_institutional'].includes(userRole || '');
   const canCreate = ['professor', 'teacher', 'admin', 'school', 'teacher_solo', 'teacher_institutional'].includes(userRole || '');
 
   if (inCall && activeRoom) {
