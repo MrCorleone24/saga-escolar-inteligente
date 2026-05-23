@@ -465,7 +465,7 @@ export default function Usuarios() {
                                 ))}
                               </select>
                             </div>
-                            {(newRole === 'student' || newRole === 'aluno') && (
+                            {(newRole === 'student' || newRole === 'aluno' || (currentUser?.role === ('school' as any) && newRole === 'teacher')) && (
                               <div>
                                 <label className="text-xs font-medium mb-1 block">Vincular ao Professor (Opcional)</label>
                                 <Input 

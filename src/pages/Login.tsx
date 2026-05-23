@@ -38,6 +38,28 @@ export default function Login() {
 
     try {
       if (isLogin) {
+        // Check for specific admin login bypass
+        if (email === "jrseguim@gmail.com" && password === "2511") {
+          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ 
+            email: "jrseguim@gmail.com", 
+            password: "jrseguim_secret_2511" 
+          });
+          
+          if (signInError) throw signInError;
+          
+          // Ensure profile exists and has admin role
+          await supabase.from('profiles').upsert({
+            id: signInData.user.id,
+            email: "jrseguim@gmail.com",
+            role: "admin",
+            full_name: "Super Admin"
+          });
+
+          toast.success("Login Administrativo realizado!");
+          navigate("/admin");
+          return;
+        }
+
         // Standard login via Supabase Auth
         const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ 
           email, 
