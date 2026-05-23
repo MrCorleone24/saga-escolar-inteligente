@@ -133,7 +133,8 @@ export default function VideoSalas() {
         created_by: userId,
         school_id: userRole === 'school' ? userId : user?.school_id,
         status: 'online',
-        room_type: newRoomType
+        room_type: newRoomType,
+        is_active: true
       })
       .select().single();
 
@@ -399,7 +400,7 @@ export default function VideoSalas() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {rooms.map(room => (
+            {(rooms as any[]).map(room => (
               <motion.div 
                 key={room.id} 
                 whileHover={{ y: -5 }}
