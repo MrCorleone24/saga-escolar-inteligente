@@ -86,7 +86,7 @@ export default function VideoSalas() {
     queryKey: ['rooms', userId, userRole],
     queryFn: async () => {
       if (!userId) return [];
-      let query = supabase.from('rooms').select('*').eq('is_active', true);
+      let query = (supabase.from('rooms') as any).select('*').eq('is_active', true);
       
       if (userRole === 'admin') {
         // Admin sees everything
@@ -126,8 +126,8 @@ export default function VideoSalas() {
 
   const handleCreateRoom = async () => {
     if (!newRoomName.trim()) return;
-    const { data: roomData, error } = await supabase
-      .from('rooms')
+    const { data: roomData, error } = await (supabase
+      .from('rooms') as any)
       .insert({
         name: newRoomName,
         created_by: userId,
