@@ -36,6 +36,23 @@ export default function Login() {
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Basic validation
+    if (!validateEmail(email)) {
+      toast.error("Por favor, insira um e-mail válido.");
+      return;
+    }
+
+    if (!isLogin && !fullName.trim()) {
+      toast.error("Por favor, insira seu nome completo.");
+      return;
+    }
+
+    if (!validatePassword(password)) {
+      toast.error("A senha deve conter pelo menos 6 caracteres.");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -77,11 +94,9 @@ export default function Login() {
           .eq('id', signInData.user.id)
           .single();
 
-        toast.success("Login realizado com sucesso!");
+        toast.success("Bem-vindo de volta!");
         
-        if (profile?.role === 'admin') {
-          navigate("/admin");
-        } else if (profile?.role === 'school') {
+        if (profile?.role === 'admin' || profile?.role === 'school') {
           navigate("/admin");
         } else if (profile?.role === 'teacher' || profile?.role === 'professor') {
           navigate("/professor");
@@ -100,6 +115,7 @@ export default function Login() {
             },
           },
         });
+        
         if (signUpError) throw signUpError;
         
         if (signUpData.user) {
@@ -110,14 +126,16 @@ export default function Login() {
             .eq('id', signUpData.user.id);
         }
 
-        toast.success("Cadastro realizado! Verifique seu email.");
+        toast.success("Cadastro realizado! Verifique seu e-mail para confirmar.");
       }
     } catch (error: any) {
-      toast.error(error.message || "Erro na autenticação");
+      console.error("Auth error:", error);
+      toast.error(translateAuthError(error));
     } finally {
       setLoading(false);
     }
   };
+
 
   const handleGoogleLogin = async () => {
     const result = await lovable.auth.signInWithOAuth("google", {
