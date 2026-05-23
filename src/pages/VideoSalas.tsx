@@ -89,7 +89,7 @@ export default function VideoSalas() {
       let query = (supabase.from('rooms') as any).select('*').eq('is_active', true);
       
       if (userRole === 'admin') {
-        // Admin sees everything
+        // Admin vê tudo
       } else if (userRole === 'school') {
         query = query.eq('school_id', userId);
       } else if (['aluno', 'student'].includes(userRole || '')) {
@@ -99,7 +99,6 @@ export default function VideoSalas() {
           query = query.neq('room_type', 'direction');
         }
       } else {
-        // Teachers
         query = query.or(`created_by.eq.${userId},school_id.eq.${user?.school_id}`);
       }
       
