@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useLocation } from "react-router-dom";
 
 interface UserProfile {
   id: string;
@@ -27,26 +28,17 @@ interface PerformanceData {
 }
 
 export default function Usuarios() {
+  const location = useLocation();
+  const { user: currentUser, loading: profileLoading, role: currentRole } = useCurrentUser();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const { user: currentUser, loading: profileLoading } = useCurrentUser();
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
   const [showPerformance, setShowPerformance] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [performanceData, setPerformanceData] = useState<PerformanceData>({ grade: 0, attendance: 0, engagement: 0 });
   const [schools, setSchools] = useState<any[]>([]);
-
-  useEffect(() => {
-    if (currentUser?.role === 'admin') {
-      const fetchSchools = async () => {
-        const { data } = await supabase.from('profiles').select('id, full_name, school_name').eq('role', 'school');
-        if (data) setSchools(data);
-      };
-      fetchSchools();
-    }
-  }, [currentUser]);
 
   // Form states
   const [newEmail, setNewEmail] = useState("");
@@ -78,20 +70,37 @@ export default function Usuarios() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const roleParam = params.get('role');
+    if (roleParam) {
+      setNewRole(roleParam);
+      setShowAddModal(true);
+    }
+  }, [location.search]);
+
+  useEffect(() => {
+    if (currentRole === 'admin') {
+      const fetchSchools = async () => {
+        const { data } = await supabase.from('profiles').select('id, full_name, school_name').eq('role', 'school');
+        if (data) setSchools(data);
+      };
+      fetchSchools();
+    }
+  }, [currentRole]);
+
+  useEffect(() => {
     if (currentUser) fetchData();
-  }, [currentUser]);
+  }, [currentUser, currentRole]);
 
   const fetchData = async () => {
     setLoading(true);
     if (currentUser) {
       let query = supabase.from("profiles").select("*");
       
-      const role = currentUser.role?.toLowerCase();
-      
-      if (role === 'admin') {
-      } else if (role === 'school') {
+      if (currentRole === 'admin') {
+      } else if (currentRole === 'school') {
         query = query.eq('school_id', currentUser.id);
-      } else if (role === 'teacher' || role === 'professor') {
+      } else if (currentRole === 'teacher_solo' || currentRole === 'teacher_institutional' || currentRole === 'professor') {
         if (currentUser.school_id) {
           query = query.eq('school_id', currentUser.school_id).eq('role', 'student');
         } else {
@@ -106,6 +115,7 @@ export default function Usuarios() {
     }
     setLoading(false);
   };
+
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
