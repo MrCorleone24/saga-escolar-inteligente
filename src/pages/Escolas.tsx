@@ -65,6 +65,11 @@ export default function Escolas() {
     e.preventDefault();
     if (!editingSchool) return;
 
+    if (formLimits.max_students < 0 || formLimits.max_teachers < 0) {
+      toast.error("Os limites não podem ser valores negativos.");
+      return;
+    }
+
     setSubmitting(true);
     try {
       const { error } = await supabase
@@ -77,15 +82,17 @@ export default function Escolas() {
 
       if (error) throw error;
 
-      toast.success("Limites atualizados!");
+      toast.success(`Limites da escola ${editingSchool.school_name} atualizados!`);
       setEditingSchool(null);
       fetchSchools();
     } catch (error: any) {
-      toast.error("Erro ao atualizar: " + error.message);
+      console.error("Update limits error:", error);
+      toast.error("Erro ao salvar novos limites. Verifique sua permissão.");
     } finally {
       setSubmitting(false);
     }
   };
+
 
   const startEdit = (school: SchoolProfile) => {
     setEditingSchool(school);

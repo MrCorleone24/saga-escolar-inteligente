@@ -33,7 +33,15 @@ export function useCurrentUser() {
         .eq('id', authUser.id)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === 'PGRST116') {
+          console.warn("Profile not found for authenticated user. This may happen if the profile creation failed.");
+          // We could auto-create a profile here if needed, but for now just null
+        } else {
+          throw error;
+        }
+      }
+
       
       setUser(profile as UserProfile);
       

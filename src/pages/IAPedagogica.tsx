@@ -60,25 +60,33 @@ export default function IAPedagogica() {
   };
 
   const handleSave = async () => {
-    if (!generatedContent || !userProfile) return;
-    const { error } = await supabase
-      .from('ai_pedagogical_content')
-      .insert({
-        teacher_id: userProfile.id,
-        student_id: selectedStudent,
-        content_type: contentType,
-        title: userInput,
-        content: generatedContent,
-      } as any);
+    if (!generatedContent || !userProfile) {
+      toast.error("Gere o conteúdo antes de tentar salvar.");
+      return;
+    }
 
-    if (error) {
-      toast.error("Erro ao salvar");
-    } else {
-      toast.success("Conteúdo salvo!");
+    try {
+      const { error } = await supabase
+        .from('ai_pedagogical_content')
+        .insert({
+          teacher_id: userProfile.id,
+          student_id: selectedStudent,
+          content_type: contentType,
+          title: userInput || "Conteúdo Gerado por IA",
+          content: generatedContent,
+        } as any);
+
+      if (error) throw error;
+      
+      toast.success("Conteúdo salvo em seu acervo pedagógico!");
       setGeneratedContent(null);
       setUserInput("");
+    } catch (error: any) {
+      console.error("Save AI content error:", error);
+      toast.error("Erro ao salvar conteúdo. Tente novamente em instantes.");
     }
   };
+
 
   if (profileLoading) return <DashboardLayout role={(userProfile?.role as any) || "professor"} userName="Carregando..."><div className="p-8"><Loader2 className="animate-spin" /></div></DashboardLayout>;
 

@@ -8,6 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useLocation } from "react-router-dom";
+import { validateEmail, validatePassword } from "@/lib/error-handling";
+
 
 interface UserProfile {
   id: string;
@@ -119,6 +121,28 @@ export default function Usuarios() {
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Comprehensive validation
+    if (!newName.trim()) {
+      toast.error("Por favor, informe o nome completo.");
+      return;
+    }
+
+    if (!validateEmail(newEmail)) {
+      toast.error("Por favor, informe um e-mail válido.");
+      return;
+    }
+
+    if (!validatePassword(newPassword)) {
+      toast.error("A senha deve conter no mínimo 6 caracteres.");
+      return;
+    }
+
+    if (newRole === 'teacher' && !newSubject && teacherCategory === 'institutional') {
+      toast.error("Por favor, informe a disciplina do professor.");
+      return;
+    }
+
     setSubmitting(true);
     
     try {
@@ -142,14 +166,23 @@ export default function Usuarios() {
           gradeLevel,
           hasSpecialNeeds,
           specialNeedsExpert,
-          teacherId: teacherId || (currentUser?.role === 'teacher' ? currentUser.id : null),
-          schoolId: schoolId || (currentUser?.role === 'school' ? currentUser.id : null),
-          teacherCategory: (currentUser?.role === 'school' && newRole === 'teacher') ? 'institutional' : teacherCategory
+          teacherId: teacherId || (currentRole === 'teacher_solo' || currentRole === 'teacher_institutional' ? currentUser?.id : null),
+          schoolId: schoolId || (currentRole === 'school' ? currentUser?.id : null),
+          teacherCategory: (currentRole === 'school' && newRole === 'teacher') ? 'institutional' : teacherCategory
         }
       });
 
-      if (error) throw error;
-      if (data.error) throw new Error(data.error);
+      if (error) {
+        console.error("Function error:", error);
+        throw new Error("Erro na comunicação com o servidor. Tente novamente.");
+      }
+      
+      if (data.error) {
+        if (data.error.includes("already registered")) {
+          throw new Error("Este e-mail já está em uso por outro usuário.");
+        }
+        throw new Error(data.error);
+      }
 
       toast.success("Usuário criado com sucesso!");
       setShowAddModal(false);
@@ -176,11 +209,13 @@ export default function Usuarios() {
       setTeacherId("");
       setSchoolId("");
     } catch (error: any) {
-      toast.error(error.message || "Erro ao criar usuário");
+      console.error("Create user error:", error);
+      toast.error(error.message || "Erro ao criar usuário. Verifique os dados.");
     } finally {
       setSubmitting(false);
     }
   };
+
 
   const handleUserClick = async (user: any) => {
     setSelectedUser(user);
