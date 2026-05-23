@@ -144,8 +144,13 @@ export default function Turmas() {
   });
 
   const handleCreateTurma = async () => {
-    if (!newClassName) {
-      toast.error("Preencha o nome da turma");
+    if (!newClassName.trim()) {
+      toast.error("Por favor, informe o nome da turma.");
+      return;
+    }
+
+    if (currentUser?.role === 'admin' && !newClassSchoolId) {
+      toast.error("Por favor, selecione uma escola para esta turma.");
       return;
     }
 
@@ -153,24 +158,30 @@ export default function Turmas() {
     try {
       // Use subjects table - it has name, color, emoji
       const { data: subjectData, error: subjectError } = await supabase.from('subjects').insert({
-        name: newClassName,
+        name: newClassName.trim(),
         color: "#4f46e5",
         emoji: "📚"
       }).select().single();
 
-      if (subjectError) throw subjectError;
+      if (subjectError) {
+        console.error("Subject insert error:", subjectError);
+        throw new Error("Não foi possível criar a disciplina base da turma.");
+      }
 
       // Create assignment if school is selected or if current user is school/teacher
       const targetSchoolId = currentUser?.role === 'admin' ? newClassSchoolId : (currentUser?.role === 'school' ? currentUser.id : currentUser?.school_id);
       
-      if (targetSchoolId || currentUser?.role === 'teacher' || currentUser?.role === 'admin') {
-        const { error: assignError } = await supabase.from('teacher_assignments').insert({
-          school_id: targetSchoolId || null,
-          teacher_id: currentUser?.role === 'teacher' ? currentUser.id : (currentUser?.role === 'admin' ? null : null),
-          subject_id: subjectData.id,
-          grade_level: "Ensino Fundamental"
-        });
-        if (assignError) console.error("Error creating assignment:", assignError);
+      const { error: assignError } = await supabase.from('teacher_assignments').insert({
+        school_id: targetSchoolId || null,
+        teacher_id: currentUser?.role === 'teacher' ? currentUser.id : null,
+        subject_id: subjectData.id,
+        grade_level: "Ensino Fundamental"
+      });
+
+      if (assignError) {
+        console.error("Assignment error:", assignError);
+        // We don't throw here to avoid user confusion if the subject was created but assignment failed
+        toast.warning("Turma criada, mas houve um problema no vínculo administrativo.");
       }
       
       toast.success("Turma criada com sucesso!");
@@ -179,7 +190,8 @@ export default function Turmas() {
       setNewClassSchoolId("");
       queryClient.invalidateQueries({ queryKey: ['turmas'] });
     } catch (error: any) {
-      toast.error("Erro ao criar turma: " + error.message);
+      console.error("Create turma error:", error);
+      toast.error(error.message || "Ocorreu um erro ao criar a turma.");
     } finally {
       setSubmitting(false);
     }
@@ -189,6 +201,20 @@ export default function Turmas() {
     e.preventDefault();
     if (!selectedStudent || !selectedTurma) return;
     
+    // Validation
+    const gradeNum = Number(grade);
+    const attendanceNum = Number(attendance);
+
+    if (isNaN(gradeNum) || gradeNum < 0 || gradeNum > 10) {
+      toast.error("A nota deve ser um valor entre 0 e 10.");
+      return;
+    }
+
+    if (isNaN(attendanceNum) || attendanceNum < 0 || attendanceNum > 100) {
+      toast.error("A presença deve ser um valor entre 0 e 100%.");
+      return;
+    }
+
     setSubmitting(true);
     const turma = turmasList.find(t => t.id === selectedTurma);
     
@@ -197,26 +223,28 @@ export default function Turmas() {
         student_id: selectedStudent.id,
         teacher_id: currentUser?.id || "",
         subject: turma?.name || "Geral",
-        grade: Number(grade),
-        attendance: Number(attendance),
+        grade: gradeNum,
+        attendance: attendanceNum,
         engagement_score: engagement,
         ai_feedback: aiFeedback
       });
 
       if (error) throw error;
       
-      toast.success("Performance registrada com sucesso!");
+      toast.success(`Desempenho de ${selectedStudent.full_name.split(' ')[0]} registrado!`);
       setShowEntryModal(false);
       setGrade("");
       setAttendance("");
       setAiFeedback("");
       queryClient.invalidateQueries({ queryKey: ['students-turma', selectedTurma] });
     } catch (error: any) {
-      toast.error("Erro ao registrar: " + error.message);
+      console.error("Record performance error:", error);
+      toast.error("Não foi possível salvar os dados de desempenho.");
     } finally {
       setSubmitting(false);
     }
   };
+
 
   if (userLoading || turmasLoading) {
     return (
