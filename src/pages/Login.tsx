@@ -206,6 +206,23 @@ export default function Login() {
             <Button type="submit" className="w-full h-11 gradient-hero border-0 text-white font-semibold mt-2" disabled={loading}>
               {loading ? "Carregando..." : isLogin ? "Entrar" : "Criar Conta"}
             </Button>
+            <button
+              type="button"
+              onClick={async () => {
+                if (!validateEmail(email)) {
+                  toast.error("Digite seu e-mail no campo acima para receber o link de recuperação.");
+                  return;
+                }
+                const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                  redirectTo: `${window.location.origin}/reset-password`,
+                });
+                if (error) toast.error(translateAuthError(error));
+                else toast.success("Enviamos um link de recuperação para o seu e-mail.");
+              }}
+              className="block w-full text-center text-xs text-muted-foreground hover:text-primary transition-colors mt-2"
+            >
+              Esqueci minha senha
+            </button>
           </form>
 
           <div className="relative my-5">
