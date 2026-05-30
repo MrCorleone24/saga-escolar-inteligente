@@ -30,6 +30,7 @@ import GerenciarLeitura from "./pages/GerenciarLeitura";
 import VideoSalas from "./pages/VideoSalas";
 import Planos from "./pages/Planos";
 import Financeiro from "./pages/Financeiro";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 
 
@@ -51,6 +52,8 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Landing />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          
           
           {/* Protected Routes */}
           <Route path="/dashboard" element={<AuthWrapper><StudentDashboard /></AuthWrapper>} />
