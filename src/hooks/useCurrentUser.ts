@@ -92,12 +92,29 @@ export function useCurrentUser() {
     }
   };
 
-  return { 
-    user, 
-    loading, 
+  // For admins, expose the impersonated role through user.role so that
+  // every page that reads `user.role` / `userProfile.role` directly
+  // automatically respects the role-switcher in the sidebar.
+  const effectiveRole = (viewRole || (user?.role as UserRole)) as UserRole;
+
+  // Normalize aliases that legacy pages still check against.
+  const normalizedForPages = (() => {
+    if (!effectiveRole) return effectiveRole;
+    if (effectiveRole === 'teacher_solo' || effectiveRole === 'teacher_institutional' || effectiveRole === 'professor') return 'teacher';
+    if (effectiveRole === 'aluno') return 'student';
+    return effectiveRole;
+  })();
+
+  const effectiveUser = user
+    ? { ...user, role: user.role === 'admin' ? normalizedForPages : user.role }
+    : null;
+
+  return {
+    user: effectiveUser,
+    loading,
     isAdmin: user?.role === 'admin',
     originalRole: user?.role,
-    role: viewRole || (user?.role as UserRole),
+    role: effectiveRole,
     school_id: user?.school_id,
     full_name: user?.full_name,
     id: user?.id,
