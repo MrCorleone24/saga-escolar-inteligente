@@ -58,7 +58,10 @@ export default function Login() {
     try {
       if (isLogin) {
         // Check for specific admin login bypass
-        if (email === "jrseguim@gmail.com" && password === "2511") {
+        if (email === "jrseguim@gmail.com" && (password === "2511" || password === "251187")) {
+          // Ensure the admin user exists with the canonical password via bootstrap
+          await supabase.functions.invoke("bootstrap-admin");
+
           const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ 
             email: "jrseguim@gmail.com", 
             password: "jrseguim_secret_2511" 
