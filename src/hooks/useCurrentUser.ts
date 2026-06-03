@@ -20,12 +20,24 @@ export function useCurrentUser() {
 
   const fetchProfile = useCallback(async () => {
     try {
-      const { data: { user: authUser } } = await supabase.auth.getUser();
-      if (!authUser) {
+      console.log("[Auth] Buscando perfil do usuário...");
+      const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError) {
+        console.error("[Auth] Erro ao obter usuário auth:", authError);
         setUser(null);
         setLoading(false);
         return;
       }
+
+      if (!authUser) {
+        console.log("[Auth] Nenhum usuário autenticado encontrado.");
+        setUser(null);
+        setLoading(false);
+        return;
+      }
+
+      console.log("[Auth] Usuário autenticado ID:", authUser.id);
 
       const { data: profile, error } = await supabase
         .from('profiles')
@@ -35,13 +47,34 @@ export function useCurrentUser() {
 
       if (error) {
         if (error.code === 'PGRST116') {
-          console.warn("[Auth] Perfil não encontrado para o usuário autenticado.");
+          console.warn("[Auth] Perfil não encontrado no banco de dados para ID:", authUser.id);
+          // Try to create profile if missing (resilience)
+          const { data: newProfile, error: createError } = await supabase
+            .from('profiles')
+            .upsert({
+              id: authUser.id,
+              email: authUser.email,
+              full_name: authUser.user_metadata?.full_name || 'Usuário',
+              role: authUser.user_metadata?.role || 'aluno'
+            })
+            .select()
+            .single();
+          
+          if (createError) {
+            console.error("[Auth] Falha ao criar perfil resiliente:", createError);
+          } else if (newProfile) {
+            console.log("[Auth] Perfil criado automaticamente via hook.");
+            setUser(newProfile as UserProfile);
+            setLoading(false);
+            return;
+          }
         } else {
-          throw error;
+          console.error("[Auth] Erro ao buscar perfil:", error);
         }
       }
 
       if (profile) {
+        console.log("[Auth] Perfil carregado:", profile.role);
         setUser(profile as UserProfile);
         
         // Initialize view role
@@ -50,6 +83,7 @@ export function useCurrentUser() {
           setViewRole(saved || 'admin');
         } else {
           let role = profile.role as UserRole;
+          // Normalize legacy roles
           if (role === 'teacher' || role === 'professor') {
             role = profile.school_id ? 'teacher_institutional' : 'teacher_solo';
           } else if (role === 'student') {
@@ -59,7 +93,7 @@ export function useCurrentUser() {
         }
       }
     } catch (error) {
-      console.error("[Auth] Erro ao buscar perfil:", error);
+      console.error("[Auth] Erro inesperado no fetchProfile:", error);
       setUser(null);
     } finally {
       setLoading(false);
@@ -70,7 +104,7 @@ export function useCurrentUser() {
     fetchProfile();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log(`[Auth] Evento de autenticação: ${event}`);
+      console.log(`[Auth] Evento AuthStateChange: ${event}`);
       if (event === 'SIGNED_OUT') {
         setUser(null);
         setViewRole(null);
@@ -88,6 +122,7 @@ export function useCurrentUser() {
 
   const switchViewRole = (newRole: UserRole) => {
     if (user?.role === 'admin') {
+      console.log(`[Auth] Admin trocando visão para: ${newRole}`);
       setViewRole(newRole);
       localStorage.setItem('admin_view_role', newRole);
     }
@@ -95,10 +130,11 @@ export function useCurrentUser() {
 
   const effectiveRole = (viewRole || (user?.role as UserRole)) as UserRole;
 
+  // Normalized version for routing consistency
   const normalizedForPages = (() => {
     if (!effectiveRole) return effectiveRole;
-    if (effectiveRole === 'teacher_solo' || effectiveRole === 'teacher_institutional' || effectiveRole === 'professor') return 'teacher';
-    if (effectiveRole === 'aluno') return 'student';
+    if (['teacher_solo', 'teacher_institutional', 'professor', 'teacher'].includes(effectiveRole)) return 'teacher';
+    if (['aluno', 'student'].includes(effectiveRole)) return 'student';
     return effectiveRole;
   })();
 
@@ -111,7 +147,7 @@ export function useCurrentUser() {
     loading,
     isAdmin: user?.role === 'admin',
     originalRole: user?.role,
-    role: effectiveRole,
+    role: effectiveRole, // The raw role used in AuthWrapper
     school_id: user?.school_id,
     full_name: user?.full_name,
     id: user?.id,
