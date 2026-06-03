@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import DashboardLayout from "@/components/DashboardLayout";
-import { Settings, Shield, Bell, Palette, Globe, Database, Lock, Mail, User, Camera, Loader2 } from "lucide-react";
+import { Settings, Shield, Bell, Palette, Globe, Database, Lock, Mail, User, Camera, Loader2, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -168,16 +168,24 @@ export default function Configuracoes() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: (si + 1) * 0.1 }}
-            className="bg-card rounded-xl border border-border p-5"
+            className="bg-card rounded-xl border border-border p-5 relative group/section"
           >
+            <div className="absolute top-4 right-4 opacity-0 group-hover/section:opacity-100 transition-opacity">
+               <Button variant="ghost" size="sm" onClick={() => toast.info("Funcionalidade de salvamento para esta seção será ativada na integração final.")}>
+                 <Save size={14} className="mr-2" /> Alterar
+               </Button>
+            </div>
             <h2 className="font-bold text-base mb-4 flex items-center gap-2">
               <section.icon size={18} className="text-primary" /> {section.title}
             </h2>
             <div className="space-y-4">
               {section.items.map((item, i) => (
                 <div key={i} className="flex items-center justify-between py-2 border-b border-border last:border-0">
-                  <span className="text-sm text-muted-foreground">{item.label}</span>
-                  <span className="text-sm font-medium">{item.value}</span>
+                  <div className="flex flex-col">
+                    <span className="text-sm text-foreground font-medium">{item.label}</span>
+                    <span className="text-[10px] text-muted-foreground uppercase">Configuração de Produção</span>
+                  </div>
+                  <span className="text-sm font-semibold text-primary bg-primary/5 px-2 py-1 rounded">{item.value}</span>
                 </div>
               ))}
             </div>

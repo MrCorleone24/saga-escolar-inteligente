@@ -8,7 +8,7 @@ import { Users, GraduationCap, BookOpen, BarChart3, School, TrendingUp, AlertTri
 
 export default function AdminDashboard() {
   const { user: profile, loading: profileLoading, role: currentRole } = useCurrentUser();
-  const [stats, setStats] = useState({ schools: 0, students: 0, teachers: 0, mrr: 0, attendanceRate: 0 });
+  const [stats, setStats] = useState({ schools: 0, students: 0, teachers: 0, mrr: 0, attendanceRate: 0, classes: 0 });
   const [schools, setSchools] = useState<any[]>([]);
   const [recentActivity, setRecentActivity] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -25,6 +25,7 @@ export default function AdminDashboard() {
       let studentCount = 0;
       let teacherCount = 0;
       let schoolCount = 0;
+      let classesCount = 0;
 
       if (isGlobalAdmin) {
         const { count: s } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'school');
@@ -118,7 +119,7 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard title={isGlobalAdmin ? "Escolas" : "Instituição"} value={stats.schools.toString()} icon={<School size={20} />} gradient="hero" subtitle={isGlobalAdmin ? "Instituições" : "Ativa"} />
         <StatCard title="Alunos" value={stats.students.toString()} icon={<Users size={20} />} gradient="success" subtitle="Total" />
-        <StatCard title="Professores" value={stats.teachers.toString()} icon={<GraduationCap size={20} />} gradient="gamification" />
+        <StatCard title="Professores" value={stats.teachers.toString()} icon={<GraduationCap size={20} />} gradient="gamification" subtitle={`${stats.classes} turmas`} />
         <StatCard title="Receita (MRR)" value={`R$ ${stats.mrr.toLocaleString()}`} icon={<TrendingUp size={20} />} gradient="badge" subtitle="Estimado" />
       </div>
 
