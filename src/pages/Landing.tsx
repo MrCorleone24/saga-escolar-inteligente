@@ -82,9 +82,9 @@ export default function Landing() {
                   Começar Agora <ArrowRight className="ml-2" size={18} />
                 </Button>
               </Link>
-              <Link to="/dashboard">
+              <Link to="/login">
                 <Button size="lg" variant="outline" className="px-8 text-base">
-                  Ver Demo
+                  Explorar Plataforma
                 </Button>
               </Link>
             </div>
