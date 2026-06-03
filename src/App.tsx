@@ -56,30 +56,35 @@ const App = () => (
           
           
           {/* Protected Routes */}
-          <Route path="/dashboard" element={<AuthWrapper><StudentDashboard /></AuthWrapper>} />
-          <Route path="/aulas" element={<AuthWrapper><MinhasAulas /></AuthWrapper>} />
-          <Route path="/conquistas" element={<AuthWrapper><Conquistas /></AuthWrapper>} />
-          <Route path="/esportes" element={<AuthWrapper><Esportes /></AuthWrapper>} />
-          <Route path="/meu-caderno" element={<AuthWrapper><MeuCaderno /></AuthWrapper>} />
-          <Route path="/calendario" element={<AuthWrapper><CalendarioEscolar /></AuthWrapper>} />
-          <Route path="/leitura" element={<AuthWrapper><Leitura /></AuthWrapper>} />
-          <Route path="/aula/:id" element={<AuthWrapper><AulaView /></AuthWrapper>} />
-          <Route path="/salas" element={<AuthWrapper><VideoSalas /></AuthWrapper>} />
-          <Route path="/professor" element={<AuthWrapper><TeacherDashboard /></AuthWrapper>} />
-          <Route path="/turmas" element={<AuthWrapper><Turmas /></AuthWrapper>} />
-          <Route path="/planejamento" element={<AuthWrapper><Planejamento /></AuthWrapper>} />
-          <Route path="/criar-aula" element={<AuthWrapper><CriarAula /></AuthWrapper>} />
-          <Route path="/caderno-alunos" element={<AuthWrapper><CadernoAlunos /></AuthWrapper>} />
-          <Route path="/gerenciar-leitura" element={<AuthWrapper><GerenciarLeitura /></AuthWrapper>} />
-          <Route path="/ia-pedagogica" element={<AuthWrapper><IAPedagogica /></AuthWrapper>} />
-          <Route path="/lousa" element={<AuthWrapper><Lousa /></AuthWrapper>} />
-          <Route path="/relatorios" element={<AuthWrapper><Relatorios /></AuthWrapper>} />
-          <Route path="/admin" element={<AuthWrapper><AdminDashboard /></AuthWrapper>} />
-          <Route path="/escolas" element={<AuthWrapper><Escolas /></AuthWrapper>} />
-          <Route path="/usuarios" element={<AuthWrapper><Usuarios /></AuthWrapper>} />
-          <Route path="/planos" element={<AuthWrapper><Planos /></AuthWrapper>} />
-          <Route path="/configuracoes" element={<AuthWrapper><Configuracoes /></AuthWrapper>} />
-          <Route path="/financeiro" element={<AuthWrapper><Financeiro /></AuthWrapper>} />
+          {/* Student Area */}
+          <Route path="/dashboard" element={<AuthWrapper allowedRoles={["aluno", "admin"]}><StudentDashboard /></AuthWrapper>} />
+          <Route path="/aulas" element={<AuthWrapper allowedRoles={["aluno", "admin"]}><MinhasAulas /></AuthWrapper>} />
+          <Route path="/conquistas" element={<AuthWrapper allowedRoles={["aluno", "admin"]}><Conquistas /></AuthWrapper>} />
+          <Route path="/esportes" element={<AuthWrapper allowedRoles={["aluno", "admin"]}><Esportes /></AuthWrapper>} />
+          <Route path="/meu-caderno" element={<AuthWrapper allowedRoles={["aluno", "admin"]}><MeuCaderno /></AuthWrapper>} />
+          <Route path="/calendario" element={<AuthWrapper allowedRoles={["aluno", "teacher_solo", "teacher_institutional", "admin", "school"]}><CalendarioEscolar /></AuthWrapper>} />
+          <Route path="/leitura" element={<AuthWrapper allowedRoles={["aluno", "admin"]}><Leitura /></AuthWrapper>} />
+          <Route path="/aula/:id" element={<AuthWrapper allowedRoles={["aluno", "admin"]}><AulaView /></AuthWrapper>} />
+          <Route path="/salas" element={<AuthWrapper allowedRoles={["aluno", "teacher_solo", "teacher_institutional", "admin", "school"]}><VideoSalas /></AuthWrapper>} />
+
+          {/* Teacher Area */}
+          <Route path="/professor" element={<AuthWrapper allowedRoles={["teacher_solo", "teacher_institutional", "admin"]}><TeacherDashboard /></AuthWrapper>} />
+          <Route path="/turmas" element={<AuthWrapper allowedRoles={["teacher_solo", "teacher_institutional", "school", "admin"]}><Turmas /></AuthWrapper>} />
+          <Route path="/planejamento" element={<AuthWrapper allowedRoles={["teacher_solo", "teacher_institutional", "admin", "school"]}><Planejamento /></AuthWrapper>} />
+          <Route path="/criar-aula" element={<AuthWrapper allowedRoles={["teacher_solo", "teacher_institutional", "admin", "school"]}><CriarAula /></AuthWrapper>} />
+          <Route path="/caderno-alunos" element={<AuthWrapper allowedRoles={["teacher_solo", "teacher_institutional", "admin", "school"]}><CadernoAlunos /></AuthWrapper>} />
+          <Route path="/gerenciar-leitura" element={<AuthWrapper allowedRoles={["teacher_solo", "teacher_institutional", "admin", "school"]}><GerenciarLeitura /></AuthWrapper>} />
+          <Route path="/ia-pedagogica" element={<AuthWrapper allowedRoles={["teacher_solo", "teacher_institutional", "admin", "school"]}><IAPedagogica /></AuthWrapper>} />
+          <Route path="/lousa" element={<AuthWrapper allowedRoles={["teacher_solo", "teacher_institutional", "admin", "school"]}><Lousa /></AuthWrapper>} />
+          <Route path="/relatorios" element={<AuthWrapper allowedRoles={["teacher_solo", "teacher_institutional", "admin", "school"]}><Relatorios /></AuthWrapper>} />
+
+          {/* Admin / School Area */}
+          <Route path="/admin" element={<AuthWrapper allowedRoles={["admin", "school"]}><AdminDashboard /></AuthWrapper>} />
+          <Route path="/escolas" element={<AuthWrapper allowedRoles={["admin", "school"]}><Escolas /></AuthWrapper>} />
+          <Route path="/usuarios" element={<AuthWrapper allowedRoles={["admin", "school"]}><Usuarios /></AuthWrapper>} />
+          <Route path="/planos" element={<AuthWrapper allowedRoles={["admin", "school"]}><Planos /></AuthWrapper>} />
+          <Route path="/configuracoes" element={<AuthWrapper allowedRoles={["admin", "school", "teacher_solo", "teacher_institutional"]}><Configuracoes /></AuthWrapper>} />
+          <Route path="/financeiro" element={<AuthWrapper allowedRoles={["admin", "school", "teacher_solo", "teacher_institutional"]}><Financeiro /></AuthWrapper>} />
 
           <Route path="*" element={<NotFound />} />
         </Routes>
