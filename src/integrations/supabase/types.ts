@@ -1057,6 +1057,7 @@ export type Database = {
     Functions: {
       get_dashboard_stats: { Args: never; Returns: Json }
       get_monthly_revenue: { Args: never; Returns: number }
+      get_my_role: { Args: never; Returns: string }
     }
     Enums: {
       user_role: "admin" | "school" | "teacher" | "student"
