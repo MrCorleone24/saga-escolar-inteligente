@@ -9,7 +9,7 @@ interface AuthWrapperProps {
 }
 
 export const AuthWrapper = ({ children, allowedRoles }: AuthWrapperProps) => {
-  const { user, loading, role: currentRole } = useCurrentUser();
+  const { user, loading, role: currentRole, isAdmin } = useCurrentUser();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -25,7 +25,11 @@ export const AuthWrapper = ({ children, allowedRoles }: AuthWrapperProps) => {
 
       // If specific roles are required, check if user has them
       if (allowedRoles && allowedRoles.length > 0) {
-        if (!allowedRoles.includes(currentRole as UserRole)) {
+        // IMPORTANT: If user is admin, they always have access if they switch to the role
+        // or if 'admin' is in allowedRoles.
+        const hasAccess = allowedRoles.includes(currentRole as UserRole) || (isAdmin && allowedRoles.includes('admin'));
+        
+        if (!hasAccess) {
           console.warn(`[AuthGuard] Acesso negado para role ${currentRole} na rota ${location.pathname}. Permissões:`, allowedRoles);
           
           let target = "/";
