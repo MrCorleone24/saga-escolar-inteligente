@@ -6,7 +6,8 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { DollarSign, TrendingUp, Users, CreditCard, Download, CheckCircle2, Clock, AlertCircle } from "lucide-react";
+import { DollarSign, TrendingUp, Users, CreditCard, Download, CheckCircle2, Clock, AlertCircle, Loader2 } from "lucide-react";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 type Role = "aluno" | "professor" | "admin" | "school" | "teacher_solo" | "teacher_institutional";
 
@@ -30,7 +31,6 @@ export default function Financeiro() {
   const navigate = useNavigate();
   const [role, setRole] = useState<Role>("aluno");
   const [userName, setUserName] = useState("Usuário");
-  const [loading, setLoading] = useState(true);
   const [history, setHistory] = useState<Payment[]>([]);
   const [stats, setStats] = useState({
     mrr: 0,
@@ -38,52 +38,56 @@ export default function Financeiro() {
   });
 
   const { user, loading: profileLoading, role: currentRole } = useCurrentUser();
+  const [loading, setLoading] = useState(true);
   
   useEffect(() => {
     if (!profileLoading && user) {
       setRole(currentRole as Role);
       setUserName(user.full_name ?? "Usuário");
       
-      (async () => {
+      const fetchData = async () => {
         try {
-        if (profile) {
           if (currentRole === 'teacher_institutional') {
             toast.error("Acesso restrito ao financeiro institucional");
             navigate("/dashboard");
             return;
           }
-        }
 
-        // Fetch history
-        const { data: histData } = await supabase
-          .from("financial_history")
-          .select("*")
-          .order("created_at", { ascending: false });
-        
-        if (histData) setHistory(histData as any);
-
-        if (profile?.role === 'admin') {
-          const { data: subs } = await supabase.from("profiles").select("role").eq("subscription_status", "active");
-          const { data: monthlyRevenue } = await supabase.rpc('get_monthly_revenue');
+          // Fetch history
+          const { data: histData } = await supabase
+            .from("financial_history")
+            .select("*")
+            .order("created_at", { ascending: false });
           
-          setStats({
-            mrr: monthlyRevenue || 0,
-            activeSubs: subs?.length || 0,
-          });
-        }
+          if (histData) setHistory(histData as any);
 
-      } catch (e) {
-        console.error("Erro ao carregar dados financeiros:", e);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
+          if (currentRole === 'admin') {
+            const { data: subs } = await supabase.from("profiles").select("role").eq("subscription_status", "active");
+            const { data: monthlyRevenue } = await supabase.rpc('get_monthly_revenue');
+            
+            setStats({
+              mrr: monthlyRevenue || 0,
+              activeSubs: subs?.length || 0,
+            });
+          }
+        } catch (e) {
+          console.error("Erro ao carregar dados financeiros:", e);
+        } finally {
+          setLoading(false);
+        }
+      };
+
+      fetchData();
+    }
+  }, [user, profileLoading, currentRole, navigate]);
+
+  if (profileLoading || loading) {
+    return <DashboardLayout><div className="flex justify-center py-20"><Loader2 className="animate-spin" /></div></DashboardLayout>;
+  }
 
   const isAdmin = role === "admin";
   const isSchool = role === "school";
   const isProfessor = role === "teacher_solo" || role === "professor";
-
 
   const handleTestPayment = async () => {
     // Placeholder: integração Woovi sandbox
