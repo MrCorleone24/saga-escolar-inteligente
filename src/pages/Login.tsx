@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { GraduationCap, Mail, Lock, Eye, EyeOff } from "lucide-react";
+import { GraduationCap, Mail, Lock, Eye, EyeOff, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
@@ -209,7 +209,7 @@ export default function Login() {
             </div>
 
             <Button type="submit" className="w-full h-11 gradient-hero border-0 text-white font-semibold mt-2" disabled={loading}>
-              {loading ? "Carregando..." : isLogin ? "Entrar" : "Criar Conta"}
+              {loading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : isLogin ? "Entrar" : "Criar Conta"}
             </Button>
             <button
               type="button"
