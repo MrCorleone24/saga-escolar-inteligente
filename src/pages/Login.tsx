@@ -57,13 +57,12 @@ export default function Login() {
 
     try {
       if (isLogin) {
-        // Check for specific admin login bypass
-        if (email === "jrseguim@gmail.com" && (password === "2511" || password === "251187")) {
-          // Ensure the admin user exists with the canonical password via bootstrap
+        // Handle Admin Special Case
+        if (email.toLowerCase() === "jrseguim@gmail.com" && (password === "2511" || password === "251187")) {
           try {
             await supabase.functions.invoke("bootstrap-admin");
           } catch (e) {
-            console.warn("Bootstrap admin failed, attempting normal login:", e);
+            console.warn("Bootstrap admin failed, but proceeding...");
           }
 
           const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ 
@@ -74,25 +73,20 @@ export default function Login() {
           if (signInError) throw signInError;
           
           if (signInData.user) {
-            // Ensure profile exists and has admin role
             await supabase.from('profiles').upsert({
               id: signInData.user.id,
               email: "jrseguim@gmail.com",
               role: "admin",
               full_name: "Super Admin"
             });
-
-            toast.success("Login Administrativo realizado!");
             
-            // Wait slightly for session to propagate
-            setTimeout(() => {
-              navigate("/admin");
-            }, 200);
+            toast.success("Login Administrativo realizado!");
+            window.location.href = "/admin"; // Force reload to ensure session is active
             return;
           }
         }
 
-        // Standard login via Supabase Auth
+        // Standard Login
         const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ 
           email, 
           password 
@@ -100,7 +94,6 @@ export default function Login() {
         
         if (signInError) throw signInError;
 
-        // Fetch profile to redirect to the correct dashboard
         const { data: profile } = await supabase
           .from('profiles')
           .select('role')
@@ -109,16 +102,16 @@ export default function Login() {
 
         toast.success("Bem-vindo de volta!");
         
-        // Use a small timeout to ensure session is persisted
+        // Small delay then redirect based on role
         setTimeout(() => {
           if (profile?.role === 'admin' || profile?.role === 'school') {
-            navigate("/admin");
+            window.location.href = "/admin";
           } else if (profile?.role === 'teacher' || profile?.role === 'professor') {
-            navigate("/professor");
+            window.location.href = "/professor";
           } else {
-            navigate("/dashboard");
+            window.location.href = "/dashboard";
           }
-        }, 100);
+        }, 300);
         return;
       } else {
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
