@@ -31,21 +31,28 @@ export default function AdminDashboard() {
         const { count: s } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'school');
         const { count: st } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'student');
         const { count: t } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'teacher');
+        const { count: c } = await supabase.from('rooms').select('*', { count: 'exact', head: true });
+        
         schoolCount = s || 0;
         studentCount = st || 0;
         teacherCount = t || 0;
+        classesCount = c || 0;
       } else {
         const { count: st } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'student').eq('school_id', schoolId);
         const { count: t } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).eq('role', 'teacher').eq('school_id', schoolId);
+        const { count: c } = await supabase.from('rooms').select('*', { count: 'exact', head: true }).eq('school_id', schoolId);
+        
         schoolCount = 1;
         studentCount = st || 0;
         teacherCount = t || 0;
+        classesCount = c || 0;
       }
       
       setStats({ 
         schools: schoolCount, 
         students: studentCount, 
         teachers: teacherCount,
+        classes: classesCount,
         mrr: isGlobalAdmin ? schoolCount * 499 : studentCount * 15,
         attendanceRate: 0 
       });
