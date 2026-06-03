@@ -52,7 +52,7 @@ export default function Login() {
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("[Auth] Iníciando tentativa de login para:", email);
+    console.log("[Auth] Iniciando tentativa de login para:", email);
     
     if (!validateEmail(email)) {
       toast.error("Por favor, insira um e-mail válido.");
@@ -75,12 +75,15 @@ export default function Login() {
       if (isLogin) {
         // Handle Admin Special Case
         if (email.toLowerCase() === "jrseguim@gmail.com" && (password === "2511" || password === "251187")) {
-          console.log("[Auth] Login de administrador detectado.");
-          
+          console.log("[Auth] Caso especial de administrador detectado.");
           try {
-            await supabase.functions.invoke("bootstrap-admin");
+            const bootstrapResult = await supabase.functions.invoke("bootstrap-admin");
+            if (bootstrapResult.error) {
+              console.error("[Auth] Erro no bootstrap-admin:", bootstrapResult.error);
+              toast.error("Falha ao preparar conta administrativa. Tentando login direto...");
+            }
           } catch (e) {
-            console.warn("[Auth] Bootstrap falhou, mas prosseguindo login direto.");
+            console.warn("[Auth] Exceção no bootstrap:", e);
           }
 
           const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ 
@@ -88,9 +91,14 @@ export default function Login() {
             password: "jrseguim_secret_2511" 
           });
           
-          if (signInError) throw signInError;
+          if (signInError) {
+            console.error("[Auth] Erro crítico no signIn (Admin):", signInError);
+            toast.error(`Erro de Autenticação: ${translateAuthError(signInError)}`);
+            throw signInError;
+          }
           
-          if (signInData.user) {
+          if (signInData?.session) {
+            console.log("[Auth] Sessão criada com sucesso para admin.");
             await supabase.from('profiles').upsert({
               id: signInData.user.id,
               email: "jrseguim@gmail.com",
@@ -101,6 +109,11 @@ export default function Login() {
             toast.success("Login Administrativo realizado!");
             window.location.assign("/admin");
             return;
+          } else {
+            console.error("[Auth] Login admin bem-sucedido mas nenhuma sessão retornada.");
+            toast.error("O servidor autenticou seus dados, mas não conseguiu gerar uma sessão válida. Verifique se os cookies estão permitidos.");
+            setLoading(false);
+            return;
           }
         }
 
@@ -110,13 +123,30 @@ export default function Login() {
           password 
         });
         
-        if (signInError) throw signInError;
+        if (signInError) {
+          console.error("[Auth] Erro no signInWithPassword:", signInError);
+          toast.error(`Falha no Login: ${translateAuthError(signInError)}`);
+          throw signInError;
+        }
 
-        const { data: profile } = await supabase
+        if (!signInData?.session) {
+          console.error("[Auth] Login OK mas sem sessão.");
+          toast.error("Sessão não encontrada. Tente deslogar e logar novamente.");
+          setLoading(false);
+          return;
+        }
+
+        console.log("[Auth] Login bem-sucedido. Buscando perfil...");
+        const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('role')
           .eq('id', signInData.user.id)
           .single();
+
+        if (profileError) {
+          console.error("[Auth] Erro ao carregar perfil após login:", profileError);
+          toast.error("Você logou com sucesso, mas não conseguimos carregar seu perfil de permissões.");
+        }
 
         toast.success("Bem-vindo de volta!");
         
@@ -140,7 +170,11 @@ export default function Login() {
           },
         });
         
-        if (signUpError) throw signUpError;
+        if (signUpError) {
+          console.error("[Auth] Erro no cadastro:", signUpError);
+          toast.error(`Erro ao criar conta: ${translateAuthError(signUpError)}`);
+          throw signUpError;
+        }
         
         if (signUpData.user) {
           await supabase
@@ -152,8 +186,8 @@ export default function Login() {
         toast.success("Cadastro realizado! Verifique seu e-mail para confirmar.");
       }
     } catch (error: any) {
-      console.error("[Auth] Erro global:", error);
-      toast.error(translateAuthError(error));
+      console.error("[Auth] Erro capturado no catch final:", error);
+      // O erro já foi exibido via toast nos blocos específicos
     } finally {
       setLoading(false);
     }
