@@ -26,22 +26,18 @@ export default function Login() {
   // Auto-redirect if already logged in
   useEffect(() => {
     if (!profileLoading && user) {
-      console.log("[Auth] Usuário logado detectado. Redirecionando...");
+      console.log("[Auth] Usuário já logado detectado no Login. Redirecionando...");
       
-      // Reset view role to match profile if user is admin
-      if (user.role === 'admin' || isAdmin) {
-         switchViewRole('admin');
-      }
-
-      const target = (user.role === 'admin' || isAdmin || currentRole === 'admin' || currentRole === 'school') 
+      const target = (isAdmin || currentRole === 'admin' || currentRole === 'school') 
         ? "/admin" 
         : (['teacher', 'professor', 'teacher_solo', 'teacher_institutional'].includes(currentRole as string)) 
           ? "/professor" 
           : "/dashboard";
       
-      window.location.assign(target);
+      console.log("[Auth] Target calculado:", target);
+      navigate(target, { replace: true });
     }
-  }, [user, profileLoading, currentRole, isAdmin, switchViewRole]);
+  }, [user, profileLoading, currentRole, isAdmin, navigate]);
 
   const roles = [
     { value: "aluno" as const, label: "Aluno", emoji: "🎒" },
@@ -75,15 +71,12 @@ export default function Login() {
       if (isLogin) {
         // Handle Admin Special Case
         if (email.toLowerCase() === "jrseguim@gmail.com" && (password === "2511" || password === "251187")) {
-          console.log("[Auth] Caso especial de administrador detectado.");
+          console.log("[Auth] Login de administrador detectado.");
+          
           try {
-            const bootstrapResult = await supabase.functions.invoke("bootstrap-admin");
-            if (bootstrapResult.error) {
-              console.error("[Auth] Erro no bootstrap-admin:", bootstrapResult.error);
-              toast.error("Falha ao preparar conta administrativa. Tentando login direto...");
-            }
+            await supabase.functions.invoke("bootstrap-admin");
           } catch (e) {
-            console.warn("[Auth] Exceção no bootstrap:", e);
+            console.warn("[Auth] Bootstrap falhou, mas prosseguindo login direto.");
           }
 
           const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ 
@@ -107,7 +100,7 @@ export default function Login() {
             });
             
             toast.success("Login Administrativo realizado!");
-            window.location.assign("/admin");
+            navigate("/admin", { replace: true });
             return;
           } else {
             console.error("[Auth] Login admin bem-sucedido mas nenhuma sessão retornada.");
@@ -129,35 +122,35 @@ export default function Login() {
           throw signInError;
         }
 
-        if (!signInData?.session) {
-          console.error("[Auth] Login OK mas sem sessão.");
-          toast.error("Sessão não encontrada. Tente deslogar e logar novamente.");
+        if (signInData?.session) {
+          console.log("[Auth] Login bem-sucedido. Buscando perfil...");
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', signInData.user.id)
+            .single();
+
+          if (profileError) {
+            console.error("[Auth] Erro ao carregar perfil após login:", profileError);
+            toast.error("Você logou com sucesso, mas não conseguimos carregar seu perfil de permissões.");
+          }
+
+          toast.success("Bem-vindo de volta!");
+          
+          const isUserAdmin = profile?.role === 'admin' || profile?.role === 'school';
+          const isUserTeacher = ['teacher', 'professor', 'teacher_solo', 'teacher_institutional'].includes(profile?.role as string);
+
+          const target = isUserAdmin ? "/admin" : isUserTeacher ? "/professor" : "/dashboard";
+
+          console.log("[Auth] Redirecionando para:", target);
+          navigate(target, { replace: true });
+          return;
+        } else {
+          console.error("[Auth] Login bem-sucedido mas nenhuma sessão retornada.");
+          toast.error("O servidor autenticou seus dados, mas não conseguiu gerar uma sessão válida. Verifique se os cookies estão permitidos.");
           setLoading(false);
           return;
         }
-
-        console.log("[Auth] Login bem-sucedido. Buscando perfil...");
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', signInData.user.id)
-          .single();
-
-        if (profileError) {
-          console.error("[Auth] Erro ao carregar perfil após login:", profileError);
-          toast.error("Você logou com sucesso, mas não conseguimos carregar seu perfil de permissões.");
-        }
-
-        toast.success("Bem-vindo de volta!");
-        
-        const isUserAdmin = profile?.role === 'admin' || profile?.role === 'school';
-        const isUserTeacher = ['teacher', 'professor', 'teacher_solo', 'teacher_institutional'].includes(profile?.role as string);
-
-        const target = isUserAdmin ? "/admin" : isUserTeacher ? "/professor" : "/dashboard";
-
-        console.log("[Auth] Redirecionando para:", target);
-        window.location.assign(target);
-        return;
       } else {
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email,
