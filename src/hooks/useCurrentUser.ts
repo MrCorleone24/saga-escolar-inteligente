@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export type UserRole = "aluno" | "professor" | "admin" | "school" | "teacher_solo" | "teacher_institutional" | "student" | "teacher";
@@ -14,11 +14,15 @@ export interface UserProfile {
 }
 
 export function useCurrentUser() {
-  const [user, setUser] = useState<UserProfile | null>(null);
+  const [user, setUser] = useState<UserProfile | null>(() => {
+    // Initial sync from session if available
+    const sessionStr = localStorage.getItem('supabase.auth.token');
+    return null; // Keep null to force fetch, but could optimize later
+  });
   const [loading, setLoading] = useState(true);
   const [viewRole, setViewRole] = useState<UserRole | null>(null);
 
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     try {
       const { data: { user: authUser } } = await supabase.auth.getUser();
       if (!authUser) {
@@ -35,47 +39,48 @@ export function useCurrentUser() {
 
       if (error) {
         if (error.code === 'PGRST116') {
-          console.warn("Profile not found for authenticated user. This may happen if the profile creation failed.");
-          // We could auto-create a profile here if needed, but for now just null
+          console.warn("[Auth] Perfil não encontrado para o usuário autenticado.");
         } else {
           throw error;
         }
       }
 
-      
-      setUser(profile as UserProfile);
-      
-      // Initialize view role
-      if (profile.role === 'admin') {
-        const saved = localStorage.getItem('admin_view_role') as UserRole;
-        setViewRole(saved || 'admin');
-      } else {
-        let role = profile.role as UserRole;
-        if (role === 'teacher' || role === 'professor') {
-          role = profile.school_id ? 'teacher_institutional' : 'teacher_solo';
-        } else if (role === 'student') {
-          role = 'aluno';
+      if (profile) {
+        setUser(profile as UserProfile);
+        
+        // Initialize view role
+        if (profile.role === 'admin') {
+          const saved = localStorage.getItem('admin_view_role') as UserRole;
+          setViewRole(saved || 'admin');
+        } else {
+          let role = profile.role as UserRole;
+          if (role === 'teacher' || role === 'professor') {
+            role = profile.school_id ? 'teacher_institutional' : 'teacher_solo';
+          } else if (role === 'student') {
+            role = 'aluno';
+          }
+          setViewRole(role);
         }
-        setViewRole(role);
       }
-
     } catch (error) {
-      console.error("Error fetching profile:", error);
+      console.error("[Auth] Erro ao buscar perfil:", error);
       setUser(null);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchProfile();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log(`[Auth] Evento de autenticação: ${event}`);
       if (event === 'SIGNED_OUT') {
         setUser(null);
         setViewRole(null);
         localStorage.removeItem('admin_view_role');
-      } else if (event === 'SIGNED_IN') {
+        setLoading(false);
+      } else if (event === 'SIGNED_IN' || event === 'USER_UPDATED' || event === 'TOKEN_REFRESHED') {
         fetchProfile();
       }
     });
@@ -83,7 +88,7 @@ export function useCurrentUser() {
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [fetchProfile]);
 
   const switchViewRole = (newRole: UserRole) => {
     if (user?.role === 'admin') {
@@ -92,12 +97,8 @@ export function useCurrentUser() {
     }
   };
 
-  // For admins, expose the impersonated role through user.role so that
-  // every page that reads `user.role` / `userProfile.role` directly
-  // automatically respects the role-switcher in the sidebar.
   const effectiveRole = (viewRole || (user?.role as UserRole)) as UserRole;
 
-  // Normalize aliases that legacy pages still check against.
   const normalizedForPages = (() => {
     if (!effectiveRole) return effectiveRole;
     if (effectiveRole === 'teacher_solo' || effectiveRole === 'teacher_institutional' || effectiveRole === 'professor') return 'teacher';
