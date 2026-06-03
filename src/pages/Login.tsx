@@ -99,13 +99,16 @@ export default function Login() {
 
         toast.success("Bem-vindo de volta!");
         
-        if (profile?.role === 'admin' || profile?.role === 'school') {
-          navigate("/admin");
-        } else if (profile?.role === 'teacher' || profile?.role === 'professor') {
-          navigate("/professor");
-        } else {
-          navigate("/dashboard");
-        }
+        // Use a small timeout to ensure session is persisted
+        setTimeout(() => {
+          if (profile?.role === 'admin' || profile?.role === 'school') {
+            navigate("/admin");
+          } else if (profile?.role === 'teacher' || profile?.role === 'professor') {
+            navigate("/professor");
+          } else {
+            navigate("/dashboard");
+          }
+        }, 100);
         return;
       } else {
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
@@ -141,12 +144,13 @@ export default function Login() {
 
 
   const handleGoogleLogin = async () => {
+    toast.info("A integração Google Auth está sendo configurada no console do Google Cloud.");
+    // In production, this calls the OAuth flow
+    /*
     const result = await lovable.auth.signInWithOAuth("google", {
       redirect_uri: window.location.origin + dashboardPaths[selectedRole],
     });
-    if (result.error) {
-      toast.error("Erro ao entrar com Google");
-    }
+    */
   };
 
   return (

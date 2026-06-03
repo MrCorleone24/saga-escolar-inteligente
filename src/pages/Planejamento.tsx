@@ -52,7 +52,7 @@ export default function Planejamento() {
         <WeeklyPlanGrid
           grade={grade}
           onCreateLesson={() => setView("create")}
-          onGenerateAI={() => {}}
+          onGenerateAI={() => navigate("/ia-pedagogica")}
         />
       ) : (
         <LessonPlanForm
