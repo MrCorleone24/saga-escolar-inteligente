@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { GraduationCap, Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,8 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 export default function Login() {
   const navigate = useNavigate();
-  const { user, loading: profileLoading, role: currentRole } = useCurrentUser();
+  const location = useLocation();
+  const { user, loading: profileLoading, role: currentRole, isAdmin } = useCurrentUser();
   const [showPassword, setShowPassword] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
   const [selectedRole, setSelectedRole] = useState<"aluno" | "professor" | "admin" | "school">("aluno");
@@ -24,14 +25,16 @@ export default function Login() {
   useEffect(() => {
     if (!profileLoading && user) {
       console.log("[Auth] Usuário já logado detectado no Login. Redirecionando...");
-      const target = (currentRole === 'admin' || currentRole === 'school') 
+      const target = (isAdmin || currentRole === 'admin' || currentRole === 'school') 
         ? "/admin" 
         : (['teacher', 'professor', 'teacher_solo', 'teacher_institutional'].includes(currentRole as string)) 
           ? "/professor" 
           : "/dashboard";
-      navigate(target);
+      
+      console.log("[Auth] Target calculado:", target);
+      navigate(target, { replace: true });
     }
-  }, [user, profileLoading, currentRole, navigate]);
+  }, [user, profileLoading, currentRole, isAdmin, navigate]);
 
   const roles = [
     { value: "aluno" as const, label: "Aluno", emoji: "🎒" },
@@ -88,12 +91,14 @@ export default function Login() {
             });
             
             toast.success("Login Administrativo realizado!");
-            navigate("/admin");
+            console.log("[Auth] Redirecionando admin para /admin...");
+            navigate("/admin", { replace: true });
             return;
           }
         }
 
         // Standard Login
+        console.log("[Auth] Realizando login padrão...");
         const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ 
           email, 
           password 
@@ -101,6 +106,7 @@ export default function Login() {
         
         if (signInError) throw signInError;
 
+        console.log("[Auth] Login bem-sucedido. Buscando perfil...");
         const { data: profile } = await supabase
           .from('profiles')
           .select('role')
@@ -109,13 +115,13 @@ export default function Login() {
 
         toast.success("Bem-vindo de volta!");
         
-        const target = (profile?.role === 'admin' || profile?.role === 'school') 
-          ? "/admin" 
-          : (['teacher', 'professor', 'teacher_solo', 'teacher_institutional'].includes(profile?.role as string)) 
-            ? "/professor" 
-            : "/dashboard";
+        const isUserAdmin = profile?.role === 'admin' || profile?.role === 'school';
+        const isUserTeacher = ['teacher', 'professor', 'teacher_solo', 'teacher_institutional'].includes(profile?.role as string);
 
-        navigate(target);
+        const target = isUserAdmin ? "/admin" : isUserTeacher ? "/professor" : "/dashboard";
+
+        console.log("[Auth] Redirecionando usuário para:", target);
+        navigate(target, { replace: true });
         return;
       } else {
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
