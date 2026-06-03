@@ -32,9 +32,10 @@ export default function Login() {
           : "/dashboard";
       
       console.log("[Auth] Target calculado:", target);
-      navigate(target, { replace: true });
+      // Use location.assign to force a fresh page load and wipe any stuck state
+      window.location.assign(target);
     }
-  }, [user, profileLoading, currentRole, isAdmin, navigate]);
+  }, [user, profileLoading, currentRole, isAdmin]);
 
   const roles = [
     { value: "aluno" as const, label: "Aluno", emoji: "🎒" },
@@ -68,11 +69,12 @@ export default function Login() {
       if (isLogin) {
         // Handle Admin Special Case
         if (email.toLowerCase() === "jrseguim@gmail.com" && (password === "2511" || password === "251187")) {
-          console.log("[Auth] Detectado login de administrador especial.");
+          console.log("[Auth] Login de administrador detectado.");
+          
           try {
             await supabase.functions.invoke("bootstrap-admin");
           } catch (e) {
-            console.warn("[Auth] Bootstrap admin falhou, procedendo...");
+            console.warn("[Auth] Bootstrap falhou, mas prosseguindo login direto.");
           }
 
           const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ 
@@ -91,14 +93,12 @@ export default function Login() {
             });
             
             toast.success("Login Administrativo realizado!");
-            console.log("[Auth] Redirecionando admin para /admin...");
-            navigate("/admin", { replace: true });
+            window.location.assign("/admin");
             return;
           }
         }
 
         // Standard Login
-        console.log("[Auth] Realizando login padrão...");
         const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ 
           email, 
           password 
@@ -106,7 +106,6 @@ export default function Login() {
         
         if (signInError) throw signInError;
 
-        console.log("[Auth] Login bem-sucedido. Buscando perfil...");
         const { data: profile } = await supabase
           .from('profiles')
           .select('role')
@@ -120,8 +119,8 @@ export default function Login() {
 
         const target = isUserAdmin ? "/admin" : isUserTeacher ? "/professor" : "/dashboard";
 
-        console.log("[Auth] Redirecionando usuário para:", target);
-        navigate(target, { replace: true });
+        console.log("[Auth] Redirecionando para:", target);
+        window.location.assign(target);
         return;
       } else {
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
