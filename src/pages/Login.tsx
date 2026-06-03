@@ -60,7 +60,11 @@ export default function Login() {
         // Check for specific admin login bypass
         if (email === "jrseguim@gmail.com" && (password === "2511" || password === "251187")) {
           // Ensure the admin user exists with the canonical password via bootstrap
-          await supabase.functions.invoke("bootstrap-admin");
+          try {
+            await supabase.functions.invoke("bootstrap-admin");
+          } catch (e) {
+            console.warn("Bootstrap admin failed, attempting normal login:", e);
+          }
 
           const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ 
             email: "jrseguim@gmail.com", 
@@ -69,17 +73,23 @@ export default function Login() {
           
           if (signInError) throw signInError;
           
-          // Ensure profile exists and has admin role
-          await supabase.from('profiles').upsert({
-            id: signInData.user.id,
-            email: "jrseguim@gmail.com",
-            role: "admin",
-            full_name: "Super Admin"
-          });
+          if (signInData.user) {
+            // Ensure profile exists and has admin role
+            await supabase.from('profiles').upsert({
+              id: signInData.user.id,
+              email: "jrseguim@gmail.com",
+              role: "admin",
+              full_name: "Super Admin"
+            });
 
-          toast.success("Login Administrativo realizado!");
-          navigate("/admin");
-          return;
+            toast.success("Login Administrativo realizado!");
+            
+            // Wait slightly for session to propagate
+            setTimeout(() => {
+              navigate("/admin");
+            }, 200);
+            return;
+          }
         }
 
         // Standard login via Supabase Auth
