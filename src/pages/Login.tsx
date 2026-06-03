@@ -9,6 +9,8 @@ import { toast } from "sonner";
 import { translateAuthError, validateEmail, validatePassword } from "@/lib/error-handling";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 
+import { cn } from "@/lib/utils";
+
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -169,17 +171,20 @@ export default function Login() {
             {isLogin ? "Entre para continuar aprendendo" : "Comece sua jornada educacional"}
           </p>
 
-          <div className="flex gap-2 mb-5">
+          <div className="grid grid-cols-2 gap-2 mb-5">
             {roles.map(r => (
               <button
                 key={r.value}
                 onClick={() => setSelectedRole(r.value)}
-                className={`flex-1 py-2.5 px-3 rounded-lg text-sm font-medium border transition-all duration-200 ${
-                  selectedRole === r.value ? "border-primary bg-primary/10 text-primary" : "border-border bg-card text-muted-foreground"
-                }`}
+                className={cn(
+                  "py-2.5 px-3 rounded-lg text-sm font-medium border transition-all duration-200 flex flex-col items-center gap-0.5",
+                  selectedRole === r.value 
+                    ? "border-primary bg-primary/10 text-primary shadow-sm" 
+                    : "border-border bg-card text-muted-foreground hover:border-primary/30"
+                )}
               >
-                <span className="block text-base mb-0.5">{r.emoji}</span>
-                {r.label}
+                <span className="text-base">{r.emoji}</span>
+                <span>{r.label}</span>
               </button>
             ))}
           </div>
