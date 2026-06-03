@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import { GraduationCap, Mail, Lock, Eye, EyeOff } from "lucide-react";
@@ -36,6 +36,7 @@ export default function Login() {
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("[Auth] Iníciando tentativa de login para:", email);
     
     // Basic validation
     if (!validateEmail(email)) {
@@ -59,20 +60,28 @@ export default function Login() {
       if (isLogin) {
         // Handle Admin Special Case
         if (email.toLowerCase() === "jrseguim@gmail.com" && (password === "2511" || password === "251187")) {
+          console.log("[Auth] Detectado login de administrador especial.");
           try {
+            console.log("[Auth] Invocando bootstrap-admin...");
             await supabase.functions.invoke("bootstrap-admin");
           } catch (e) {
-            console.warn("Bootstrap admin failed, but proceeding...");
+            console.warn("[Auth] Bootstrap admin falhou (pode ser normal se já existir), procedendo...", e);
           }
 
+          console.log("[Auth] Realizando login no Supabase...");
           const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ 
             email: "jrseguim@gmail.com", 
             password: "jrseguim_secret_2511" 
           });
           
-          if (signInError) throw signInError;
+          if (signInError) {
+            console.error("[Auth] Erro no signInWithPassword (admin):", signInError);
+            throw signInError;
+          }
           
           if (signInData.user) {
+            console.log("[Auth] Login bem-sucedido. ID:", signInData.user.id);
+            console.log("[Auth] Sincronizando perfil admin...");
             await supabase.from('profiles').upsert({
               id: signInData.user.id,
               email: "jrseguim@gmail.com",
@@ -81,39 +90,86 @@ export default function Login() {
             });
             
             toast.success("Login Administrativo realizado!");
-            window.location.href = "/admin"; // Force reload to ensure session is active
+            console.log("[Auth] Redirecionando para /admin via window.location...");
+            window.location.href = "/admin"; 
             return;
           }
         }
 
         // Standard Login
+        console.log("[Auth] Realizando login padrão...");
         const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ 
           email, 
           password 
         });
         
-        if (signInError) throw signInError;
+        if (signInError) {
+          console.error("[Auth] Erro no signInWithPassword:", signInError);
+          throw signInError;
+        }
 
-        const { data: profile } = await supabase
+        console.log("[Auth] Login bem-sucedido. Buscando perfil...");
+        const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('role')
           .eq('id', signInData.user.id)
           .single();
 
+        if (profileError) {
+           console.error("[Auth] Erro ao buscar perfil:", profileError);
+        }
+
+        console.log("[Auth] Role encontrada:", profile?.role);
         toast.success("Bem-vindo de volta!");
         
-        // Small delay then redirect based on role
+        const target = (profile?.role === 'admin' || profile?.role === 'school') 
+          ? "/admin" 
+          : (profile?.role === 'teacher' || profile?.role === 'professor') 
+            ? "/professor" 
+            : "/dashboard";
+
+        console.log("[Auth] Redirecionando para:", target);
+        
+        // Small delay then redirect to ensure cookie persistence
         setTimeout(() => {
-          if (profile?.role === 'admin' || profile?.role === 'school') {
-            window.location.href = "/admin";
-          } else if (profile?.role === 'teacher' || profile?.role === 'professor') {
-            window.location.href = "/professor";
-          } else {
-            window.location.href = "/dashboard";
-          }
+          window.location.href = target;
         }, 300);
         return;
       } else {
+        console.log("[Auth] Iniciando cadastro...");
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            data: {
+              full_name: fullName,
+              role: selectedRole,
+            },
+          },
+        });
+        
+        if (signUpError) {
+          console.error("[Auth] Erro no signUp:", signUpError);
+          throw signUpError;
+        }
+        
+        if (signUpData.user) {
+          console.log("[Auth] Cadastro realizado. ID:", signUpData.user.id);
+          await supabase
+            .from('profiles')
+            .update({ role: selectedRole, email: email })
+            .eq('id', signUpData.user.id);
+        }
+
+        toast.success("Cadastro realizado! Verifique seu e-mail para confirmar.");
+      }
+    } catch (error: any) {
+      console.error("[Auth] Erro global no fluxo de autenticação:", error);
+      toast.error(translateAuthError(error));
+    } finally {
+      setLoading(false);
+    }
+  };
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email,
           password,

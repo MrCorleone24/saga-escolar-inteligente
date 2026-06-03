@@ -14,28 +14,29 @@ export const AuthWrapper = ({ children, allowedRoles }: AuthWrapperProps) => {
   const location = useLocation();
 
   useEffect(() => {
+    console.log(`[AuthGuard] Verificando rota: ${location.pathname}. Loading: ${loading}, User: ${!!user}, Role: ${currentRole}`);
+    
     if (!loading) {
       if (!user) {
+        console.warn("[AuthGuard] Usuário não autenticado. Redirecionando para /login.");
         navigate("/login", { state: { from: location.pathname } });
         return;
       }
 
       // If specific roles are required, check if user has them
       if (allowedRoles && allowedRoles.length > 0) {
-        // We use currentRole which already handles admin impersonation
         if (!allowedRoles.includes(currentRole as UserRole)) {
-          // Redirect to their respective dashboard if they try to access unauthorized area
-          console.warn(`Access denied for role ${currentRole} to ${location.pathname}`);
+          console.warn(`[AuthGuard] Acesso negado para role ${currentRole} na rota ${location.pathname}. Permissões:`, allowedRoles);
           
-          if (currentRole === 'aluno' || currentRole === 'student') {
-            navigate("/dashboard");
-          } else if (['teacher', 'professor', 'teacher_solo', 'teacher_institutional'].includes(currentRole as string)) {
-            navigate("/professor");
-          } else if (['admin', 'school'].includes(currentRole as string)) {
-            navigate("/admin");
-          } else {
-            navigate("/");
-          }
+          let target = "/";
+          if (currentRole === 'aluno' || currentRole === 'student') target = "/dashboard";
+          else if (['teacher', 'professor', 'teacher_solo', 'teacher_institutional'].includes(currentRole as string)) target = "/professor";
+          else if (['admin', 'school'].includes(currentRole as string)) target = "/admin";
+
+          console.log("[AuthGuard] Redirecionando para dashboard padrão da role:", target);
+          navigate(target);
+        } else {
+          console.log("[AuthGuard] Acesso autorizado.");
         }
       }
     }
