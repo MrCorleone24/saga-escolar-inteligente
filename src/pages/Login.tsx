@@ -9,11 +9,10 @@ import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
 import { translateAuthError, validateEmail, validatePassword } from "@/lib/error-handling";
 
-
 export default function Login() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
-  const [isLogin, setIsLogin] = useState(true); // Always login mode, register is via management or plans
+  const [isLogin, setIsLogin] = useState(true);
   const [selectedRole, setSelectedRole] = useState<"aluno" | "professor" | "admin" | "school">("aluno");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -27,18 +26,10 @@ export default function Login() {
     { value: "admin" as const, label: "Admin", emoji: "🛡️" },
   ];
 
-  const dashboardPaths: Record<string, string> = {
-    aluno: "/dashboard",
-    professor: "/professor",
-    school: "/admin", // School can use the admin/management UI
-    admin: "/admin",
-  };
-
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log("[Auth] Iníciando tentativa de login para:", email);
     
-    // Basic validation
     if (!validateEmail(email)) {
       toast.error("Por favor, insira um e-mail válido.");
       return;
@@ -130,7 +121,6 @@ export default function Login() {
 
         console.log("[Auth] Redirecionando para:", target);
         
-        // Small delay then redirect to ensure cookie persistence
         setTimeout(() => {
           window.location.href = target;
         }, 300);
@@ -170,46 +160,9 @@ export default function Login() {
       setLoading(false);
     }
   };
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              full_name: fullName,
-              role: selectedRole,
-            },
-          },
-        });
-        
-        if (signUpError) throw signUpError;
-        
-        if (signUpData.user) {
-          // Explicitly update profile email and role to be sure
-          await supabase
-            .from('profiles')
-            .update({ role: selectedRole, email: email })
-            .eq('id', signUpData.user.id);
-        }
-
-        toast.success("Cadastro realizado! Verifique seu e-mail para confirmar.");
-      }
-    } catch (error: any) {
-      console.error("Auth error:", error);
-      toast.error(translateAuthError(error));
-    } finally {
-      setLoading(false);
-    }
-  };
-
 
   const handleGoogleLogin = async () => {
     toast.info("A integração Google Auth está sendo configurada no console do Google Cloud.");
-    // In production, this calls the OAuth flow
-    /*
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin + dashboardPaths[selectedRole],
-    });
-    */
   };
 
   return (
