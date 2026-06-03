@@ -14,7 +14,7 @@ import { cn } from "@/lib/utils";
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, loading: profileLoading, role: currentRole, isAdmin } = useCurrentUser();
+  const { user, loading: profileLoading, role: currentRole, isAdmin, switchViewRole } = useCurrentUser();
   const [showPassword, setShowPassword] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
   const [selectedRole, setSelectedRole] = useState<"aluno" | "professor" | "admin" | "school">("aluno");
@@ -26,18 +26,22 @@ export default function Login() {
   // Auto-redirect if already logged in
   useEffect(() => {
     if (!profileLoading && user) {
-      console.log("[Auth] Usuário já logado detectado no Login. Redirecionando...");
-      const target = (isAdmin || currentRole === 'admin' || currentRole === 'school') 
+      console.log("[Auth] Usuário logado detectado. Redirecionando...");
+      
+      // Reset view role to match profile if user is admin
+      if (user.role === 'admin' || isAdmin) {
+         switchViewRole('admin');
+      }
+
+      const target = (user.role === 'admin' || isAdmin || currentRole === 'admin' || currentRole === 'school') 
         ? "/admin" 
         : (['teacher', 'professor', 'teacher_solo', 'teacher_institutional'].includes(currentRole as string)) 
           ? "/professor" 
           : "/dashboard";
       
-      console.log("[Auth] Target calculado:", target);
-      // Use location.assign to force a fresh page load and wipe any stuck state
       window.location.assign(target);
     }
-  }, [user, profileLoading, currentRole, isAdmin]);
+  }, [user, profileLoading, currentRole, isAdmin, switchViewRole]);
 
   const roles = [
     { value: "aluno" as const, label: "Aluno", emoji: "🎒" },
