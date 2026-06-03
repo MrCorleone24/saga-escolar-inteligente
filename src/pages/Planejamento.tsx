@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import DashboardLayout from "@/components/DashboardLayout";
 import { ClipboardList, Brain, Calendar, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
@@ -12,6 +13,7 @@ import { useCurrentUser } from "@/hooks/useCurrentUser";
 export default function Planejamento() {
   const [grade, setGrade] = useState(3);
   const [view, setView] = useState<"grid" | "create">("grid");
+  const navigate = useNavigate();
   const { user, loading } = useCurrentUser();
 
   if (loading) {
