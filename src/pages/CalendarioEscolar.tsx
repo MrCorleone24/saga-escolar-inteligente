@@ -54,7 +54,7 @@ interface AttendanceRecord {
 export default function CalendarioEscolar() {
   const queryClient = useQueryClient();
   const [currentDate, setCurrentDate] = useState(new Date());
-  const { user: userProfile, loading: userLoading } = useCurrentUser();
+  const { user: userProfile, loading: userLoading, role: currentRole } = useCurrentUser();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -71,17 +71,17 @@ export default function CalendarioEscolar() {
       if (error) return [];
       return data;
     },
-    enabled: userProfile?.role === 'admin'
+    enabled: currentRole === 'admin'
   });
 
   const { data: schoolEvents = [], isLoading: eventsLoading } = useQuery<SchoolEvent[]>({
-    queryKey: ['school-events', userProfile?.school_id, userProfile?.role, currentDate.getMonth()],
+    queryKey: ['school-events', userProfile?.school_id, currentRole, currentDate.getMonth()],
     queryFn: async () => {
       if (!userProfile) return [];
       
       let query = supabase.from('school_calendar_events').select('*');
       
-      if (userProfile.role !== 'admin') {
+      if (currentRole !== 'admin') {
         const targetId = userProfile.school_id || userProfile.id;
         query = query.eq('school_id', targetId);
       }
@@ -96,7 +96,7 @@ export default function CalendarioEscolar() {
   const { data: attendanceData = [] } = useQuery<AttendanceRecord[]>({
     queryKey: ['user-attendance', userProfile?.id],
     queryFn: async () => {
-      if (!userProfile?.id || userProfile.role !== 'aluno') return [];
+      if (!userProfile?.id || currentRole !== 'aluno') return [];
       const { data, error } = await supabase
         .from('attendance')
         .select('*')
@@ -104,7 +104,7 @@ export default function CalendarioEscolar() {
       if (error) throw error;
       return data as AttendanceRecord[];
     },
-    enabled: !!userProfile && userProfile.role === 'aluno'
+    enabled: !!userProfile && currentRole === 'aluno'
   });
 
   const handleCreateEvent = async () => {
@@ -113,13 +113,13 @@ export default function CalendarioEscolar() {
       return;
     }
 
-    if (userProfile?.role === 'admin' && !eventSchoolId) {
+    if (currentRole === 'admin' && !eventSchoolId) {
       toast.error("Selecione uma escola para o evento");
       return;
     }
 
     setLoading(true);
-    const targetId = userProfile?.role === 'admin' ? eventSchoolId : (userProfile?.school_id || userProfile?.id);
+    const targetId = currentRole === 'admin' ? eventSchoolId : (userProfile?.school_id || userProfile?.id);
 
     const { error } = await supabase
       .from('school_calendar_events')
@@ -207,7 +207,7 @@ export default function CalendarioEscolar() {
     ? Math.round((totalPresent / (totalPresent + totalAbsent)) * 100) 
     : 0;
 
-  const isAdmin = ['school', 'admin', 'professor', 'teacher', 'teacher_solo', 'teacher_institutional'].includes(userProfile?.role);
+  const isAdmin = ['school', 'admin', 'professor', 'teacher', 'teacher_solo', 'teacher_institutional'].includes(currentRole as string);
 
   const handleExportPDF = async () => {
     const element = document.getElementById('calendar-content');
@@ -251,7 +251,7 @@ export default function CalendarioEscolar() {
 
   return (
     <DashboardLayout 
-      role={(userProfile?.role as any) || "aluno"} 
+      role={(currentRole as any) || "aluno"} 
       userName={userProfile?.full_name || "Usuário"} 
       xp={userProfile?.xp || 0} 
       level={userProfile?.level || 1}
@@ -307,7 +307,7 @@ export default function CalendarioEscolar() {
                       <Label htmlFor="date">Data</Label>
                       <Input id="date" type="date" value={eventDate} onChange={e => setEventDate(e.target.value)} />
                     </div>
-                    {userProfile?.role === 'admin' && (
+                    {currentRole === 'admin' && (
                       <div className="grid gap-2">
                         <Label htmlFor="school">Escola</Label>
                         <Select value={eventSchoolId} onValueChange={setEventSchoolId}>
@@ -405,7 +405,7 @@ export default function CalendarioEscolar() {
                           e.event_type === 'aula' ? 'bg-primary/10 text-primary border border-primary/20' : 
                           'bg-zinc-100 text-zinc-600 border border-zinc-200'
                         }`}>
-                          {userProfile?.role === 'admin' && e.school_id && (
+                          {currentRole === 'admin' && e.school_id && (
                             <span className="text-[8px] bg-white/20 px-1 rounded mr-1">
                               {schools.find(s => s.id === e.school_id)?.school_name?.substring(0, 3) || 'ESC'}
                             </span>
