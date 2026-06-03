@@ -32,7 +32,7 @@ interface Student {
 
 export default function Turmas() {
   const queryClient = useQueryClient();
-  const { user: currentUser, loading: userLoading } = useCurrentUser();
+  const { user: currentUser, loading: userLoading, role: currentRole } = useCurrentUser();
   const [selectedTurma, setSelectedTurma] = useState<string | null>(null);
   const [showEntryModal, setShowEntryModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -58,26 +58,26 @@ export default function Turmas() {
       if (error) return [];
       return data;
     },
-    enabled: currentUser?.role === 'admin'
+    enabled: currentRole === 'admin'
   });
 
   const { data: turmasList = [], isLoading: turmasLoading } = useQuery({
-    queryKey: ['turmas', currentUser?.id, currentUser?.role],
+    queryKey: ['turmas', currentUser?.id, currentRole],
     queryFn: async () => {
       if (!currentUser) return [];
       
       let query = supabase.from("subjects").select("*");
       
-      if (currentUser.role === 'admin') {
+      if (currentRole === 'admin') {
         // Admin sees all
-      } else if (currentUser.role === 'school') {
+      } else if (currentRole === 'school') {
         // In a real system, we'd have a subjects_schools junction or similar
         // For now, let's assume we can filter assignments
         const { data: assignments } = await supabase.from('teacher_assignments').select('subject_id').eq('school_id', currentUser.id);
         if (assignments && assignments.length > 0) {
           query = query.in('id', assignments.map(a => a.subject_id));
         }
-      } else if (currentUser.role === 'teacher') {
+      } else if (currentRole === 'teacher') {
         const { data: assignments } = await supabase.from('teacher_assignments').select('subject_id').eq('teacher_id', currentUser.id);
         if (assignments && assignments.length > 0) {
           query = query.in('id', assignments.map(a => a.subject_id));
@@ -107,9 +107,9 @@ export default function Turmas() {
       
       let query = supabase.from("profiles").select("*").eq("role", "student");
       
-      if (currentUser.role === 'teacher') {
+      if (currentRole === 'teacher') {
         query = query.eq('teacher_id', currentUser.id);
-      } else if (currentUser.role === 'school') {
+      } else if (currentRole === 'school') {
         query = query.eq('school_id', currentUser.id);
       }
       
@@ -149,7 +149,7 @@ export default function Turmas() {
       return;
     }
 
-    if (currentUser?.role === 'admin' && !newClassSchoolId) {
+    if (currentRole === 'admin' && !newClassSchoolId) {
       toast.error("Por favor, selecione uma escola para esta turma.");
       return;
     }
@@ -169,11 +169,11 @@ export default function Turmas() {
       }
 
       // Create assignment if school is selected or if current user is school/teacher
-      const targetSchoolId = currentUser?.role === 'admin' ? newClassSchoolId : (currentUser?.role === 'school' ? currentUser.id : currentUser?.school_id);
+      const targetSchoolId = currentRole === 'admin' ? newClassSchoolId : (currentRole === 'school' ? currentUser.id : currentUser?.school_id);
       
       const { error: assignError } = await supabase.from('teacher_assignments').insert({
         school_id: targetSchoolId || null,
-        teacher_id: currentUser?.role === 'teacher' ? currentUser.id : null,
+        teacher_id: currentRole === 'teacher' ? currentUser.id : null,
         subject_id: subjectData.id,
         grade_level: "Ensino Fundamental"
       });
@@ -257,7 +257,7 @@ export default function Turmas() {
   }
 
   return (
-    <DashboardLayout role={(currentUser?.role as any) || "professor"} userName={currentUser?.full_name || "Professor"}>
+    <DashboardLayout role={(currentRole as any) || "professor"} userName={currentUser?.full_name || "Professor"}>
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold">Minhas Turmas</h1>
@@ -292,7 +292,7 @@ export default function Turmas() {
                   </SelectContent>
                 </Select>
               </div>
-              {currentUser?.role === 'admin' && (
+              {currentRole === 'admin' && (
                 <div className="grid gap-2">
                   <Label htmlFor="school">Escola</Label>
                   <Select value={newClassSchoolId} onValueChange={setNewClassSchoolId}>

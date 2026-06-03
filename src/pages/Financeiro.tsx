@@ -37,27 +37,21 @@ export default function Financeiro() {
     activeSubs: 0,
   });
 
+  const { user, loading: profileLoading, role: currentRole } = useCurrentUser();
+  
   useEffect(() => {
-    (async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-        
-        const { data: profile } = await supabase.from("profiles").select("role, full_name, school_id, teacher_category").eq("id", user.id).single();
+    if (!profileLoading && user) {
+      setRole(currentRole as Role);
+      setUserName(user.full_name ?? "Usuário");
+      
+      (async () => {
+        try {
         if (profile) {
-          let roleToSet = profile.role as Role;
-          if (roleToSet === 'professor') {
-            roleToSet = profile.teacher_category === 'solo' ? 'teacher_solo' : 'teacher_institutional';
-          }
-
-          if (roleToSet === 'teacher_institutional') {
-            // School teacher shouldn't be here
+          if (currentRole === 'teacher_institutional') {
             toast.error("Acesso restrito ao financeiro institucional");
             navigate("/dashboard");
             return;
           }
-          setRole(roleToSet);
-          setUserName(profile.full_name ?? user.email ?? "Usuário");
         }
 
         // Fetch history

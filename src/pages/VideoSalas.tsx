@@ -44,7 +44,7 @@ interface Participant {
 
 export default function VideoSalas() {
   const queryClient = useQueryClient();
-  const { user, loading: userLoading } = useCurrentUser();
+  const { user, loading: userLoading, role: currentRole } = useCurrentUser();
   const [inCall, setInCall] = useState(false);
   const [activeRoom, setActiveRoom] = useState<Room | null>(null);
   const [newRoomName, setNewRoomName] = useState("");
@@ -53,7 +53,7 @@ export default function VideoSalas() {
   const [isHandRaised, setIsHandRaised] = useState(false);
   
   const userId = user?.id;
-  const userRole = user?.role?.toLowerCase();
+  const userRole = (currentRole as string)?.toLowerCase();
 
   // Set up Realtime for moderation commands
   useEffect(() => {
