@@ -47,12 +47,31 @@ export default function IAPedagogica() {
     if (!userInput.trim()) return;
     setIsGenerating(true);
     try {
-      // Mock generation for demo
-      setTimeout(() => {
-        setGeneratedContent(`Conteúdo pedagógico gerado para: ${userInput}\n\nEste plano foca no desenvolvimento de competências cognitivas e socioemocionais...`);
-        setIsGenerating(false);
-        toast.success("Conteúdo gerado com IA!");
-      }, 2000);
+    try {
+      const { data, error } = await supabase.functions.invoke('ai-generate', {
+        body: { 
+          prompt: userInput,
+          type: contentType,
+          student_id: selectedStudent
+        }
+      });
+
+      if (error) throw error;
+
+      setGeneratedContent(data.content);
+      toast.success("Conteúdo gerado com sucesso!");
+    } catch (error: any) {
+      console.error("AI Generation error:", error);
+      // Fallback para demo se a função não estiver implantada ainda
+      if (error.message?.includes('404')) {
+        setGeneratedContent(`[DEMO MODE] Conteúdo pedagógico gerado para: ${userInput}\n\n1. Objetivo: Desenvolvimento de competências BNCC.\n2. Metodologia: Aprendizagem baseada em problemas.\n3. Avaliação: Formativa continuada.\n\n(Note: A Edge Function 'ai-generate' precisa ser implantada para resultados reais).`);
+        toast.info("Modo demonstração ativado.");
+      } else {
+        toast.error("Erro na comunicação com a IA.");
+      }
+    } finally {
+      setIsGenerating(false);
+    }
     } catch (error) {
       toast.error("Erro ao gerar conteúdo");
       setIsGenerating(false);

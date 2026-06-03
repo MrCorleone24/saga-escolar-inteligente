@@ -121,19 +121,19 @@ export default function DashboardLayout({ children, xp, level }: DashboardLayout
         {isAdmin && !collapsed && (
           <div className="mt-4 px-2">
             <p className="text-[10px] uppercase font-bold text-sidebar-foreground/40 mb-2">Alternar Perfil</p>
-            <div className="flex flex-col gap-1">
-              {(["admin", "school", "teacher_institutional", "teacher_solo", "aluno"] as UserRole[]).map((r) => (
+            <div className="grid grid-cols-2 gap-1">
+              {(["admin", "school", "teacher_solo", "aluno"] as UserRole[]).map((r) => (
                 <button
                   key={r}
                   onClick={() => handleRoleSwitch(r)}
-                  className={`text-[11px] py-1.5 px-3 rounded-md border text-left transition-all flex items-center gap-2 ${
+                  className={`text-[10px] py-1.5 px-2 rounded-md border text-center transition-all flex flex-col items-center justify-center gap-1 ${
                     currentRole === r 
-                    ? "bg-primary/10 text-primary border-primary font-medium" 
-                    : "border-transparent text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                    ? "bg-primary text-primary-foreground border-primary shadow-sm" 
+                    : "border-border text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
                   }`}
+                  title={roleLabels[r]}
                 >
-                  <div className={`w-1.5 h-1.5 rounded-full ${currentRole === r ? "bg-primary" : "bg-sidebar-foreground/20"}`} />
-                  {roleLabels[r]}
+                  <span className="font-bold leading-none">{r === 'teacher_solo' ? 'PROF' : r.substring(0, 4).toUpperCase()}</span>
                 </button>
               ))}
             </div>
