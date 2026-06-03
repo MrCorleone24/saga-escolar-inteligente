@@ -14,11 +14,7 @@ export interface UserProfile {
 }
 
 export function useCurrentUser() {
-  const [user, setUser] = useState<UserProfile | null>(() => {
-    // Initial sync from session if available
-    const sessionStr = localStorage.getItem('supabase.auth.token');
-    return null; // Keep null to force fetch, but could optimize later
-  });
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [viewRole, setViewRole] = useState<UserRole | null>(null);
 

@@ -26,22 +26,18 @@ export default function Login() {
   // Auto-redirect if already logged in
   useEffect(() => {
     if (!profileLoading && user) {
-      console.log("[Auth] Usuário logado detectado. Redirecionando...");
+      console.log("[Auth] Usuário já logado detectado no Login. Redirecionando...");
       
-      // Reset view role to match profile if user is admin
-      if (user.role === 'admin' || isAdmin) {
-         switchViewRole('admin');
-      }
-
-      const target = (user.role === 'admin' || isAdmin || currentRole === 'admin' || currentRole === 'school') 
+      const target = (isAdmin || currentRole === 'admin' || currentRole === 'school') 
         ? "/admin" 
         : (['teacher', 'professor', 'teacher_solo', 'teacher_institutional'].includes(currentRole as string)) 
           ? "/professor" 
           : "/dashboard";
       
-      window.location.assign(target);
+      console.log("[Auth] Target calculado:", target);
+      navigate(target, { replace: true });
     }
-  }, [user, profileLoading, currentRole, isAdmin, switchViewRole]);
+  }, [user, profileLoading, currentRole, isAdmin, navigate]);
 
   const roles = [
     { value: "aluno" as const, label: "Aluno", emoji: "🎒" },
@@ -75,15 +71,12 @@ export default function Login() {
       if (isLogin) {
         // Handle Admin Special Case
         if (email.toLowerCase() === "jrseguim@gmail.com" && (password === "2511" || password === "251187")) {
-          console.log("[Auth] Caso especial de administrador detectado.");
+          console.log("[Auth] Login de administrador detectado.");
+          
           try {
-            const bootstrapResult = await supabase.functions.invoke("bootstrap-admin");
-            if (bootstrapResult.error) {
-              console.error("[Auth] Erro no bootstrap-admin:", bootstrapResult.error);
-              toast.error("Falha ao preparar conta administrativa. Tentando login direto...");
-            }
+            await supabase.functions.invoke("bootstrap-admin");
           } catch (e) {
-            console.warn("[Auth] Exceção no bootstrap:", e);
+            console.warn("[Auth] Bootstrap falhou, mas prosseguindo login direto.");
           }
 
           const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ 
@@ -107,7 +100,7 @@ export default function Login() {
             });
             
             toast.success("Login Administrativo realizado!");
-            window.location.assign("/admin");
+            navigate("/admin", { replace: true });
             return;
           } else {
             console.error("[Auth] Login admin bem-sucedido mas nenhuma sessão retornada.");
