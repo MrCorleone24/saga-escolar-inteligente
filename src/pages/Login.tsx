@@ -122,35 +122,35 @@ export default function Login() {
           throw signInError;
         }
 
-        if (!signInData?.session) {
-          console.error("[Auth] Login OK mas sem sessão.");
-          toast.error("Sessão não encontrada. Tente deslogar e logar novamente.");
+        if (signInData?.session) {
+          console.log("[Auth] Login bem-sucedido. Buscando perfil...");
+          const { data: profile, error: profileError } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', signInData.user.id)
+            .single();
+
+          if (profileError) {
+            console.error("[Auth] Erro ao carregar perfil após login:", profileError);
+            toast.error("Você logou com sucesso, mas não conseguimos carregar seu perfil de permissões.");
+          }
+
+          toast.success("Bem-vindo de volta!");
+          
+          const isUserAdmin = profile?.role === 'admin' || profile?.role === 'school';
+          const isUserTeacher = ['teacher', 'professor', 'teacher_solo', 'teacher_institutional'].includes(profile?.role as string);
+
+          const target = isUserAdmin ? "/admin" : isUserTeacher ? "/professor" : "/dashboard";
+
+          console.log("[Auth] Redirecionando para:", target);
+          navigate(target, { replace: true });
+          return;
+        } else {
+          console.error("[Auth] Login bem-sucedido mas nenhuma sessão retornada.");
+          toast.error("O servidor autenticou seus dados, mas não conseguiu gerar uma sessão válida. Verifique se os cookies estão permitidos.");
           setLoading(false);
           return;
         }
-
-        console.log("[Auth] Login bem-sucedido. Buscando perfil...");
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', signInData.user.id)
-          .single();
-
-        if (profileError) {
-          console.error("[Auth] Erro ao carregar perfil após login:", profileError);
-          toast.error("Você logou com sucesso, mas não conseguimos carregar seu perfil de permissões.");
-        }
-
-        toast.success("Bem-vindo de volta!");
-        
-        const isUserAdmin = profile?.role === 'admin' || profile?.role === 'school';
-        const isUserTeacher = ['teacher', 'professor', 'teacher_solo', 'teacher_institutional'].includes(profile?.role as string);
-
-        const target = isUserAdmin ? "/admin" : isUserTeacher ? "/professor" : "/dashboard";
-
-        console.log("[Auth] Redirecionando para:", target);
-        window.location.assign(target);
-        return;
       } else {
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email,
